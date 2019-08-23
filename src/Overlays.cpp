@@ -399,7 +399,7 @@ void Overlays::SetAntTweakBar(int Width, int Height, float &fps, Scene *scene, R
 	scene_ptr = scene;
 
 	stats = TwNewBar("Statistics" );
-	TwDefine(" GLOBAL help='Marble Marcher Community Edition. Work in progress.' ");
+	TwDefine(" GLOBAL help='Marble Marcher: Community Edition. Work in progress.' ");
 
 	// Change bar position
 	int barPos[2] = { 16, 60 };
