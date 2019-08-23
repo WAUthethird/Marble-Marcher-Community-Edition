@@ -1,6 +1,8 @@
 # Marble Marcher: Community Edition
 
-### Version 1.2.0
+### Version 1.4.0 beta
+
+![Logo](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/LOGO.PNG)
 
 This is the community edition of Marble Marcher, a procedurally rendered fractal physics marble game in which you must get to the flag in each level as fast as you can. With 24 levels to unlock and an active [speedrunning community](https://www.speedrun.com/marblemarcher), along with a rudimentary level editor, there's always new features being developed. If you complete all levels, you can use cheats to create and enhance a more exploratory experience.
 
@@ -44,6 +46,10 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 - new rendering engine
 - ingame statistics added (marble speed, ground/air state, ...). Press `o` to toggle.
 - AntTweakBar editor added. Press `F4` to toggle.
+- Level Editor and custom level support
+![Editor](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/EDITOR.PNG)
+![Levels](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/LEVELS.PNG)
+
 
 ## Proposed Changes
 Though Marble Marcher CE is a largely finished game, there are still several improvements we'd like to implement. Here are our proposed changes:
@@ -97,7 +103,7 @@ The version of SFML required is 2.5.1 or newer. It has come to my attention that
 Alternatively, [vcpkg](https://github.com/Microsoft/vcpkg) can be used though it is unsupported:
 
 `vcpkg install cmake eigen3 sfml anttweakbar`
-
+r
 It may also be possible to use MacPorts which is also unsupported and untested.
 ### Arch Linux
 `sudo pacman -S eigen sfml anttweakbar git cmake make`
@@ -158,3 +164,4 @@ Launching should be self-explanatory for these systems, just run the excecutable
 * Press `o` to toggle the debug screen.
 * Press `F5` to take a screenshot.
 * Press `F4` to open AntTweakBar.
+

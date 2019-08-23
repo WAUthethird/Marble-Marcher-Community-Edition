@@ -14,12 +14,11 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.If not, see <http://www.gnu.org/licenses/>.
 */
-#include "Scene.h"
-#include "Overlays.h"
+
+#include<Gamemodes.h>
 #include "Level.h"
 #include "Res.h"
 #include "SelectRes.h"
-#include "Scores.h"
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
@@ -32,6 +31,10 @@
 #include <thread>
 #include <mutex>
 
+
+
+
+
 #ifdef _WIN32
 #include <Windows.h>
 #define ERROR_MSG(x) MessageBox(nullptr, TEXT(x), TEXT("ERROR"), MB_OK);
@@ -39,78 +42,9 @@
 #define ERROR_MSG(x) std::cerr << x << std::endl;
 #endif
 
-//Constants
-static float mouse_sensitivity = 0.005f;
-static float wheel_sensitivity = 0.2f;
-static float music_vol = 75.0f;
-static float target_fps = 60.0f;
-
-template < typename T > std::string num2str(const T& n)
-{
-	std::ostringstream stm;
-	stm << n;
-	return stm.str();
-}
-
-//Game modes
-enum GameMode {
-  MAIN_MENU,
-  PLAYING,
-  PAUSED,
-  SCREEN_SAVER,
-  CONTROLS,
-  LEVELS,
-  CREDITS,
-  MIDPOINT
-};
-
-//Global variables
-static sf::Vector2i mouse_pos, mouse_prev_pos;
-static bool all_keys[sf::Keyboard::KeyCount] = { 0 };
-static bool mouse_clicked = false;
-static bool show_cheats = false;
-static GameMode game_mode = MAIN_MENU;
-
 //Graphics settings
 static bool VSYNC = true;
 
-
-float GetVol() {
-  if (game_settings.mute) {
-    return 0.0f;
-  } else if (game_mode == PAUSED) {
-    return music_vol / 4;
-  } else {
-    return music_vol;
-  }
-}
-
-void LockMouse(sf::RenderWindow& window) {
-  window.setMouseCursorVisible(false);
-  const sf::Vector2u size = window.getSize();
-  mouse_pos = sf::Vector2i(size.x / 2, size.y / 2);
-  sf::Mouse::setPosition(mouse_pos);
-}
-void UnlockMouse(sf::RenderWindow& window) {
-  window.setMouseCursorVisible(true);
-}
-
-void PauseGame(sf::RenderWindow& window, Scene& scene) {
-  game_mode = PAUSED;
-  scene.GetCurMusic().setVolume(GetVol());
-  UnlockMouse(window);
-  scene.SetExposure(0.5f);
-}
-
-int DirExists(const char *path) {
-  struct stat info;
-  if (stat(path, &info) != 0) {
-    return 0;
-  } else if (info.st_mode & S_IFDIR) {
-    return 1;
-  }
-  return 0;
-}
 
 #if defined(_WIN32)
 int WinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR lpCmdLine, int nCmdShow) {
@@ -187,8 +121,6 @@ int main(int argc, char *argv[]) {
   const std::string save_file = save_dir + "/scores.bin";
   const std::string settings_file = save_dir + "/settings.bin";
 
-  //Load scores if available
-  high_scores.Load(save_file);
   game_settings.Load(settings_file);
 
   //Have user select the resolution
@@ -201,8 +133,8 @@ int main(int argc, char *argv[]) {
 
   //GL settings
   sf::ContextSettings settings;
-  settings.majorVersion = 2;
-  settings.minorVersion = 0;
+  settings.majorVersion = 4;
+  settings.minorVersion = 3;
 
   //Create the window
   sf::VideoMode screen_size;
@@ -218,14 +150,22 @@ int main(int argc, char *argv[]) {
 
   AdditionalSettings addsett;
   addsett.Load("assets/config.txt");
+  LOCAL.LoadLocalsFromFolder(local_folder);
+  LOCAL.SetLanguage(addsett.lang);
 
   sf::Vector2f screenshot_size = sf::Vector2f(addsett.screenshot_width, addsett.screenshot_height);
 
-  sf::RenderWindow window(screen_size, "Marble Marcher", window_style, settings);
+  sf::RenderWindow window(screen_size, "Marble Marcher Community Edition", window_style, settings);
   window.setVerticalSyncEnabled(VSYNC);
   window.setKeyRepeatEnabled(false);
-  window.requestFocus();
 
+  INIT();
+
+  sf::VideoMode fs_size = sf::VideoMode::getDesktopMode();
+  window.setSize(sf::Vector2u(fs_size.width, fs_size.width*9.f/16.f));
+  window.setPosition(sf::Vector2i(0, 0));
+  window.requestFocus();
+  UpdateAspectRatio(window.getSize().x, window.getSize().y);
   //set window icon
   sf::Image icon;
   icon.loadFromFile(icon_png); 
@@ -239,29 +179,39 @@ int main(int argc, char *argv[]) {
   //force fullscreen mode
   fullscreen = true;
 
+  Renderer rend(resolution->width, resolution->height, "shaders/compute/MAIN.cfg");
+
   //fullscreen = false;
   //Create the render texture if needed
   sf::RenderTexture renderTexture;
   //screenshot number
   int screenshot_i = 0;
   sf::RenderTexture screenshotTexture;
+
+  //new rendering textures
+  sf::Image mimg, simg;
+  mimg.create(resolution->width, resolution->height, sf::Color::Blue);
+  sf::Texture main_txt, screenshot_txt;
+  main_txt.loadFromImage(mimg);
+  screenshot_txt.create(screenshot_size.x, screenshot_size.y);
+
   screenshotTexture.create(screenshot_size.x, screenshot_size.y, settings);
-  screenshotTexture.setSmooth(true);
+  screenshotTexture.setSmooth(false);
 
   if (fullscreen) {
     renderTexture.create(resolution->width, resolution->height, settings);
-    renderTexture.setSmooth(true);
+    renderTexture.setSmooth(false);
   }
 
-  
+  sf::View default_window_view = window.getDefaultView();
 
   //Create the fractal scene
   Scene scene(level_music);
   const sf::Glsl::Vec2 window_res((float)resolution->width, (float)resolution->height);
   const sf::Glsl::Vec2 sres_res((float)screenshot_size.x, (float)screenshot_size.y);
-  shader.setUniform("iResolution", window_res);
   scene.Write(shader);
-
+  scene.SetResolution(shader, window_res.x, window_res.y);
+  scene.SetWindowResolution(window.getSize().x, window.getSize().y);
   //Create screen rectangle
   sf::RectangleShape rect;
   rect.setSize(window_res);
@@ -270,13 +220,9 @@ int main(int argc, char *argv[]) {
   sf::RectangleShape rect_scrshot;
   rect_scrshot.setSize(sres_res);
   rect_scrshot.setPosition(0, 0);
-
-  //Create the menus
-  Overlays overlays(&font, &font_mono);
-  overlays.SetScale(float(screen_size.width) / 1280.0f);
   
   menu_music.setVolume(GetVol());
-  menu_music.play();
+  //menu_music.play();
 
   //Main loop
   sf::Clock clock;
@@ -285,17 +231,41 @@ int main(int argc, char *argv[]) {
   mouse_pos = sf::Vector2i(0, 0);
   mouse_prev_pos = sf::Vector2i(0, 0);
 
-  overlays.SetAntTweakBar(window.getSize().x, window.getSize().y, smooth_fps, &scene, &VSYNC, &mouse_sensitivity, &wheel_sensitivity, &music_vol, &target_fps);
+  //temporary level generation code
+  /*for (int i = 0; i < 24; i++)
+  {
+	  all_levels[i].desc = "Official Level by Codeparade";
+	  all_levels[i].SaveToFile(std::string(level_folder) + "/" + ConvertSpaces2_(all_levels[i].txt)+".lvl", i, (i<24)?(i+1):-1);
+  }*/
+
+  scene.levels.LoadLevelsFromFolder(level_folder);
+  scene.levels.LoadMusicFromFolder(music_folder);
+
+  //Create the menus
+  Overlays overlays(&font, &font_mono, &scene);
+  overlays.SetScale(float(screen_size.width) / 1280.0f);
+ 
+
+  scene.StartDefault();
+  overlays.SetAntTweakBar(window.getSize().x, window.getSize().y, smooth_fps, &scene, &rend, &VSYNC, &mouse_sensitivity, &wheel_sensitivity, &music_vol, &target_fps);
+  
+  io_state.window_size = sf::Vector2f(window.getSize().x, window.getSize().y);
+  float prev_s = 0;
+
+  OpenMainMenu(&scene, &overlays);
 
   while (window.isOpen()) {
     sf::Event event;
 	
 	float mouse_wheel = 0.0f;
 	mouse_prev_pos = mouse_pos;
-	
+	io_state.mouse_prev = sf::Vector2f(mouse_prev_pos.x, mouse_prev_pos.y);
+	io_state.wheel = mouse_wheel;
+	io_state.mouse_press[2] = false;
+	io_state.mouse_press[0] = false;
 	while (window.pollEvent(event)) 
 	{
-		bool handled = overlays.TwManageEvent(event);
+		bool handled = overlays.TwManageEvent(&event);
 		if (event.type == sf::Event::Closed) {
 			window.close();
 			break;
@@ -308,10 +278,14 @@ int main(int argc, char *argv[]) {
 		else if (event.type == sf::Event::Resized) {
 			screen_size.width = event.size.width;
 			screen_size.height = event.size.height;
-			overlays.SetTWBARResolution(event.size.width, event.size.height);
 			overlays.SetScale( std::max(float(screen_size.width), float(screen_size.height))/ 1280.0f);
 			sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
-			window.setView(sf::View(visibleArea));
+			default_window_view = sf::View(visibleArea);
+			window.setView(default_window_view);
+			io_state.window_size = sf::Vector2f(window.getSize().x, window.getSize().y);
+			UpdateAspectRatio(window.getSize().x, window.getSize().y);
+			scene.SetWindowResolution(window.getSize().x, window.getSize().y);
+			rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
 		}
 
 		// If event has not been handled by AntTweakBar, process it
@@ -319,15 +293,18 @@ int main(int argc, char *argv[]) {
 		{
 			if (event.type == sf::Event::KeyPressed) {
 				const sf::Keyboard::Key keycode = event.key.code;
+				all_keys[keycode] = true;
+				io_state.keys[keycode] = true;
 				if (event.key.code < 0 || event.key.code >= sf::Keyboard::KeyCount) { continue; }
 				if (game_mode == CREDITS) {
-					game_mode = MAIN_MENU;
+					OpenMainMenu(&scene, &overlays);
 					UnlockMouse(window);
 					scene.SetMode(Scene::INTRO);
 					scene.SetExposure(1.0f);
 					credits_music.stop();
+					scene.levels.StopAllMusic();
 					menu_music.setVolume(GetVol());
-					menu_music.play();
+					//menu_music.play();
 				}
 				else if (game_mode == MIDPOINT) {
 					game_mode = PLAYING;
@@ -341,12 +318,10 @@ int main(int argc, char *argv[]) {
 						break;
 					}
 					else if (game_mode == CONTROLS || game_mode == LEVELS) {
-						game_mode = MAIN_MENU;
-						scene.SetExposure(1.0f);
+						OpenMainMenu(&scene, &overlays);
 					}
 					else if (game_mode == SCREEN_SAVER) {
-						game_mode = MAIN_MENU;
-						scene.SetMode(Scene::INTRO);
+						OpenMainMenu(&scene, &overlays);
 					}
 					else if (game_mode == PAUSED) {
 						game_mode = PLAYING;
@@ -357,6 +332,11 @@ int main(int argc, char *argv[]) {
 					else if (game_mode == PLAYING) {
 						PauseGame(window, scene);
 					}
+					else if (game_mode == LEVEL_EDITOR)
+					{
+						RemoveGlobalObject(focused);
+						ConfirmEditorExit(&scene, &overlays);
+					}
 				}
 				else if (keycode == sf::Keyboard::R) {
 					if (game_mode == PLAYING) {
@@ -364,34 +344,46 @@ int main(int argc, char *argv[]) {
 					}
 				}
 				else if (keycode == sf::Keyboard::F1) {
-					if (game_mode == PLAYING && high_scores.HasCompleted(num_levels - 1)) {
+					if (game_mode == PLAYING) {
 						show_cheats = !show_cheats;
 						scene.EnbaleCheats();
 					}
 				} else if (keycode == sf::Keyboard::F5) { 
-          ///Screenshot
-          screenshot_i++;
-          //Update the shader values
-          shader.setUniform("iResolution", sres_res);
-          scene.Write(shader);
+					///Screenshot
+					screenshot_i++;
+					//Update the shader values
+					scene.SetResolution(shader, sres_res.x, sres_res.y);
+					rend.ReInitialize(sres_res.x, sres_res.y);
+					scene.WriteRenderer(rend);
+					shader.setUniform("render_texture", screenshot_txt);
+					rend.SetOutputTexture(screenshot_txt);
+					scene.Write(shader);
 
-          //Setup full-screen shader
-          sf::RenderStates states = sf::RenderStates::Default;
-          states.shader = &shader;
-          window.setActive(false);
-          //Draw the fractal
-          //Draw to the render texture
-          screenshotTexture.setActive(true);
-          screenshotTexture.draw(rect_scrshot, states);
-          screenshotTexture.display();
-          screenshotTexture.getTexture().copyToImage().saveToFile((std::string)"screenshots/screenshot_"+(std::string)num2str(screenshot_i)+".jpg");
+					//Setup full-screen shader
+					sf::RenderStates states = sf::RenderStates::Default;
+					states.shader = &shader;
+					//shader.setUniform("render_texture", screenshot_txt);
 
-          screenshotTexture.setActive(false);
-          window.setActive(true);
+					window.setActive(false);
+					//Draw the fractal
+					//Draw to the render texture
+					screenshotTexture.setActive(true);
 
-          shader.setUniform("iResolution", window_res);
-          scene.Write(shader);
-        } else if (keycode == sf::Keyboard::F4) {
+					rend.camera.SetMotionBlur(0);
+					rend.Render();
+
+					screenshotTexture.draw(rect_scrshot, states);
+					screenshotTexture.display();
+					screenshotTexture.getTexture().copyToImage().saveToFile((std::string)"screenshots/screenshot"+(std::string)num2str(time(NULL))+".jpg");
+
+					screenshotTexture.setActive(false);
+					window.setActive(true);
+
+					scene.SetResolution(shader, window_res.x, window_res.y);
+					rend.ReInitialize(window_res.x, window_res.y);
+					rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
+					scene.Write(shader);
+			    } else if (keycode == sf::Keyboard::F4) {
 					overlays.TWBAR_ENABLED = !overlays.TWBAR_ENABLED;
 				} 	else if (keycode == sf::Keyboard::C) {
 					scene.Cheat_ColorChange();
@@ -423,78 +415,34 @@ int main(int argc, char *argv[]) {
 				} if (keycode >= sf::Keyboard::Num0 && keycode <= sf::Keyboard::Num9) {
 					scene.Cheat_Param(int(keycode) - int(sf::Keyboard::Num1));
 				}
-				all_keys[keycode] = true;
+				
 			}
 			else if (event.type == sf::Event::KeyReleased) {
 				const sf::Keyboard::Key keycode = event.key.code;
 				if (event.key.code < 0 || event.key.code >= sf::Keyboard::KeyCount) { continue; }
 				all_keys[keycode] = false;
+				io_state.keys[keycode] = false;
 			}
 			else if (event.type == sf::Event::MouseButtonPressed) {
 				if (event.mouseButton.button == sf::Mouse::Left) {
 					mouse_pos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
 					mouse_clicked = true;
+					io_state.mouse[0] = true;
+					io_state.mouse_press[0] = true;
 					if (game_mode == MAIN_MENU) {
 						const Overlays::Texts selected = overlays.GetOption(Overlays::PLAY, Overlays::EXIT);
-						if (selected == Overlays::PLAY) {
-							game_mode = PLAYING;
-							menu_music.stop();
-							scene.StartNewGame();
-							scene.GetCurMusic().setVolume(GetVol());
-							scene.GetCurMusic().play();
-							LockMouse(window);
-						}
-						else if (selected == Overlays::CONTROLS) {
-							game_mode = CONTROLS;
-						}
-						else if (selected == Overlays::LEVELS) {
-							game_mode = LEVELS;
-							overlays.GetLevelPage() = 0;
-							scene.SetExposure(0.5f);
-						}
-						else if (selected == Overlays::SCREEN_SAVER) {
-							game_mode = SCREEN_SAVER;
-							scene.SetMode(Scene::SCREEN_SAVER);
-						}
-						else if (selected == Overlays::EXIT) {
-							window.close();
-							break;
-						}
 					}
 					else if (game_mode == CONTROLS) {
 						const Overlays::Texts selected = overlays.GetOption(Overlays::BACK, Overlays::BACK);
 						if (selected == Overlays::BACK) {
-							game_mode = MAIN_MENU;
+							OpenMainMenu(&scene, &overlays);
 						}
 					}
 					else if (game_mode == LEVELS) {
-						const Overlays::Texts selected = overlays.GetOption(Overlays::L0, Overlays::BACK2);
-						if (selected == Overlays::BACK2) {
-							game_mode = MAIN_MENU;
-							scene.SetExposure(1.0f);
-						}
-						else if (selected == Overlays::PREV) {
-							overlays.GetLevelPage() -= 1;
-						}
-						else if (selected == Overlays::NEXT) {
-							overlays.GetLevelPage() += 1;
-						}
-						else if (selected >= Overlays::L0 && selected <= Overlays::L14) {
-							const int level = selected - Overlays::L0 + overlays.GetLevelPage() * Overlays::LEVELS_PER_PAGE;
-							if (high_scores.HasUnlocked(level)) {
-								game_mode = PLAYING;
-								menu_music.stop();
-								scene.SetExposure(1.0f);
-								scene.StartSingle(level);
-								scene.GetCurMusic().setVolume(GetVol());
-								scene.GetCurMusic().play();
-								LockMouse(window);
-							}
-						}
+					
 					}
 					else if (game_mode == SCREEN_SAVER) {
-						scene.SetMode(Scene::INTRO);
-						game_mode = MAIN_MENU;
+						OpenMainMenu(&scene, &overlays);
 					}
 					else if (game_mode == PAUSED) {
 						const Overlays::Texts selected = overlays.GetOption(Overlays::CONTINUE, Overlays::MOUSE);
@@ -512,17 +460,18 @@ int main(int argc, char *argv[]) {
 							LockMouse(window);
 						}
 						else if (selected == Overlays::QUIT) {
-							if (scene.IsSinglePlay()) {
-								game_mode = LEVELS;
+							if (scene.IsSinglePlay()) 
+							{
+								OpenLevelMenu(&scene, &overlays);
 							}
-							else {
-								game_mode = MAIN_MENU;
-								scene.SetExposure(1.0f);
+							else 
+							{
+								OpenMainMenu(&scene, &overlays);
 							}
 							scene.SetMode(Scene::INTRO);
 							scene.StopAllMusic();
 							menu_music.setVolume(GetVol());
-							menu_music.play();
+							//menu_music.play();
 						}
 						else if (selected == Overlays::MUSIC) {
 							game_settings.mute = !game_settings.mute;
@@ -534,8 +483,18 @@ int main(int argc, char *argv[]) {
 							game_settings.mouse_sensitivity = (game_settings.mouse_sensitivity + 1) % 3;
 						}
 					}
+					if (game_mode == LEVEL_EDITOR)
+					{
+						if (scene.cur_ed_mode == Scene::EditorMode::PLACE_MARBLE
+							|| scene.cur_ed_mode == Scene::EditorMode::PLACE_FLAG)
+						{
+							scene.cur_ed_mode = Scene::EditorMode::DEFAULT;
+						}
+					}
 				}
 				else if (event.mouseButton.button == sf::Mouse::Right) {
+					io_state.mouse[2] = true; 
+					io_state.mouse_press[2] = true;
 					if (game_mode == PLAYING) {
 						scene.ResetLevel();
 					}
@@ -543,19 +502,34 @@ int main(int argc, char *argv[]) {
 			}
 			else if (event.type == sf::Event::MouseButtonReleased) {
 				if (event.mouseButton.button == sf::Mouse::Left) {
+					io_state.mouse[0] = false;
 					mouse_pos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
 					mouse_clicked = false;
+				}
+				else if (event.mouseButton.button == sf::Mouse::Right) {
+					io_state.mouse[2] = false;
 				}
 			}
 			else if (event.type == sf::Event::MouseMoved) {
 				mouse_pos = sf::Vector2i(event.mouseMove.x, event.mouseMove.y);
+				io_state.mouse_pos = sf::Vector2f(mouse_pos.x, mouse_pos.y);
+				if (scene.cur_ed_mode == Scene::EditorMode::PLACE_MARBLE)
+				{
+					Eigen::Vector3f marble_pos = scene.MouseRayCast(mouse_pos.x, mouse_pos.y, scene.level_copy.marble_rad);
+					scene.level_copy.start_pos = marble_pos;
+				}
+				else if (scene.cur_ed_mode == Scene::EditorMode::PLACE_FLAG)
+				{
+					Eigen::Vector3f flag_pos = scene.MouseRayCast(mouse_pos.x, mouse_pos.y);
+					scene.level_copy.end_pos = flag_pos;
+				}
 			}
 			else if (event.type == sf::Event::MouseWheelScrolled) {
 				mouse_wheel += event.mouseWheelScroll.delta;
+				io_state.wheel = mouse_wheel;
 			}
 		}
 	}
-
     //Check if the game was beat
     if (scene.GetMode() == Scene::FINAL && game_mode != CREDITS) {
       game_mode = CREDITS;
@@ -569,12 +543,6 @@ int main(int argc, char *argv[]) {
       credits_music.play();
     }
 
-
-	if (overlays.GetUnlock())
-	{
-		high_scores.UnlockEverything();
-	}
-
     //Main game update
     if (game_mode == MAIN_MENU) {
       scene.UpdateCamera();
@@ -584,10 +552,9 @@ int main(int argc, char *argv[]) {
       overlays.UpdateControls((float)mouse_pos.x, (float)mouse_pos.y);
     } else if (game_mode == LEVELS) {
       scene.UpdateCamera();
-      overlays.UpdateLevels((float)mouse_pos.x, (float)mouse_pos.y);
     } else if (game_mode == SCREEN_SAVER) {
       scene.UpdateCamera();
-    } else if (game_mode == PLAYING || game_mode == CREDITS || game_mode == MIDPOINT) {
+    } else if (game_mode == PLAYING || game_mode == CREDITS || game_mode == MIDPOINT || game_mode == LEVEL_EDITOR) {
       //Collect keyboard input
       const float force_lr =
         (all_keys[sf::Keyboard::Left] || all_keys[sf::Keyboard::A] ? -1.0f : 0.0f) +
@@ -599,10 +566,12 @@ int main(int argc, char *argv[]) {
 	  //Apply forces to marble and camera
 	  scene.UpdateMarble(force_lr, force_ud);
 
+
+	  scene.free_camera_speed *= 1 + mouse_wheel * 0.05;
       //Collect mouse input
 	  if (overlays.TWBAR_ENABLED)
 	  {
-		 
+		  
 		  sf::Vector2i mouse_delta = sf::Vector2i(0, 0);
 		  window.setMouseCursorVisible(true);
 		  if (mouse_clicked)
@@ -656,6 +625,9 @@ int main(int argc, char *argv[]) {
 	  window.setVerticalSyncEnabled(VSYNC);
       //Update the shader values
       scene.Write(shader);
+	  scene.WriteRenderer(rend);
+	  shader.setUniform("render_texture", main_txt);
+	  rend.SetOutputTexture(main_txt);
 
       //Setup full-screen shader
       sf::RenderStates states = sf::RenderStates::Default;
@@ -666,6 +638,7 @@ int main(int argc, char *argv[]) {
 	    window.setActive(false);
 		renderTexture.setActive(true);
         //Draw to the render texture
+		rend.Render();
         renderTexture.draw(rect, states);
         renderTexture.display();
 
@@ -692,7 +665,7 @@ int main(int argc, char *argv[]) {
       overlays.DrawLevels(window);
     } else if (game_mode == PLAYING) {
       if (scene.GetMode() == Scene::ORBIT && scene.GetMarble().x() < 998.0f) {
-        overlays.DrawLevelDesc(window, scene.GetLevel());
+        overlays.DrawLevelDesc(window, scene.level_copy.txt);
       } else if (scene.GetMode() == Scene::MARBLE && !scene.IsFreeCamera()) {
         overlays.DrawArrow(window, scene.GetGoalDirection());
       }
@@ -718,19 +691,29 @@ int main(int argc, char *argv[]) {
     } else if (game_mode == MIDPOINT) {
       overlays.DrawMidPoint(window, scene.IsFullRun(), scene.GetSumTime());
     }
-    if (!scene.IsFreeCamera()) {
+    if (!scene.IsFreeCamera() || game_mode == LEVEL_EDITOR) {
       overlays.DrawFPS(window, int(smooth_fps + 0.5f));
     }
 
+
+	//new interface render stuff
+	io_state.dt = prev_s;
+	io_state.time += io_state.dt;
+	UpdateAllObjects(&window, io_state);
+	window.setView(default_window_view);
+
     if (!skip_frame) {
       //Finally display to the screen
-	  overlays.DrawAntTweakBar();
+	 
 	  if(overlays.TWBAR_ENABLED)
 		scene.Synchronize();
+	  overlays.DrawAntTweakBar();
+	  
       window.display();
 
       //If V-Sync is running higher than desired fps, slow down!
       const float s = clock.restart().asSeconds();
+	  prev_s = s;
       if (s > 0.0f) {
         smooth_fps = smooth_fps*0.9f + std::min(1.0f / s, target_fps)*0.1f;
       }
@@ -744,12 +727,15 @@ int main(int argc, char *argv[]) {
     }
   }
 
+ // RemoveAllObjects();
+  //UpdateAllObjects(&window, io_state);
   //Stop all music
   menu_music.stop();
   scene.StopAllMusic();
   credits_music.stop();
-  high_scores.Save(save_file);
+  scene.levels.SaveScoresToFile();
   game_settings.Save(settings_file);
+  TwTerminate();
 
 #ifdef _DEBUG
   system("pause");

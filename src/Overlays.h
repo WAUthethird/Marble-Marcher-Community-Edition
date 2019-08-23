@@ -15,13 +15,12 @@
 * along with this program.If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
-#include "Settings.h"
 #include "Level.h"
+#include "Settings.h"
 #include "Scene.h"
 #include <SFML/Graphics.hpp>
-#include <SFML/Audio.hpp>
-#include <AntTweakBar.h>
 
+#include <AntTweakBar.h>
 
 extern Settings game_settings;
 
@@ -54,14 +53,19 @@ public:
   };
   static const int LEVELS_PER_PAGE = 15;
   bool TWBAR_ENABLED;
-  TwBar *stats, *settings;
-  
-  Overlays(const sf::Font* _font, const sf::Font* _font_mono);
+  TwBar *stats, *settings, *fractal_editor, *level_editor, *confirmation_box;
+
+  sf::Sound sound_hover;
+  sf::Sound sound_click;
+  sf::Sound sound_count;
+  sf::Sound sound_go;
+
+  Overlays(sf::Font* _font, sf::Font* _font_mono, Scene* scene);
+
+  void ReloadLevelMenu(Scene * scene);
 
   //Relative to 1280x720
   void SetScale(float scale) { draw_scale = scale; }
-  bool GetUnlock();
-  void SetAntTweakBar(int Width, int Height, float &fps, Scene *scene, bool *vsync, float *mouse_sensitivity, float *wheel_sensitivity, float *music_vol, float *target_fps);
   void SetTWBARResolution(int Width, int Height);
 
   Texts GetOption(Texts from, Texts to);
@@ -70,12 +74,13 @@ public:
   void UpdateMenu(float mouse_x, float mouse_y);
   void UpdateControls(float mouse_x, float mouse_y);
   void UpdateLevels(float mouse_x, float mouse_y);
+  void UpdateLevelMenu(float mouse_x, float mouse_y, float scroll);
   void UpdatePaused(float mouse_x, float mouse_y);
 
   void DrawMenu(sf::RenderWindow& window);
   void DrawControls(sf::RenderWindow& window);
   void DrawTimer(sf::RenderWindow& window, int t, bool is_high_score);
-  void DrawLevelDesc(sf::RenderWindow& window, int level);
+  void DrawLevelDesc(sf::RenderWindow& window, std::string desc);
   void DrawFPS(sf::RenderWindow& window, int fps);
   void DrawPaused(sf::RenderWindow& window);
   void DrawArrow(sf::RenderWindow& window, const sf::Vector3f& v3);
@@ -85,11 +90,13 @@ public:
   void DrawSumTime(sf::RenderWindow& window, int t);
   void DrawCheatsEnabled(sf::RenderWindow& window);
   void DrawCheats(sf::RenderWindow& window);
+  void SetAntTweakBar(int Width, int Height, float & fps, Scene * scene, Renderer * rd, bool * vsync, float * mouse_sensitivity, float * wheel_sensitivity, float * music_vol, float * target_fps);
   void DrawAntTweakBar();
 
-  bool TwManageEvent(sf::Event &event);
+  bool TwManageEvent(sf::Event * event);
 protected:
-  void MakeText(const char* str, float x, float y, float size, const sf::Color& color, sf::Text& text, bool mono=false);
+  template<class T>
+  void MakeText(T str, float x, float y, float size, const sf::Color & color, sf::Text & text, bool mono = 0);
   void MakeTime(int t, float x, float y, float size, const sf::Color& color, sf::Text& text);
   void UpdateHover(Texts from, Texts to, float mouse_x, float mouse_y);
 
@@ -97,13 +104,9 @@ private:
   sf::Text all_text[NUM_TEXTS];
   bool all_hover[NUM_TEXTS];
 
-  sf::Sound sound_hover;
   sf::SoundBuffer buff_hover;
-  sf::Sound sound_click;
   sf::SoundBuffer buff_click;
-  sf::Sound sound_count;
   sf::SoundBuffer buff_count;
-  sf::Sound sound_go;
   sf::SoundBuffer buff_go;
 
   sf::Texture arrow_tex;
@@ -115,4 +118,5 @@ private:
 
   const sf::Font* font;
   const sf::Font* font_mono;
+
 };

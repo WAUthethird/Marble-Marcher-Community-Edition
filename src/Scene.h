@@ -15,10 +15,17 @@
 * along with this program.If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
+
 #include "Level.h"
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <Eigen/Dense>
+
+
+#define MAX_DIST 20.f
+#define MAX_MARCHES 1000
+#define MIN_DIST 1e-4f
+#define FOCAL_DIST 1.73205080757
 
 class Scene {
 public:
@@ -32,10 +39,20 @@ public:
     FINAL,
     MIDPOINT
   };
+
+  enum EditorMode
+  {
+	  DEFAULT,
+	  PLACE_MARBLE,
+	  PLACE_FLAG
+  };
+
+  EditorMode cur_ed_mode;
   FractalParams   frac_params;
   FractalParams   frac_params_smooth;
 
   Level           level_copy;
+  All_Levels	  levels;
 
   bool PBR_Enabled;
   bool Refl_Refr_Enabled;
@@ -47,9 +64,7 @@ public:
   Eigen::Vector3f LIGHT_DIRECTION;
   float PBR_METALLIC;
   float PBR_ROUGHNESS;
-
-
-
+  std::string original_level_name;
 
   float           marble_rad;
   Eigen::Vector3f marble_pos;
@@ -64,6 +79,8 @@ public:
   void SetFlag(float x, float y, float z);
   void SetMode(CamMode mode);
   void SetExposure(float e) { exposure = e; }
+  void SetResolution(sf::Shader& shader, int x, int y);
+  void SetWindowResolution(int x, int y);
   void EnbaleCheats() { enable_cheats = true; }
   Eigen::Vector3f GetVelocity();
 
@@ -78,7 +95,7 @@ public:
   int GetSumTime() const { return sum_time; }
   sf::Vector3f GetGoalDirection() const;
   bool IsSinglePlay() const { return play_single; }
-  bool IsHighScore() const;
+  bool IsHighScore();
   bool IsFullRun() const { return is_fullrun && !enable_cheats; }
   bool IsFreeCamera() const { return free_camera; }
   bool HasCheats() const { return enable_cheats; }
@@ -90,6 +107,8 @@ public:
   void StartNewGame();
   void StartNextLevel();
   void StartSingle(int level);
+  void StartLevelEditor(int level);
+  void StartDefault();
   void ResetLevel();
   void ResetCheats();
   void Synchronize();
@@ -101,6 +120,14 @@ public:
   void HideObjects();
 
   void Write(sf::Shader& shader) const;
+  void WriteLVL(int lvl)
+  {
+	  cur_level = lvl;
+  }
+
+  void WriteRenderer(Renderer & rd);
+
+  void WriteShader(ComputeShader & rd);
 
   float DE(const Eigen::Vector3f& pt) const;
   Eigen::Vector3f NP(const Eigen::Vector3f& pt) const;
@@ -115,6 +142,11 @@ public:
   void Cheat_Planet();
   void Cheat_Zoom();
   void Cheat_Param(int param);
+
+  void ExitEditor();
+
+  Eigen::Vector3f MouseRayCast(int mousex, int mousey, float min_dist = MIN_DIST);
+  Eigen::Vector3f RayMarch(const Eigen::Vector3f& pt, const Eigen::Vector3f& ray, float min_dist = MIN_DIST);
 
 protected:
   void SetLevel(int level);
@@ -132,6 +164,7 @@ private:
   bool            is_fullrun;
   bool            intro_needs_snap;
   bool            play_single;
+  bool			  level_editor;
 
   Eigen::Matrix4f cam_mat;
   float           cam_look_x;
@@ -148,7 +181,8 @@ private:
   Eigen::Vector3f flag_pos;
 
 
-
+  int			  ResX, ResY;
+  int			  WinX, WinY;
   int             timer;
   int             final_time;
   int             sum_time;
@@ -168,7 +202,6 @@ private:
   sf::Music* music;
 
 
-
   bool            enable_cheats;
   bool            free_camera;
   int             gravity_type;
@@ -177,4 +210,5 @@ private:
   bool            hyper_speed;
   bool            disable_motion;
   bool            zoom_to_scale;
+  float			  gravity;
 };

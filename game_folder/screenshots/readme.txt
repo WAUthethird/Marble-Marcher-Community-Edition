@@ -1,1 +1,1 @@
-The screenshot numbering currently resets after each start. 
+To change the screenshot resolution go to assets folder and open config.txt

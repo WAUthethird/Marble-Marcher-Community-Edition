@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(MarbleMarcher)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 #
 # Try to find AntTweakBar library and include path.
@@ -91,11 +91,14 @@ FILE(GLOB
   ${ANT_TWEAK_BAR_INCLUDE_DIR}/../src/*.cpp)
 
 ## DEPENDENCIES
+
 IF (WIN32)
-set(SFML_DIR C:/Libraries/SFML-2.5.1/lib/cmake/SFML)
-set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1/include)
+set(SFML_DIR C:/Libraries/SFML-2.5.1_64/lib/cmake/SFML)
+set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1_64/include)
 set(SDK_DIRECTORY "C:/Program Files (x86)/Microsoft SDKs")
 set(EIGEN3_INCLUDE_DIR C:/Libraries/eigen3/)
+set(GLEW_INCLUDE_DIR C:/Libraries/GLEW)
+set(GLM_INCLUDE_DIR C:/Libraries/glm)
 set(SFML_STATIC_LIBRARIES TRUE)
 ELSE (WIN32)
 set(SFML_INCLUDE_DIR /usr/local/include)
@@ -111,6 +114,8 @@ target_include_directories(MarbleMarcherSources PUBLIC
   src
   ${EIGEN3_INCLUDE_DIR}
   ${SFML_INCLUDE_DIR}
+  ${GLEW_INCLUDE_DIR}/include
+  ${GLM_INCLUDE_DIR}
   ${ANT_TWEAK_BAR_INCLUDE_DIR}
 )
 
@@ -137,6 +142,7 @@ target_compile_definitions(MarbleMarcher PRIVATE SFML_STATIC)
 target_link_libraries(MarbleMarcher
   MarbleMarcherSources
   ${ANT_TWEAK_BAR_LIBRARY}
+  ${GLEW_INCLUDE_DIR}/lib/Release/x64/glew32.lib
   sfml-system
   sfml-window
   sfml-graphics
