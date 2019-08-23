@@ -90,6 +90,8 @@ Though Marble Marcher CE is a largely finished game, there are still several imp
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
 * [SFML 2.5.0](https://www.sfml-dev.org)
 * [AntTweakBar](http://anttweakbar.sourceforge.net/)
+* [GLEW](http://glew.sourceforge.net/)
+* [GLM](https://glm.g-truc.net/)
 * [CMake](https://cmake.org/)
 * [OpenAL](https://www.openal.org/) (in case you get an "OpenAL DLL not found" error while trying to run the software, seems to be Windows-specific)
 ### MacOS
