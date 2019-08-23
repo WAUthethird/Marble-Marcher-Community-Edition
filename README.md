@@ -103,7 +103,7 @@ The version of SFML required is 2.5.1 or newer. It has come to my attention that
 Alternatively, [vcpkg](https://github.com/Microsoft/vcpkg) can be used though it is unsupported:
 
 `vcpkg install cmake eigen3 sfml anttweakbar`
-r
+
 It may also be possible to use MacPorts which is also unsupported and untested.
 ### Arch Linux
 `sudo pacman -S eigen sfml anttweakbar git cmake make`
