@@ -41,6 +41,8 @@ void PlayLevel(Scene * scene, sf::RenderWindow * window, int level);
 
 void OpenControlMenu(Scene * scene, Overlays * overlays);
 
+void OpenPauseMenu(Scene * scene, Overlays * overlays);
+
 void OpenScreenSaver(Scene * scene, Overlays * overlays);
 
 void PlayNewGame(Scene * scene, sf::RenderWindow * window, int level);
@@ -55,7 +57,7 @@ void ConfirmEditorExit(Scene * scene, Overlays * overlays);
 float GetVol();
 void LockMouse(sf::RenderWindow& window);
 void UnlockMouse(sf::RenderWindow& window);
-void PauseGame(sf::RenderWindow& window, Scene& scene);
+void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene);
 int DirExists(const char *path);
 
 template < typename T > std::string num2str(const T& n)

@@ -21,7 +21,8 @@ extern sf::Color default_main_color;
 extern sf::Color default_hover_main_color;
 extern sf::Color default_active_main_color;
 extern float default_margin;
-extern sf::View default_view ;
+extern sf::Vector2f default_size;
+extern sf::View default_view;
 
 extern float animation_sharpness;
 extern float action_dt;
@@ -315,6 +316,7 @@ inline Text::Text(T str, sf::Font & f, float size, sf::Color col)
 	text.setFont(f);
 	defaultstate.font_size = size;
 	defaultstate.color_main = col;
-
+	SetBorderColor(sf::Color::Black);
+	SetBorderWidth(2);
 	clone_states();
 }

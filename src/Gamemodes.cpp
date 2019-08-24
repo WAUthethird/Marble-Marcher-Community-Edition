@@ -22,9 +22,9 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	game_mode = MAIN_MENU;
 	scene->SetExposure(1.0f);
 	scene->SetMode(Scene::INTRO);
-	sf::Vector2f wsize = default_view.getSize();
-
-	MenuBox mainmenu(1000, wsize.y*0.95f, wsize.x*0.025, wsize.y*0.025f);
+	sf::Vector2f wsize = default_size;
+	sf::Vector2f vsize = default_view.getSize();
+	MenuBox mainmenu(1000, vsize.y*0.95f, wsize.x*0.025, wsize.y*0.025f);
 	mainmenu.SetBackgroundColor(sf::Color::Transparent);
 	//make the menu static
 	mainmenu.static_object = true;
@@ -34,6 +34,10 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	ttl.SetBorderColor(sf::Color::Black);
 	ttl.SetBorderWidth(4);
 	mainmenu.AddObject(&ttl, Object::Allign::LEFT);
+
+	Box margin1(800, 5);
+	margin1.SetBackgroundColor(sf::Color::Transparent);
+	mainmenu.AddObject(&margin1, Object::Allign::LEFT);
 
 	Text CE("Community Edition", LOCAL("default"), 60, sf::Color::White);
 	CE.SetBorderColor(sf::Color::Black);
@@ -47,6 +51,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	//PLAY
 	Box playbtn(600, 50);
 	Text button1(LOCAL["Play"], LOCAL("default"), 40, sf::Color::White);
+	button1.SetBorderColor(sf::Color::Black);
 	playbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	playbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
@@ -59,6 +64,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	//LEVELS
 	Box lvlsbtn(600, 50);
 	Text button2(LOCAL["Levels"], LOCAL("default"), 40, sf::Color::White);
+	button2.SetBorderColor(sf::Color::Black);
 	lvlsbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	lvlsbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
@@ -71,6 +77,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	//Settings
 	Box sttbtn(600, 50);
 	Text buttonstt(LOCAL["Settings"], LOCAL("default"), 40, sf::Color::White);
+	buttonstt.SetBorderColor(sf::Color::Black);
 	sttbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	sttbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
@@ -83,6 +90,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	//Controls
 	Box cntrlbtn(600, 50);
 	Text button3(LOCAL["Controls"], LOCAL("default"), 40, sf::Color::White);
+	button3.SetBorderColor(sf::Color::Black);
 	cntrlbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	cntrlbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
@@ -95,6 +103,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	//Screen Saver
 	Box ssbtn(600, 50);
 	Text button4(LOCAL["Screen_Saver"], LOCAL("default"), 40, sf::Color::White);
+	button4.SetBorderColor(sf::Color::Black);
 	ssbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	ssbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
@@ -107,6 +116,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	//Exit
 	Box exitbtn(600, 50);
 	Text button5(LOCAL["Exit"], LOCAL("default"), 40, sf::Color::White);
+	button5.SetBorderColor(sf::Color::Black);
 	exitbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	exitbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
@@ -158,6 +168,136 @@ void OpenControlMenu(Scene * scene, Overlays * overlays)
 	game_mode = CONTROLS;
 }
 
+
+
+
+void OpenPauseMenu(Scene * scene, Overlays * overlays)
+{
+	RemoveAllObjects();
+	scene->SetExposure(1.0f);
+	sf::Vector2f wsize = default_size;
+	sf::Vector2f vsize = default_view.getSize();
+	MenuBox pausemenu(625, 510, wsize.x*0.025, wsize.y*0.025f);
+	pausemenu.SetBackgroundColor(sf::Color(32, 32, 32, 200));
+	
+	//make the menu static
+	pausemenu.static_object = true;
+
+	//TITLE
+	Text ttl(LOCAL["Paused"], LOCAL("default"), 120, sf::Color::White);
+	ttl.SetBorderColor(sf::Color::Black);
+	ttl.SetBorderWidth(4);
+	pausemenu.AddObject(&ttl, Object::Allign::LEFT);
+
+	Box margin1(600, 0);
+	margin1.SetBackgroundColor(sf::Color::Transparent);
+	pausemenu.AddObject(&margin1, Object::Allign::LEFT);
+
+	Text CE1(scene->level_copy.txt, LOCAL("default"), 40, sf::Color::White);
+	CE1.SetBorderColor(sf::Color::Black);
+	CE1.SetBorderWidth(0);
+	pausemenu.AddObject(&CE1, Object::Allign::LEFT);
+
+	pausemenu.AddObject(&margin1, Object::Allign::LEFT);
+
+	Text CE2(scene->level_copy.desc, LOCAL("default"), 20, sf::Color::White);
+	CE2.SetBorderColor(sf::Color::Black);
+	CE2.SetBorderWidth(0);
+	pausemenu.AddObject(&CE2, Object::Allign::LEFT);
+
+	Box margin(600, 20);
+	margin.SetBackgroundColor(sf::Color::Transparent);
+	pausemenu.AddObject(&margin, Object::Allign::LEFT);
+
+	//PLAY
+	Box resumebtn(600, 50);
+	Text button1(LOCAL["Resume"], LOCAL("default"), 40, sf::Color::White);
+	button1.SetBorderColor(sf::Color::Black);
+	button1.SetBorderWidth(2);
+	resumebtn.SetBackgroundColor(sf::Color(200, 200, 200, 200));
+	resumebtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
+	resumebtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
+	{
+		RemoveAllObjects();
+		game_mode = PLAYING;
+		scene->GetCurMusic().setVolume(GetVol());
+		scene->SetExposure(1.0f);
+		LockMouse(*window);
+		overlays->sound_click.play();
+	}, true);
+	resumebtn.AddObject(&button1, Object::Allign::CENTER);
+	pausemenu.AddObject(&resumebtn, Object::Allign::LEFT);
+
+	//LEVELS
+	Box rstbtn(600, 50);
+	Text button2(LOCAL["Restart"], LOCAL("default"), 40, sf::Color::White);
+	button2.SetBorderColor(sf::Color::Black);
+	button2.SetBorderWidth(2);
+	rstbtn.SetBackgroundColor(sf::Color(200, 200, 200, 200));
+	rstbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
+	rstbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
+	{
+		RemoveAllObjects();
+		game_mode = PLAYING;
+		scene->ResetLevel();
+		scene->GetCurMusic().setVolume(GetVol());
+		scene->SetExposure(1.0f);
+		LockMouse(*window);
+		overlays->sound_click.play();
+	}, true);
+	rstbtn.AddObject(&button2, Object::Allign::CENTER);
+	pausemenu.AddObject(&rstbtn, Object::Allign::LEFT);
+
+	//Settings
+	Box sttbtn(600, 50);
+	Text buttonstt(LOCAL["Settings"], LOCAL("default"), 40, sf::Color::White);
+	buttonstt.SetBorderColor(sf::Color::Black);
+	buttonstt.SetBorderWidth(2);
+	sttbtn.SetBackgroundColor(sf::Color(200, 200, 200, 200));
+	sttbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
+	sttbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
+	{
+		overlays->TWBAR_ENABLED = !overlays->TWBAR_ENABLED;
+		overlays->sound_click.play();
+	}, true);
+	sttbtn.AddObject(&buttonstt, Object::Allign::CENTER);
+	pausemenu.AddObject(&sttbtn, Object::Allign::LEFT);
+
+	//Exit
+	Box exitbtn(600, 50);
+	Text button5(LOCAL["Quit"], LOCAL("default"), 40, sf::Color::White);
+	button5.SetBorderColor(sf::Color::Black);
+	button5.SetBorderWidth(2);
+	exitbtn.SetBackgroundColor(sf::Color(200, 200, 200, 200));
+	exitbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
+	exitbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
+	{
+		RemoveAllObjects();
+		if (scene->IsSinglePlay())
+		{
+			OpenLevelMenu(scene, overlays);
+		}
+		else
+		{
+			OpenMainMenu(scene, overlays);
+		}
+		scene->SetMode(Scene::INTRO);
+		scene->StopAllMusic();
+	}, true);
+	exitbtn.AddObject(&button5, Object::Allign::CENTER);
+	pausemenu.AddObject(&exitbtn, Object::Allign::LEFT);
+
+	AddGlobalObject(pausemenu);
+}
+
+void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene) {
+	game_mode = PAUSED;
+	scene->GetCurMusic().setVolume(GetVol());
+	UnlockMouse(window);
+	OpenPauseMenu(scene, overlays);
+	scene->SetExposure(0.5f);
+}
+
 void OpenScreenSaver(Scene * scene, Overlays * overlays)
 {
 	RemoveAllObjects();
@@ -199,9 +339,9 @@ void OpenTestWindow()
 void OpenLevelMenu(Scene* scene, Overlays* overlays)
 {
 	RemoveAllObjects();
-	sf::Vector2f wsize = default_view.getSize();
-
-	MenuBox levels(wsize.x*0.95f, wsize.y*0.95f, wsize.x*0.025f, wsize.y*0.025f);
+	sf::Vector2f wsize = default_size;
+	sf::Vector2f vsize = default_view.getSize();
+	MenuBox levels(wsize.x*0.95f, vsize.y*0.95f, (vsize.x - wsize.x*0.95f)/2, vsize.y*0.025f);
 	levels.SetBackgroundColor(sf::Color(32,32,32,160));
 	//make the menu static
 	levels.static_object = true;
@@ -210,12 +350,16 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 	scene->SetMode(Scene::INTRO);
 	game_mode = LEVELS;
 
+	Box lvlmargin(50, 4);
+	lvlmargin.SetBackgroundColor(sf::Color::Transparent);
+
 	std::map<int, std::string> names = scene->levels.getLevelNames();
 	std::map<int, std::string> desc = scene->levels.getLevelDesc();
 	std::vector<int> ids = scene->levels.getLevelIds();
 	std::map<int, Score> scores = scene->levels.getLevelScores();
 	Text lvl(LOCAL["Levels"], LOCAL("default"), 60, sf::Color::White);
 	levels.AddObject(&lvl, Object::Allign::CENTER);
+	levels.AddObject(&lvlmargin, Object::Allign::CENTER);
 	Box Bk2Menu(600, 50);
 	Bk2Menu.SetBackgroundColor(sf::Color(128, 128, 128, 128));
 	Text button(LOCAL["Back2Main"], LOCAL("default"), 40, sf::Color::White);
@@ -250,11 +394,11 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 
 	for (int i = 0; i < scene->levels.GetLevelNum(); i++)
 	{
-		Box lvlbtton(wsize.x*0.95f - 60, 60);
+		Box lvlbtton(wsize.x*0.95f - 60, 65);
 		lvlbtton.SetBackgroundColor(sf::Color(128, 128, 128, 128));
 		lvlbtton.hoverstate.border_thickness = 3;
 
-		Box lvltext(500, 60);
+		Box lvltext(500, 65);
 		lvltext.SetBackgroundColor(sf::Color::Transparent);
 		Box lvltitle(500, 40);
 		lvltitle.SetBackgroundColor(sf::Color::Transparent);
@@ -268,6 +412,8 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 		});
 		lvltitle.AddObject(&lvlname, Object::Allign::LEFT);
 		lvltext.AddObject(&lvltitle, Object::Allign::LEFT);
+	
+		lvltext.AddObject(&lvlmargin, Object::Allign::CENTER);
 		lvltext.AddObject(&lvldescr, Object::Allign::LEFT);
 		lvlbtton.AddObject(&lvltext, Object::Allign::LEFT);
 
@@ -338,7 +484,7 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 
 void ConfirmLevelDeletion(int lvl, Scene* scene, Overlays* overlays)
 {
-	sf::Vector2f wsize = default_view.getSize();
+	sf::Vector2f wsize = default_size;
 	Window confirm(wsize.x*0.4f, wsize.y*0.4f, 500, 215, sf::Color(0, 0, 0, 128), LOCAL["You_sure"], LOCAL("default"));
 	Text button1(LOCAL["Yes"], LOCAL("default"), 30, sf::Color::White);
 	Text button2(LOCAL["No"], LOCAL("default"), 30, sf::Color::White);
@@ -375,7 +521,7 @@ void ConfirmLevelDeletion(int lvl, Scene* scene, Overlays* overlays)
 
 void ConfirmEditorExit(Scene* scene, Overlays* overlays)
 {
-	sf::Vector2f wsize = default_view.getSize();
+	sf::Vector2f wsize = default_size;
 	Window confirm(wsize.x*0.4f, wsize.y*0.4f, 500, 215, sf::Color(0, 0, 0, 128), LOCAL["You_sure"], LOCAL("default"));
 	Text button1(LOCAL["Yes"], LOCAL("default"), 30, sf::Color::White);
 	Text button2(LOCAL["No"], LOCAL("default"), 30, sf::Color::White);
@@ -436,12 +582,6 @@ void UnlockMouse(sf::RenderWindow& window) {
 	window.setMouseCursorVisible(true);
 }
 
-void PauseGame(sf::RenderWindow& window, Scene& scene) {
-	game_mode = PAUSED;
-	scene.GetCurMusic().setVolume(GetVol());
-	UnlockMouse(window);
-	scene.SetExposure(0.5f);
-}
 
 int DirExists(const char *path) {
 	struct stat info;

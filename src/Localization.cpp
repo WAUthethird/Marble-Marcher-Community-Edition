@@ -103,7 +103,15 @@ void Localization::SetLanguage(std::string lang)
 
 std::wstring Localization::operator[](std::string str)
 {
-	return locales[cur_language][str];
+	if (locales[cur_language].count(str) != 0)
+	{
+		return locales[cur_language][str];
+	}
+	else //if no string found
+	{
+		return utf8_to_wstring(str);
+	}
+		
 }
 
 sf::Font & Localization::operator()(std::string str)

@@ -160,10 +160,13 @@ int main(int argc, char *argv[]) {
   window.setKeyRepeatEnabled(false);
 
   INIT();
-
-  sf::VideoMode fs_size = sf::VideoMode::getDesktopMode();
-  window.setSize(sf::Vector2u(fs_size.width, fs_size.width*9.f/16.f));
-  window.setPosition(sf::Vector2i(0, 0));
+  if (!fullscreen)
+  {
+	  sf::VideoMode fs_size = sf::VideoMode::getDesktopMode();
+	  window.setSize(sf::Vector2u(fs_size.width, fs_size.height-100.f));
+	  window.setPosition(sf::Vector2i(0, 0));
+  }
+ 
   window.requestFocus();
   UpdateAspectRatio(window.getSize().x, window.getSize().y);
   //set window icon
@@ -272,7 +275,7 @@ int main(int argc, char *argv[]) {
 		}
 		else if (event.type == sf::Event::LostFocus) {
 			if (game_mode == PLAYING) {
-				PauseGame(window, scene);
+				PauseGame(window, &overlays, &scene);
 			}
 		}
 		else if (event.type == sf::Event::Resized) {
@@ -324,13 +327,14 @@ int main(int argc, char *argv[]) {
 						OpenMainMenu(&scene, &overlays);
 					}
 					else if (game_mode == PAUSED) {
+						RemoveAllObjects();
 						game_mode = PLAYING;
 						scene.GetCurMusic().setVolume(GetVol());
 						scene.SetExposure(1.0f);
 						LockMouse(window);
 					}
 					else if (game_mode == PLAYING) {
-						PauseGame(window, scene);
+						PauseGame(window, &overlays, &scene);
 					}
 					else if (game_mode == LEVEL_EDITOR)
 					{
@@ -445,6 +449,7 @@ int main(int argc, char *argv[]) {
 						OpenMainMenu(&scene, &overlays);
 					}
 					else if (game_mode == PAUSED) {
+						
 						const Overlays::Texts selected = overlays.GetOption(Overlays::CONTINUE, Overlays::MOUSE);
 						if (selected == Overlays::CONTINUE) {
 							game_mode = PLAYING;
@@ -568,6 +573,13 @@ int main(int argc, char *argv[]) {
 
 
 	  scene.free_camera_speed *= 1 + mouse_wheel * 0.05;
+
+	  //make ATB impossible to use while playing
+	  if (game_mode == PLAYING)
+	  {
+		  overlays.TWBAR_ENABLED = false;
+	  }
+
       //Collect mouse input
 	  if (overlays.TWBAR_ENABLED)
 	  {
@@ -613,7 +625,7 @@ int main(int argc, char *argv[]) {
 
  
     } else if (game_mode == PAUSED) {
-      overlays.UpdatePaused((float)mouse_pos.x, (float)mouse_pos.y);
+     
     }
 
     bool skip_frame = false;
@@ -682,7 +694,7 @@ int main(int argc, char *argv[]) {
         overlays.DrawCheats(window);
       }
     } else if (game_mode == PAUSED) {
-      overlays.DrawPaused(window);
+    //  overlays.DrawPaused(window);
       if (scene.HasCheats()) {
         overlays.DrawCheatsEnabled(window);
       }
@@ -692,7 +704,7 @@ int main(int argc, char *argv[]) {
       overlays.DrawMidPoint(window, scene.IsFullRun(), scene.GetSumTime());
     }
     if (!scene.IsFreeCamera() || game_mode == LEVEL_EDITOR) {
-      overlays.DrawFPS(window, int(smooth_fps + 0.5f));
+    //  overlays.DrawFPS(window, int(smooth_fps + 0.5f));
     }
 
 
