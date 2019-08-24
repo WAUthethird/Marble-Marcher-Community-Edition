@@ -8,7 +8,7 @@ This is a short and easy tutorial for building Marble Marcher: Community Edition
 6. Download and unzip AntTweakBar to the `Libraries` folder: [http://anttweakbar.sourceforge.net](http://anttweakbar.sourceforge.net) Inside the resulting unzipped folder should be just a folder called `AntTweakBar`. Move this folder outside its parent folder, into `Libraries`. Delete the now empty parent folder.
 7. Download and unzip GLM to the `Libraries` folder: [https://github.com/g-truc/glm/releases/tag/0.9.9.5](https://github.com/g-truc/glm/releases/tag/0.9.9.5) Inside the resulting unzipped folder should be just a folder called `glm`. Move this folder outside its parent folder, into `Libraries`. Delete the now empty parent folder.
 8. Download and unzip GLEW to the `Libraries` folder. I used the 2.1.0 Windows binaries: [http://glew.sourceforge.net/](http://glew.sourceforge.net/) Inside the resulting unzipped folder should be just a folder called `glew-2.1.0`. Move this folder outside its parent folder, into `Libraries`. Delete the now empty parent folder. Rename `glew-2.1.0` to `GLEW`.
-9. Now that you have all libraries in the proper places, open a developer command prompt with administrator privileges and CD into the MMCE root. Run `cmake .`
+9. Now that you have all libraries in the proper places, open a developer command prompt with administrator privileges and `cd` into the MMCE root. Run `cmake .`
 10. Open the resulting .sln file in Visual Studio and build the solution as a x64 release.
 
 You're done!
