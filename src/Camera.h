@@ -35,7 +35,7 @@ public:
 	};
 
 	Camera(): alpha(0), beta(0), gamma(0), cur_mode(Free), radius(1.f),
-		smooth(0.3f), FOV(60.f), focus(1e10), bokeh(0), mblur(0.05), speckle(10), size(0), exposure(1.5f)
+		smooth(0.3f), FOV(60.f), focus(1e10), bokeh(0), mblur(0.01), speckle(10), size(0), exposure(1.0f)
 	{
 		//camera directions
 		dirx = quat(0, 1, 0, 0);

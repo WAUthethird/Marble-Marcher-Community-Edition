@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
   fullscreen = true;
 
   Renderer rend(resolution->width, resolution->height, "shaders/compute/MAIN.cfg");
-
+  rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
   //fullscreen = false;
   //Create the render texture if needed
   sf::RenderTexture renderTexture;

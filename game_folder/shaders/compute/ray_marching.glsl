@@ -38,8 +38,9 @@ float smin(float a, float b, float k) {
 
 float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 {
-	float light_visibility=1;
+	float light_visibility = 1;
 	float ph = 1e5;
+	float dDEdt = 0;
 	pos.w = DE(pos.xyz);
 	int i = 0;
 	for (; i < MAX_MARCHES; i++) {
@@ -49,15 +50,17 @@ float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 		pos.w = DE(pos.xyz);
 		
 		float y = pos.w*pos.w/(2.0*ph);
-        float d = sqrt(pos.w*pos.w-y*y);
+        float d = (pos.w+ph)*0.5*(1-dDEdt);
 		float angle = d/(max(MIN_DIST,dir.w-y)*light_angle);
-        light_visibility = min(light_visibility, angle);
-        ph = pos.w;
 		
+        light_visibility = min(light_visibility, angle);
+		
+		dDEdt = dDEdt*0.8 + 0.2*(pos.w-ph)/ph;
+		ph = pos.w;
 		
 		if(dir.w >= distance2light)
 		{
-			return light_visibility*light_visibility;
+			break;
 		}
 		
 		if(dir.w > MAX_DIST || pos.w < max(fovray*dir.w, MIN_DIST))
@@ -65,6 +68,7 @@ float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 			return 0;
 		}
 	}
+	
 	return light_visibility*light_visibility; //smoothens out the shadow, and is more physically accurate
 }
 

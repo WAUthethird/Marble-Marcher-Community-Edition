@@ -67,32 +67,39 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 }
 ///END PBR functions
 
-float ambient_occlusion(in vec4 pos, in vec4 norm)
+float ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 {
+	vec3 dir1 = normalize(cross(dir.xyz,norm.xyz));
+	vec3 dir2 = normalize(cross(dir1,norm.xyz));
+	pos.w = iMarbleRad/2; 
 	
-		pos.w = iMarbleRad/2; 
-		float dcoef = 0.02/iMarbleRad;
-		float occlusion_angle = 0;
-		float integral = 0;
-		float i_coef = 0;
-		
-		//march in the direction of the normal
-		#pragma unroll
-		for(int i = 0; i < AMBIENT_MARCHES; i++)
-		{
-			norm.w += pos.w;
-			pos.xyz += pos.w*norm.xyz;
-			pos.w = DE(pos.xyz);
-			
-			i_coef = 1/(dcoef*norm.w+1);//importance
-			occlusion_angle += i_coef*pos.w/norm.w;
-			integral += i_coef;
-		}
-		
-		occlusion_angle /= integral; // average weighted by importance
-		
-		return pow(occlusion_angle,2);
+	vec3 pos0 = pos.xyz;
 	
+	float shifter = 2;
+	float dcoef = 0.02/iMarbleRad;
+	float occlusion_angle = 0;
+	float integral = 0;
+	float i_coef = 0;
+	
+	//march in the direction of the normal
+	#pragma unroll
+	for(int i = 0; i < AMBIENT_MARCHES; i++)
+	{
+		//moving in a zig-zag
+		vec3 direction = normalize(norm.xyz + 0.25*((mod(shifter,3.f)-1)*dir1 +  (mod(shifter+1,3.f)-1)*dir2));
+		pos.xyz += pos.w*direction;
+		pos.w = DE(pos.xyz);
+		
+		norm.w = length(pos0 - pos.xyz);
+		i_coef = 1/(dcoef*norm.w+1);//importance
+		occlusion_angle += i_coef*pos.w/norm.w;
+		integral += i_coef;
+	}
+	
+	occlusion_angle /= integral; // average weighted by importance
+	
+	//square because its a surface angle
+	return pow(occlusion_angle,2);
 }
 
 vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
@@ -109,8 +116,8 @@ vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 	vec3 albedo = COL(cpos).xyz;
 	albedo *= albedo;
 	
-	//square because its a surface
-	float ao = ambient_occlusion(pos, norm);
+	
+	float ao = ambient_occlusion(pos, norm, dir);
 	vec4 ambient_color = vec4(BACKGROUND_COLOR,1)*ao;
 	
 	float metallic = PBR_METALLIC;
@@ -200,6 +207,29 @@ vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 	return vec4(Lo,1);
 }
 
+const float Br = 0.0025;
+const float Bm = 0.0003;
+const float g =  0.9800;
+const vec3 nitrogen = vec3(0.650, 0.570, 0.475);
+const vec3 Kr = Br / pow(nitrogen, vec3(4.0));
+const vec3 Km = Bm / pow(nitrogen, vec3(0.84));
+
+vec3 sky_color(in vec3 pos)
+{
+	// Atmosphere Scattering
+	vec3 fsun = LIGHT_DIRECTION;
+	if(pos.y < 0)
+	{
+		pos.y = 0; 
+		pos.xyz = normalize(pos.xyz);
+	}
+    float mu = dot(normalize(pos), normalize(fsun));
+
+	
+	vec3 extinction = mix(exp(-exp(-((pos.y + fsun.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0, vec3(1.0 - exp(fsun.y)) * 0.2, -fsun.y * 0.2 + 0.5);
+	return  3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
+	
+}
 
 vec3 HDRmapping(vec3 color, float exposure, float gamma)
 {
