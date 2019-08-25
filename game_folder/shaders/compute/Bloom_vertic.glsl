@@ -51,12 +51,12 @@ void main() {
 	color_buffer_hoz1[local_indx.y + group_size/2] = imageLoad(blurred_hor1, global_pos).xyz;
 	int new_coord = safe_coord(global_pos.y + shift(local_indx.y), img_size);
 	color_buffer_hoz1[local_indx.y + group_size/2 + shift(local_indx.y)] =
-	(new_coord!=-1)?imageLoad(blurred_hor1, ivec2(global_pos.x,new_coord)).xyz:0;
+	(new_coord!=-1)?imageLoad(blurred_hor1, ivec2(global_pos.x,new_coord)).xyz:vec3(0);
 	
 	color_buffer_hoz2[local_indx.y + group_size/2] = imageLoad(blurred_hor2, global_pos).xyz;
 	new_coord = safe_coord(global_pos.y + shift(local_indx.y), img_size);
 	color_buffer_hoz2[local_indx.y + group_size/2 + shift(local_indx.y)] =
-	(new_coord!=-1)?imageLoad(blurred_hor2, ivec2(global_pos.x,new_coord)).xyz:0;
+	(new_coord!=-1)?imageLoad(blurred_hor2, ivec2(global_pos.x,new_coord)).xyz:vec3(0);
 	
 	memoryBarrierShared(); 
 	barrier();

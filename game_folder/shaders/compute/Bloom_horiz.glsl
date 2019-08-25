@@ -49,7 +49,7 @@ void main() {
 	color_buffer[local_indx.x + group_size/2] = bloom_treshold(imageLoad(color_HDR, global_pos).xyz, Camera.exposure);
 	int new_coord = safe_coord(global_pos.x + shift(local_indx.x), img_size);
 	color_buffer[local_indx.x + group_size/2 + shift(local_indx.x)] =
-	(new_coord!=-1)?bloom_treshold(imageLoad(color_HDR, ivec2(new_coord,global_pos.y)).xyz, Camera.exposure):0;
+	(new_coord!=-1)?bloom_treshold(imageLoad(color_HDR, ivec2(new_coord,global_pos.y)).xyz, Camera.exposure):vec3(0);
 	memoryBarrierShared(); 
 	barrier();
 	
