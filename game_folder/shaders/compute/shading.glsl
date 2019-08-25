@@ -153,9 +153,12 @@ vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 	
-	if(SHADOWS_ENABLED)
+	if(!SHADOWS_ENABLED)
 	{
-		{ //light contribution
+		shadow = ao;
+	}
+	
+	{ //light contribution
 			float roughness = PBR_ROUGHNESS;
 			vec3 L = normalize(LIGHT_DIRECTION);
 			vec3 H = normalize(V + L);
@@ -183,7 +186,7 @@ vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 			float roughness = 0.6;
 			vec3 L = normalize(-LIGHT_DIRECTION);
 			vec3 H = normalize(V + L);
-			vec3 radiance = 6*LIGHT_COLOR*ao*(1-ao);        
+			vec3 radiance = 5*LIGHT_COLOR*ao*(1-ao);        
 			
 			// cook-torrance brdf
 			float NDF = DistributionGGX(N, H, roughness);        
@@ -202,7 +205,6 @@ vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 			float NdotL = max(dot(N, L), 0.0);                
 			Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 		}
-	}
 	
 	return vec4(Lo,1);
 }
@@ -218,16 +220,17 @@ vec3 sky_color(in vec3 pos)
 {
 	// Atmosphere Scattering
 	vec3 fsun = LIGHT_DIRECTION;
+	float brightnees = exp(min(5*pos.y,0));
 	if(pos.y < 0)
 	{
 		pos.y = 0; 
 		pos.xyz = normalize(pos.xyz);
 	}
     float mu = dot(normalize(pos), normalize(fsun));
-
+	
 	
 	vec3 extinction = mix(exp(-exp(-((pos.y + fsun.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0, vec3(1.0 - exp(fsun.y)) * 0.2, -fsun.y * 0.2 + 0.5);
-	return  3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
+	return brightnees* 3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
 	
 }
 
