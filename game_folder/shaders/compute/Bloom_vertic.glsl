@@ -68,9 +68,10 @@ void main() {
 	float a2 = 1;
 	
 	vec3 conv1 = vec3(0), conv2 = vec3(0);
-	for(int i = 0; i < buffer_size; i++)
+	int center = local_indx.y+group_size/2;
+	for(int i = max(center-int(width)*2,0); i < min(center+int(width)*2,buffer_size); i++)
 	{
-		float coord = float(local_indx.y+group_size/2-i)/width;
+		float coord = float(center-i)/width;
 		conv1 += exp(-k1*pow(coord,2))*color_buffer_hoz1[i];
 		conv2 += exp(-k2*pow(coord,2))*color_buffer_hoz2[i];
 	}

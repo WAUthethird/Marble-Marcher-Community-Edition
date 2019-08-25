@@ -9,7 +9,54 @@ layout(rgba32f, binding = 1) uniform image2D blurred_hor2; //calculate blur
 layout(rgba32f, binding = 2) uniform image2D DE_input; 
 layout(rgba32f, binding = 3) uniform image2D color_HDR; //calculate final color
 
-#include<camera.glsl>
+
+struct ray
+{
+	vec3 pos;
+	vec3 dir;
+};		
+
+struct gl_camera
+{
+	vec3 position;
+	vec3 dirx;
+	vec3 diry;
+	vec3 dirz;
+	vec2 resolution;
+	float aspect_ratio;
+	float FOV;
+	float focus;
+	float bokeh;
+	float exposure;
+	float mblur;
+	float speckle;
+	float size;
+	int stepN;
+	int step;
+};
+
+
+ivec2 getGpos(int index)
+{
+	int y = index/group_size;
+	int x = index%group_size;
+	return ivec2(x,y);
+}
+
+uniform gl_camera Camera;
+float fovray;
+
+ray get_ray(vec2 screen_pos)
+{
+	vec2 shift = Camera.FOV*(2.f*screen_pos - 1.f)*vec2(Camera.aspect_ratio, 1.f);
+	ray cray;
+	cray.pos = Camera.position + Camera.size*(Camera.dirx*shift.x + Camera.diry*shift.y);
+	cray.dir = normalize(Camera.dirx*shift.x + Camera.diry*shift.y + Camera.dirz);
+	float aspect_ratio_ratio = Camera.aspect_ratio/(Camera.resolution.x/Camera.resolution.y);
+	fovray = 1.41*Camera.FOV*max(1.f/aspect_ratio_ratio, aspect_ratio_ratio)/Camera.resolution.x; //pixel FOV
+	return cray;
+}
+
 
 shared vec3 color_buffer[buffer_size];
 
@@ -61,7 +108,7 @@ void main() {
 	
 	vec3 conv1 = vec3(0), conv2 = vec3(0);
 	int center = local_indx.x+group_size/2;
-	for(int i = max(center-int(width)*2,0); i < min(center+int(width)*2,buffer_size); i++)
+	for(int i = max(center-width*2,0); i < min(center+width*2,buffer_size); i++)
 	{
 		float coord = float(center-i)/width;
 		conv1 += exp(-k1*pow(coord,2))*color_buffer[i];
@@ -71,3 +118,6 @@ void main() {
 	imageStore(blurred_hor1, global_pos,  vec4(conv1,1));
 	imageStore(blurred_hor2, global_pos,  vec4(conv2,1));
 }
+
+ERROR: 0:111: '=' :  cannot convert from 'highp float' to 'highp int'
+
