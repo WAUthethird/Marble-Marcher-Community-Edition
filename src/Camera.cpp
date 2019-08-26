@@ -151,6 +151,9 @@ gl_camera Camera::GetGLdata()
 	cam.mblur = mblur;
 	cam.speckle = speckle;
 	cam.size = size;
+	cam.bloomintensity = bloomintensity;
+	cam.bloomtreshold = bloomtreshold;
+	cam.bloomradius = bloomradius;
 
 	//data for the renderer
 	cam.stepN = 0; 

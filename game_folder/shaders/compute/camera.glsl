@@ -20,6 +20,9 @@ struct gl_camera
 	float mblur;
 	float speckle;
 	float size;
+	float bloomintensity;
+	float bloomtreshold;
+	float bloomradius;
 	int stepN;
 	int step;
 };

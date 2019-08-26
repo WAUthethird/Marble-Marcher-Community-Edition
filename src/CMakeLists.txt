@@ -38,4 +38,7 @@ add_library(MarbleMarcherSources
   
   ExprParser.h
   ExprParser.cpp
+  
+  SoundSystem.h
+  SoundSystem.cpp
 )

@@ -94,3 +94,8 @@ public:
 		}
 	}
 };
+
+class AllSettings
+{
+
+};

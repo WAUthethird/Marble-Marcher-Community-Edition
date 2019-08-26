@@ -92,7 +92,7 @@ float ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 		
 		norm.w = length(pos0 - pos.xyz);
 		i_coef = 1/(dcoef*norm.w+1);//importance
-		occlusion_angle += i_coef*pos.w/norm.w;
+		occlusion_angle += i_coef*clamp(pos.w/norm.w,0,1);
 		integral += i_coef;
 	}
 	
@@ -100,6 +100,30 @@ float ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	
 	//square because its a surface angle
 	return pow(occlusion_angle,2);
+}
+
+const float Br = 0.0025;
+const float Bm = 0.0003;
+const float g =  0.9800;
+const vec3 nitrogen = vec3(0.650, 0.570, 0.475);
+const vec3 Kr = Br / pow(nitrogen, vec3(4.0));
+const vec3 Km = Bm / pow(nitrogen, vec3(0.84));
+
+vec3 sky_color(in vec3 pos)
+{
+	// Atmosphere Scattering
+	vec3 fsun = LIGHT_DIRECTION;
+	float brightnees = exp(min(5*pos.y,0));
+	if(pos.y < 0)
+	{
+		pos.y = 0; 
+		pos.xyz = normalize(pos.xyz);
+	}
+    float mu = dot(normalize(pos), normalize(fsun));
+	
+	vec3 extinction = mix(exp(-exp(-((pos.y + fsun.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0, vec3(1.0 - exp(fsun.y)) * 0.2, -fsun.y * 0.2 + 0.5);
+	vec3 sky_col = brightnees* 3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
+	return 0.4*clamp(sky_col,0,10);
 }
 
 vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
@@ -158,11 +182,13 @@ vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 		shadow = ao;
 	}
 	
+	vec3 light_color = sky_color(LIGHT_DIRECTION);
+	
 	{ //light contribution
 			float roughness = PBR_ROUGHNESS;
 			vec3 L = normalize(LIGHT_DIRECTION);
 			vec3 H = normalize(V + L);
-			vec3 radiance = 10*LIGHT_COLOR*shadow*(0.6+0.4*ao);        
+			vec3 radiance = light_color*shadow*(0.6+0.4*ao);        
 			
 			// cook-torrance brdf
 			float NDF = DistributionGGX(N, H, roughness);        
@@ -186,7 +212,7 @@ vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 			float roughness = 0.6;
 			vec3 L = normalize(-LIGHT_DIRECTION);
 			vec3 H = normalize(V + L);
-			vec3 radiance = 5*LIGHT_COLOR*ao*(1-ao);        
+			vec3 radiance = 0.5*light_color*ao*(1-ao);        
 			
 			// cook-torrance brdf
 			float NDF = DistributionGGX(N, H, roughness);        
@@ -209,30 +235,7 @@ vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 	return vec4(Lo,1);
 }
 
-const float Br = 0.0025;
-const float Bm = 0.0003;
-const float g =  0.9800;
-const vec3 nitrogen = vec3(0.650, 0.570, 0.475);
-const vec3 Kr = Br / pow(nitrogen, vec3(4.0));
-const vec3 Km = Bm / pow(nitrogen, vec3(0.84));
 
-vec3 sky_color(in vec3 pos)
-{
-	// Atmosphere Scattering
-	vec3 fsun = LIGHT_DIRECTION;
-	float brightnees = exp(min(5*pos.y,0));
-	if(pos.y < 0)
-	{
-		pos.y = 0; 
-		pos.xyz = normalize(pos.xyz);
-	}
-    float mu = dot(normalize(pos), normalize(fsun));
-	
-	
-	vec3 extinction = mix(exp(-exp(-((pos.y + fsun.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0, vec3(1.0 - exp(fsun.y)) * 0.2, -fsun.y * 0.2 + 0.5);
-	return brightnees* 3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
-	
-}
 
 vec3 HDRmapping(vec3 color, float exposure, float gamma)
 {

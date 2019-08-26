@@ -415,6 +415,9 @@ void Overlays::SetAntTweakBar(int Width, int Height, float &fps, Scene *scene, R
 	//TwAddVarRW(settings, "Reflection and Refraction", TW_TYPE_BOOLCPP, &scene->Refl_Refr_Enabled, "group='Graphics settings'");
 	TwAddVarRW(settings, "Blur", TW_TYPE_FLOAT, &rd->camera.mblur, "min=0 step=0.001 max=0.75 group='Graphics settings'");
 	TwAddVarRW(settings, "Exposure", TW_TYPE_FLOAT, &rd->camera.exposure, "min=0 max=5 step=0.001 group='Graphics settings'");
+	TwAddVarRW(settings, "Bloom Treshold", TW_TYPE_FLOAT, &rd->camera.bloomtreshold, "min=0 max=5 step=0.001 group='Graphics settings'");
+	TwAddVarRW(settings, "Bloom Intensity", TW_TYPE_FLOAT, &rd->camera.bloomintensity, "min=0 max=5 step=0.001 group='Graphics settings'");
+	TwAddVarRW(settings, "Bloom Radius", TW_TYPE_FLOAT, &rd->camera.bloomradius, "min=1 max=10 step=0.1 group='Graphics settings'");
 
 	TwEnumVal marble_type[] = { { 0, "Glass"  },
 								{ 1,  "Metal" } };

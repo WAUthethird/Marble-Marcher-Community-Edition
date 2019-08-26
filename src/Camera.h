@@ -20,6 +20,9 @@ typedef struct
 	float mblur;
 	float speckle;
 	float size;
+	float bloomintensity;
+	float bloomtreshold;
+	float bloomradius;
 	int stepN;
 	int step;
 } gl_camera;
@@ -35,7 +38,7 @@ public:
 	};
 
 	Camera(): alpha(0), beta(0), gamma(0), cur_mode(Free), radius(1.f),
-		smooth(0.3f), FOV(60.f), focus(1e10), bokeh(0), mblur(0.01), speckle(10), size(0), exposure(1.0f)
+		smooth(0.3f), FOV(75.f), focus(1e10), bokeh(0), mblur(0.01), speckle(10), size(0), exposure(1.0f), bloomintensity(0.2), bloomtreshold(3), bloomradius(2)
 	{
 		//camera directions
 		dirx = quat(0, 1, 0, 0);
@@ -86,7 +89,7 @@ public:
 	void Update(float dt);
 
 	//exposure, motion blur and speckle radius
-	float exposure, mblur, speckle;
+	float exposure, mblur, speckle, bloomintensity, bloomtreshold, bloomradius;
 private:
 	CameraMode cur_mode;
 
