@@ -492,7 +492,7 @@ void Overlays::SetAntTweakBar(int Width, int Height, float &fps, Scene *scene, R
 	TwAddVarRW(level_editor, "Sun direction", TW_TYPE_DIR3F, copy->light_dir.data(), "group='Level parameters'");
 	TwAddVarRW(level_editor, "Sun color", TW_TYPE_DIR3F, copy->light_col.data(), "group='Level parameters'");
 	TwAddVarRW(level_editor, "Background color", TW_TYPE_DIR3F, copy->background_col.data(), "group='Level parameters'");
-	TwAddVarRW(level_editor, "Gravity strenght", TW_TYPE_FLOAT, &copy->gravity, "min=0 max=0.5 step=0.0001 group='Level parameters'");
+	TwAddVarRW(level_editor, "Gravity strength", TW_TYPE_FLOAT, &copy->gravity, "min=0 max=0.5 step=0.0001 group='Level parameters'");
 	TwAddVarRW(level_editor, "Level restart y position", TW_TYPE_FLOAT, &copy->kill_y, "min=-100 max=100 step=0.1 group='Level parameters'");
 	TwAddVarRW(level_editor, "Is planet", TW_TYPE_BOOLCPP, &copy->planet, "group='Level parameters'");
 	TwAddVarRW(level_editor, "Starting look direction angle", TW_TYPE_FLOAT, &copy->start_look_x, "min=-3.14159 max=3.14159 step=0.01 group='Level parameters'");
