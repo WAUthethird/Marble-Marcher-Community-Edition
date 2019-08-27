@@ -67,40 +67,6 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 }
 ///END PBR functions
 
-float ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
-{
-	vec3 dir1 = normalize(cross(dir.xyz,norm.xyz));
-	vec3 dir2 = normalize(cross(dir1,norm.xyz));
-	pos.w = iMarbleRad/2; 
-	
-	vec3 pos0 = pos.xyz;
-	
-	float shifter = 2;
-	float dcoef = 0.02/iMarbleRad;
-	float occlusion_angle = 0;
-	float integral = 0;
-	float i_coef = 0;
-	
-	//march in the direction of the normal
-	#pragma unroll
-	for(int i = 0; i < AMBIENT_MARCHES; i++)
-	{
-		//moving in a zig-zag
-		vec3 direction = normalize(norm.xyz + 0.25*((mod(shifter,3.f)-1)*dir1 +  (mod(shifter+1,3.f)-1)*dir2));
-		pos.xyz += pos.w*direction;
-		pos.w = DE(pos.xyz);
-		
-		norm.w = length(pos0 - pos.xyz);
-		i_coef = 1/(dcoef*norm.w+1);//importance
-		occlusion_angle += i_coef*clamp(pos.w/norm.w,0,1);
-		integral += i_coef;
-	}
-	
-	occlusion_angle /= integral; // average weighted by importance
-	
-	return 0.5-cos(3.14159265*occlusion_angle)*0.5;
-}
-
 const float Br = 0.0025;
 const float Bm = 0.0003;
 const float g =  0.9800;
@@ -122,8 +88,49 @@ vec3 sky_color(in vec3 pos)
 	
 	vec3 extinction = mix(exp(-exp(-((pos.y + fsun.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0, vec3(1.0 - exp(fsun.y)) * 0.2, -fsun.y * 0.2 + 0.5);
 	vec3 sky_col = brightnees* 3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
-	return 0.4*clamp(sky_col,0,10);
+	sky_col = 0.4*clamp(sky_col,0,10);
+	return sky_col*sky_col;
 }
+
+
+vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
+{
+	vec3 dir1 = normalize(cross(dir.xyz,norm.xyz));
+	vec3 dir2 = normalize(cross(dir1,norm.xyz));
+	pos.w = iMarbleRad/2; 
+	
+	vec3 pos0 = pos.xyz;
+	
+	float shifter = 2;
+	float dcoef = 0.02/iMarbleRad;
+	float occlusion_angle = 0;
+	float integral = 0;
+	float i_coef = 0;
+	
+	vec3 ambient_color = vec3(0);
+	
+	//march in the direction of the normal
+	#pragma unroll
+	for(int i = 0; i < AMBIENT_MARCHES; i++)
+	{
+		//moving in a zig-zag
+		vec3 direction = normalize(norm.xyz + 0.25*((mod(shifter,3.f)-1)*dir1 +  (mod(shifter+1,3.f)-1)*dir2));
+		pos.xyz += pos.w*direction;
+		pos.w = DE(pos.xyz);
+		
+		ambient_color += sky_color(direction);
+		
+		norm.w = length(pos0 - pos.xyz);
+		i_coef = 1/(dcoef*norm.w+1);//importance
+		occlusion_angle += i_coef*clamp(pos.w/norm.w,0,1);
+		integral += i_coef;
+	}
+	
+	occlusion_angle /= integral; // average weighted by importance
+	ambient_color /= integral;
+	return vec4(ambient_color,1)*(0.5-cos(3.14159265*occlusion_angle)*0.5);
+}
+
 
 vec3 refraction(vec3 rd, vec3 n, float p) {
 	float dot_nd = dot(rd, n);
@@ -152,9 +159,7 @@ vec4 lighting(vec4 pos, vec4 dir, vec4 norm, vec3 reflection, vec3 refraction, f
 	vec3 albedo = COL(cpos).xyz;
 	albedo *= albedo;
 	
-	
-	float ao = ambient_occlusion(pos, norm, dir);
-	vec4 ambient_color = vec4(BACKGROUND_COLOR,1)*ao;
+	vec4 ambient_color = ambient_occlusion(pos, norm, dir);
 	
 	float metallic = PBR_METALLIC;
 	vec3 F0 = vec3(0.04); 
@@ -191,16 +196,16 @@ vec4 lighting(vec4 pos, vec4 dir, vec4 norm, vec3 reflection, vec3 refraction, f
 	
 	if(!SHADOWS_ENABLED)
 	{
-		shadow = ao;
+		shadow = ambient_color.w;
 	}
 	
-	vec3 light_color = sky_color(LIGHT_DIRECTION);
-	
+	vec3 sun_color = sky_color(LIGHT_DIRECTION);
+
 	{ //light contribution
 			float roughness = PBR_ROUGHNESS;
 			vec3 L = normalize(LIGHT_DIRECTION);
 			vec3 H = normalize(V + L);
-			vec3 radiance = light_color*shadow*(0.6+0.4*ao);        
+			vec3 radiance = sun_color*shadow*(0.6+0.4*ambient_color.w);        
 			
 			// cook-torrance brdf
 			float NDF = DistributionGGX(N, H, roughness);        
@@ -224,7 +229,7 @@ vec4 lighting(vec4 pos, vec4 dir, vec4 norm, vec3 reflection, vec3 refraction, f
 			float roughness = max(PBR_ROUGHNESS,0.5);
 			vec3 L = normalize(-LIGHT_DIRECTION);
 			vec3 H = normalize(V + L);
-			vec3 radiance = 0.5*light_color*ao*(1-ao);        
+			vec3 radiance = 0.35*sun_color*ambient_color.w*(1-ambient_color.w);        
 			
 			// cook-torrance brdf
 			float NDF = DistributionGGX(N, H, roughness);        

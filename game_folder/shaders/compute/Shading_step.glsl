@@ -40,8 +40,7 @@ void main() {
 	}
 	else
 	{
-		vec3 sky = sky_color(dir.xyz);
-		color = vec4(sky*sky,0);
+		color = vec4(sky_color(dir.xyz),0);
 	}
 	
 	vec4 prev_color = imageLoad(color_HDR, global_pos);
