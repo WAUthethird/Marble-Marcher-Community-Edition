@@ -55,7 +55,7 @@ float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 		
         light_visibility = min(light_visibility, angle);
 		
-		dDEdt = dDEdt*0.8 + 0.2*(pos.w-ph)/ph;
+		dDEdt = dDEdt*0.75 + 0.25*(pos.w-ph)/ph;
 		ph = pos.w;
 		
 		if(dir.w >= distance2light)
@@ -68,8 +68,8 @@ float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 			return 0;
 		}
 	}
-	
-	return light_visibility*light_visibility; //smoothens out the shadow, and is more physically accurate
+	//return light_visibility; //bad
+	return 0.5-cos(3.14159265*light_visibility)*0.5; //looks better and is more physically accurate(for a circular light source)
 }
 
 float sphere_intersection(vec3 r, vec3 p, vec4 sphere)

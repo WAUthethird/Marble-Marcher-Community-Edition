@@ -36,7 +36,7 @@ static const int frame_orbit = 600;
 static const int frame_deorbit = 800;
 static const int frame_countdown = frame_deorbit + 3*60;
 static const float default_zoom = 15.0f;
-static const int fractal_iters = 16;
+int fractal_iters = 16;
 static const float ground_ratio = 1.15f;
 static const int mus_switches[num_level_music] = {9, 15, 21, 24};
 static const int num_levels_midpoint = 15;
@@ -311,6 +311,7 @@ void Scene::Synchronize()
 }
 
 void Scene::UpdateCamera(float dx, float dy, float dz, bool speedup) {
+  fractal_iters = level_copy.FractalIter;
   //Camera update depends on current mode
   gravity = level_copy.gravity;
   const int iters = speedup ? 5 : 1;

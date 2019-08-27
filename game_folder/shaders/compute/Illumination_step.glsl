@@ -16,6 +16,7 @@ shared vec4 de_sph[group_size][group_size];
 
 ///Half-resolution illumination step
 
+
 void main() {
 
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
@@ -46,7 +47,7 @@ void main() {
 		vec4 norm = calcNormal(pos.xyz, td*fovray/8); 
 		norm.xyz = normalize(norm.xyz);
 		pos.xyz += norm.xyz*5*td*fovray;
-		illum.x = shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, 0.08);
+		illum.x = shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, LIGHT_ANGLE);
 		
 		//illum.y = ambient_occlusion(pos, norm);
 	}

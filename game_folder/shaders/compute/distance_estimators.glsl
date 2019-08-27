@@ -27,14 +27,21 @@ void sierpinskiFold(inout vec4 z) {
 	z.xz -= min(z.x + z.z, 0.0);
 	z.yz -= min(z.y + z.z, 0.0);
 }
+
+// Polynomial smooth minimum by iq
+float smoothmin(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5*(a-b)/k, 0.0, 1.0);
+  return mix(a, b, h) - k*h*(1.0-h);
+}
+
 void mengerFold(inout vec4 z) {
-	float a = min(z.x - z.y, 0.0);
+	float a = smoothmin(z.x - z.y, 0.0, 0.03);
 	z.x -= a;
 	z.y += a;
-	a = min(z.x - z.z, 0.0);
+	a = smoothmin(z.x - z.z, 0.0, 0.03);
 	z.x -= a;
 	z.z += a;
-	a = min(z.y - z.z, 0.0);
+	a = smoothmin(z.y - z.z, 0.0, 0.03);
 	z.y -= a;
 	z.z += a;
 }
