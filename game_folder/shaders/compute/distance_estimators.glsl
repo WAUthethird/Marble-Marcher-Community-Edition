@@ -10,7 +10,7 @@ uniform vec3 iMarblePos;
 uniform float iMarbleRad;
 uniform float iFlagScale;
 uniform vec3 iFlagPos;
-#define FRACTAL_ITER 16
+uniform int FRACTAL_ITER;
 
 ///Original MM distance estimators
 

@@ -756,7 +756,7 @@ void Scene::Write(sf::Shader& shader) const {
 
   shader.setUniform("SHADOWS_ENABLED", Shadows_Enabled);
   shader.setUniform("CAMERA_SIZE", camera_size*level_copy.marble_rad/0.035f);
-  shader.setUniform("FRACTAL_ITER", Fractal_Iterations);
+  shader.setUniform("FRACTAL_ITER", level_copy.FractalIter);
   shader.setUniform("REFL_REFR_ENABLED", Refl_Refr_Enabled);
   shader.setUniform("MARBLE_MODE", MarbleType);
 }
@@ -836,7 +836,7 @@ void Scene::WriteShader(ComputeShader& shader)
 
 	shader.setUniform("SHADOWS_ENABLED", Shadows_Enabled);
 	shader.setUniform("CAMERA_SIZE", camera_size*level_copy.marble_rad / 0.035f);
-	shader.setUniform("FRACTAL_ITER", Fractal_Iterations);
+	shader.setUniform("FRACTAL_ITER", level_copy.FractalIter);
 	shader.setUniform("REFL_REFR_ENABLED", Refl_Refr_Enabled);
 	shader.setUniform("MARBLE_MODE", MarbleType);
 }
