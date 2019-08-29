@@ -21,12 +21,14 @@ public:
 	void LoadLocalsFromFolder(std::string folder);
 	void LoadLocalFromFile(fs::path path);
 	void SetLanguage(std::string lang);
+	std::vector<std::string> GetLanguages();
 
 	std::wstring operator[](std::string str);
 	sf::Font& operator()(std::string str);
 
 private:
 	std::string cur_language;
+	std::vector<std::string> languages;
 	std::map<std::string, std::map<std::string, std::wstring>> locales;
 	std::map<std::string, std::map<std::string, sf::Font>> fonts;
 };

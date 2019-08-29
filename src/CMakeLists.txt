@@ -23,6 +23,7 @@ add_library(MarbleMarcherSources
   Localization.cpp
 
   Settings.h
+  Settings.cpp
 
   Gamemodes.h
   Gamemodes.cpp

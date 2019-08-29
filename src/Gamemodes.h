@@ -1,13 +1,15 @@
 #pragma once
 
 #include<Overlays.h>
+#include<Scene.h>
 #include<Localization.h>
 #include<Interface.h>
-#include<Scene.h>
+
 #include<Settings.h>
 #include <AntTweakBar.h>
 
 enum GameMode {
+	FIRST_START,
 	MAIN_MENU,
 	PLAYING,
 	PAUSED,
@@ -59,6 +61,10 @@ void LockMouse(sf::RenderWindow& window);
 void UnlockMouse(sf::RenderWindow& window);
 void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene);
 int DirExists(const char *path);
+
+void FirstStart(Overlays* overlays);
+
+void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float* fps, bool *vsync, float *mouse_sensitivity, float *wheel_sensitivity, float *music_vol, float *target_fps);
 
 template < typename T > std::string num2str(const T& n)
 {

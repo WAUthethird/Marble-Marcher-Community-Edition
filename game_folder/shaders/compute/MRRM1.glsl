@@ -1,5 +1,4 @@
 #version 430
-//4*4 ray bundle
 #define group_size 8
 #define block_size 64
 
@@ -7,6 +6,8 @@ layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D DE_output; //calculate final DE spheres
 layout(rgba32f, binding = 1) uniform image2D DE2_output;
 layout(rgba32f, binding = 2) uniform image2D var_output; 
+layout(rgba32f, binding = 3) uniform image2D DE_input; 
+layout(rgba32f, binding = 4) uniform image2D color_HDR; //calculate final color
 
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
@@ -27,7 +28,9 @@ void main() {
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
-	fovray *= 4;
+	float res_ratio = float(imageSize(color_HDR).x/imageSize(DE_output).x);;
+	fovray *= res_ratio;
+	dir.w = 4*Camera.size;
 	ray_march(pos, dir, var, fovray, fovray);
 	
 	vec4 pos1 = pos;

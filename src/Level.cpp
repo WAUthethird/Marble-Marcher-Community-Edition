@@ -636,7 +636,18 @@ std::map<int, Score> All_Levels::getLevelScores()
 
 sf::Music* All_Levels::GetLevelMusic(int ID)
 {
-	return music_map[level_map[ID].use_music];
+	if (music_map.count(level_map[ID].use_music) > 0)
+	{
+		return music_map[level_map[ID].use_music];
+	}
+}
+
+sf::Music* All_Levels::GetMusic(std::string music)
+{
+	if (music_map.count(music) > 0)
+	{
+		return music_map[music];
+	}
 }
 
 void All_Levels::ReloadLevels()

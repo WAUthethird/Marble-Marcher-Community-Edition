@@ -171,6 +171,8 @@ public:
 	std::map<int, Score> getLevelScores();
 	sf::Music* GetLevelMusic(int ID);
 
+	sf::Music * GetMusic(std::string music);
+
 	void ReloadLevels();
 
 	void LoadLevelFromFile(fs::path file);

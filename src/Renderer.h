@@ -16,6 +16,8 @@ class WorldModel
 
 };
 
+std::vector<fs::path> GetFilesInFolder(std::string folder, std::string filetype);
+
 class Renderer
 {
 public:
@@ -27,6 +29,8 @@ public:
 
 	void SetOutputTexture(sf::Texture& tex);
 	void LoadShader(std::string shader_file);
+	std::vector<std::string> GetConfigurationsList();
+	std::string GetConfigFolder();
 
 	void Render();
 	std::vector<ComputeShader> shader_pipeline;
@@ -34,9 +38,13 @@ public:
 
 private:
 	std::string config_file;
+	std::string config_folder;
 	GLuint GenerateTexture(float w, float h);
 
 	int width, height;
+
+	std::map<std::string, float> variables;
+	std::vector<std::string> rendering_configurations;
 	std::vector<vec2> global_size;
 	std::vector<GLuint> main_textures;
 	std::vector<std::vector<GLuint>> shader_textures;

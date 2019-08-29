@@ -36,10 +36,12 @@ static const int frame_orbit = 600;
 static const int frame_deorbit = 800;
 static const int frame_countdown = frame_deorbit + 3*60;
 static const float default_zoom = 15.0f;
-int fractal_iters = 16;
+static const int fractal_iters = 16;
 static const float ground_ratio = 1.15f;
 static const int mus_switches[num_level_music] = {9, 15, 21, 24};
 static const int num_levels_midpoint = 15;
+
+sf::Music *current_music = nullptr;
 
 static void ModPi(float& a, float b) {
   if (a - b > PI) {
@@ -81,7 +83,8 @@ Scene::Scene(sf::Music* level_music) :
 	camera_size(0.035),
 	cur_ed_mode(DEFAULT),
 	level_editor(false),
-	gravity(0.005f)
+	gravity(0.005f),
+	time(0.f)
 {
   ResetCheats();
   frac_params.setOnes();
@@ -126,6 +129,13 @@ void Scene::SetFlag(float x, float y, float z) {
 void Scene::SetLevel(int level) {
   cur_level = level;    
   level_copy = levels.GetLevel(level);
+  if (current_music != levels.GetLevelMusic(level))
+  {
+	  if (current_music != nullptr)
+		  current_music->stop();
+	  current_music = levels.GetLevelMusic(level);
+	  current_music->play();
+  }
 }
 
 void Scene::SetMode(CamMode mode) {
@@ -205,7 +215,6 @@ void Scene::StartNewGame() {
   play_single = false;
   ResetCheats();
   SetLevel(0);
- // is_fullrun = high_scores.HasCompleted(num_levels - 1);
   HideObjects();
   SetMode(ORBIT);
 }
@@ -311,8 +320,8 @@ void Scene::Synchronize()
 }
 
 void Scene::UpdateCamera(float dx, float dy, float dz, bool speedup) {
-  fractal_iters = level_copy.FractalIter;
-  //Camera update depends on current mode
+	time += 1.f / 60.f;
+	//Camera update depends on current mode
   gravity = level_copy.gravity;
   const int iters = speedup ? 5 : 1;
   if (cam_mode == INTRO) {
@@ -840,6 +849,8 @@ void Scene::WriteShader(ComputeShader& shader)
 	shader.setUniform("FRACTAL_ITER", level_copy.FractalIter);
 	shader.setUniform("REFL_REFR_ENABLED", Refl_Refr_Enabled);
 	shader.setUniform("MARBLE_MODE", MarbleType);
+
+	shader.setUniform("time", time);
 }
 
 //Hard-coded to match the fractal

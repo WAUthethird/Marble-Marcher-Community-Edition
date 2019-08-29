@@ -59,6 +59,8 @@ void main() {
 	pos.w = d;
 	var.w = 1;
 	
+	//pos.xyz += d*dir.xyz;
+	//pos.w = sph.w;
 	ray_march(pos, dir, var, fovray, 0);
 	
 	//save the DE spheres

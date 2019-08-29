@@ -52,8 +52,8 @@ public:
     NUM_TEXTS
   };
   static const int LEVELS_PER_PAGE = 15;
+  TwBar *stats, *settings, *fractal_editor, *level_editor, *flaunch;
   bool TWBAR_ENABLED;
-  TwBar *stats, *settings, *fractal_editor, *level_editor, *confirmation_box;
 
   sf::Sound sound_hover;
   sf::Sound sound_click;
@@ -90,7 +90,7 @@ public:
   void DrawSumTime(sf::RenderWindow& window, int t);
   void DrawCheatsEnabled(sf::RenderWindow& window);
   void DrawCheats(sf::RenderWindow& window);
-  void SetAntTweakBar(int Width, int Height, float & fps, Scene * scene, Renderer * rd, bool * vsync, float * mouse_sensitivity, float * wheel_sensitivity, float * music_vol, float * target_fps);
+  void SetAntTweakBar(int Width, int Height);
   void DrawAntTweakBar();
 
   bool TwManageEvent(sf::Event * event);

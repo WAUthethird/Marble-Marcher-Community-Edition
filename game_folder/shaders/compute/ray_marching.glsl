@@ -1,9 +1,9 @@
 #include<distance_estimators.glsl>
 
 #define MAX_DIST 50
-#define MIN_DIST 1e-7
+#define MIN_DIST 1e-5
 #define MAX_MARCHES 512
-#define NORMARCHES 2
+#define NORMARCHES 5
 
 
 void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float d0) 
@@ -127,11 +127,19 @@ void normarch(inout vec4 pos)
 	norm.xyz = normalize(norm.xyz);
 	pos.w = norm.w;
 	
+	float prev_w = 0;
 	//march in the direction of the normal
 	#pragma unroll
 	for(int i = 0; i < NORMARCHES; i++)
 	{
 		pos.xyz += pos.w*norm.xyz;
 		pos.w = DE(pos.xyz);
+		if(pos.w < prev_w)
+		{
+			pos.xyz -= prev_w*norm.xyz;
+			pos.w = prev_w;
+			break;
+		}
+		prev_w = pos.w;
 	}
 }

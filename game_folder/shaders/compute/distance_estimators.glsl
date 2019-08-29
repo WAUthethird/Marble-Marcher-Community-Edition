@@ -12,6 +12,8 @@ uniform float iFlagScale;
 uniform vec3 iFlagPos;
 uniform int FRACTAL_ITER;
 
+uniform int time;
+
 ///Original MM distance estimators
 
 float s1 = sin(iFracAng1), c1 = cos(iFracAng1), s2 = sin(iFracAng2), c2 = cos(iFracAng2);
@@ -132,8 +134,12 @@ vec4 col_marble(vec4 p)
 float de_flag(vec4 p) 
 {
 	vec3 f_pos = iFlagPos + vec3(1.5, 4, 0)*iFlagScale;
-	float d = de_box(p - vec4(f_pos, 0), vec3(1.5, 0.8, 0.08)*iMarbleRad);
-	d = min(d, de_capsule(p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0), iMarbleRad*2.4, iMarbleRad*0.18));
+	vec4 p_s = p/iMarbleRad;
+	vec4 d_pos = p - vec4(f_pos, 0);
+	vec4 caps_pos = p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0);
+	float oscillation = sin(4*p_s.x + 1*p_s.y + 5*time) + 0.2*sin(6*p_s.x - 2*p_s.y + 6*time) + 0.08*sin(15*p_s.x + 3*p_s.y + 7*time);
+	float d = 0.8*de_box(d_pos + caps_pos.x*vec4(0,0.005*oscillation,0.03*oscillation,0), vec3(1.5, 0.8, 0.01)*iMarbleRad);
+	d = min(d, de_capsule(caps_pos, iMarbleRad*2.4, iMarbleRad*0.05));
 	return d;
 }
 

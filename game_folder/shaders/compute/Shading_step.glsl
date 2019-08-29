@@ -33,17 +33,17 @@ void main() {
 	pos = sph;
 	dir.w += td; 
 	
-	vec4 color;
-	if(pos.w < max(2*fovray*td, MIN_DIST) )
+	vec3 color;
+	if(pos.w < max(16*fovray*td, MIN_DIST))
 	{
 		color = shading(pos, dir, fovray, illum.x);
 	}
 	else
 	{
-		color = vec4(sky_color(dir.xyz),0);
+		color = sky_color(dir.xyz);
 	}
 	
-	vec4 prev_color = imageLoad(color_HDR, global_pos);
+	vec3 prev_color = imageLoad(color_HDR, global_pos).xyz;
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))
 	{
 		color = prev_color*Camera.mblur + (1-Camera.mblur)*color; //blur

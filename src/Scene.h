@@ -27,6 +27,8 @@
 #define MIN_DIST 1e-4f
 #define FOCAL_DIST 1.73205080757
 
+extern sf::Music *current_music;
+
 class Scene {
 public:
   enum CamMode {
@@ -160,6 +162,7 @@ protected:
   void MakeCameraRotation();
 
 private:
+  float           time;
   int             cur_level;
   bool            is_fullrun;
   bool            intro_needs_snap;

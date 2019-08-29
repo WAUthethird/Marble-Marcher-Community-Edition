@@ -20,6 +20,15 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 {
 	RemoveAllObjects();
 	game_mode = MAIN_MENU;
+
+	if (current_music != scene->levels.GetMusic("menu.ogg"))
+	{
+		if (current_music != nullptr)
+			current_music->stop();
+		current_music = scene->levels.GetMusic("menu.ogg");
+		current_music->play();
+	}
+
 	scene->SetExposure(1.0f);
 	scene->SetMode(Scene::INTRO);
 	sf::Vector2f wsize = default_size;
@@ -154,9 +163,6 @@ void PlayLevel(Scene * scene, sf::RenderWindow * window, int level)
 	RemoveAllObjects();
 	//play level
 	game_mode = PLAYING;
-	scene->SetExposure(1.0f);
-	scene->levels.GetLevelMusic(level)->setVolume(GetVol());
-	scene->levels.GetLevelMusic(level)->play();
 	scene->StartSingle(level);
 	LockMouse(*window);
 }
@@ -310,8 +316,8 @@ void PlayNewGame(Scene * scene, sf::RenderWindow * window, int level)
 	RemoveAllObjects();
 	game_mode = PLAYING;
 	scene->StartNewGame();
-	scene->GetCurMusic().setVolume(GetVol());
-	scene->GetCurMusic().play();
+//	scene->GetCurMusic().setVolume(GetVol());
+//	scene->GetCurMusic().play();
 	LockMouse(*window);
 }
 
@@ -561,10 +567,7 @@ void ConfirmEditorExit(Scene* scene, Overlays* overlays)
 
 
 float GetVol() {
-	if (game_settings.mute) {
-		return 0.0f;
-	}
-	else if (game_mode == PAUSED) {
+	if (game_mode == PAUSED) {
 		return music_vol / 4;
 	}
 	else {
@@ -592,4 +595,343 @@ int DirExists(const char *path) {
 		return 1;
 	}
 	return 0;
+}
+
+void FirstStart(Overlays* overlays)
+{
+	TwDefine("First_launch visible=true");
+	TwDefine("Statistics visible=false");
+	TwDefine("Settings visible=false");
+	game_mode = FIRST_START;
+	overlays->TWBAR_ENABLED = true;
+}
+
+
+//ANTTWEAKBAR
+
+
+Scene *scene_ptr;
+Overlays *overlays_ptr;
+Renderer *renderer_ptr;
+
+extern bool confirmed = false;
+extern bool canceled = false;
+int music_id = 0;
+bool music_play = false;
+
+
+void TW_CALL Confirm(void *data)
+{
+	confirmed = true;
+}
+
+void TW_CALL Cancel(void *data)
+{
+	canceled = true;
+}
+
+void TW_CALL MarbleSet(void *data)
+{
+	scene_ptr->cur_ed_mode = Scene::EditorMode::PLACE_MARBLE;
+}
+
+void TW_CALL FlagSet(void *data)
+{
+	scene_ptr->cur_ed_mode = Scene::EditorMode::PLACE_FLAG;
+}
+
+void TW_CALL PlayMusic(void *data)
+{
+	scene_ptr->levels.StopAllMusic();
+	music_play = !music_play;
+	if (music_play)
+	{
+		scene_ptr->levels.GetMusicByID(music_id)->play();
+	}
+}
+
+void TW_CALL SaveLevel(void *data)
+{
+	Level* copy = &scene_ptr->level_copy;
+	int lvlid = scene_ptr->GetLevel();
+
+	std::vector<std::string> music_list = scene_ptr->levels.GetMusicNames();
+	std::vector<int> lvlnum = scene_ptr->levels.getLevelIds();
+	copy->use_music = music_list[music_id];
+	bool same_level = scene_ptr->original_level_name == copy->txt;
+	if (lvlid < 0 || !same_level)
+		lvlid = time(NULL);
+	copy->level_id = lvlid;
+	copy->SaveToFile(std::string(level_folder) + "/" + ConvertSpaces2_(copy->txt) + ".lvl", lvlid, copy->link_level);
+	scene_ptr->levels.ReloadLevels();
+	if (!(scene_ptr->GetLevel() >= 0 && same_level))
+	{
+		scene_ptr->WriteLVL(lvlid);
+		scene_ptr->original_level_name = copy->txt;
+	}
+}
+
+
+void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const std::string& sourceLibraryString)
+{
+	// Copy the content of souceString handled by the AntTweakBar library to destinationClientString handled by your application
+	destinationClientString = sourceLibraryString;
+}
+
+int render_resolution = 3;
+int screenshot_resolution = 10;
+int language_choise = 0;
+int shader_config = 0;
+
+sf::Vector2i getResolution(int i)
+{
+	switch (i)
+	{
+	case 0:
+		return sf::Vector2i(320, 240);
+	case 1:
+		return sf::Vector2i(480, 320);
+	case 2:
+		return sf::Vector2i(640, 480);
+	case 3:
+		return sf::Vector2i(800, 480);
+	case 4:
+		return sf::Vector2i(960, 540);
+	case 5:
+		return sf::Vector2i(1136, 640);
+	case 6:
+		return sf::Vector2i(1280, 720);
+	case 7:
+		return sf::Vector2i(1600, 900);
+	case 8:
+		return sf::Vector2i(1920, 1080);
+	case 9:
+		return sf::Vector2i(2048, 1152);
+	case 10:
+		return sf::Vector2i(2560, 1440);
+	case 11:
+		return sf::Vector2i(3840, 2160);
+	case 12:
+		return sf::Vector2i(7680, 4320);
+	case 13:
+		return sf::Vector2i(10240, 4320);
+	}
+}
+
+void TW_CALL InitialOK(void *data)
+{
+	std::vector<std::string> langs = LOCAL.GetLanguages();
+	LOCAL.SetLanguage(langs[language_choise]);
+	SETTINGS.stg.rendering_resolution = getResolution(render_resolution);
+	SETTINGS.stg.screenshot_resolution = getResolution(screenshot_resolution);
+	TwDefine("First_launch visible=false");
+	TwDefine("Statistics visible=true");
+	TwDefine("Settings visible=true");
+	overlays_ptr->TWBAR_ENABLED = false;
+	OpenMainMenu(scene_ptr, overlays_ptr);
+}
+
+void TW_CALL ApplySettings(void *data)
+{
+	std::vector<std::string> langs = LOCAL.GetLanguages();
+	LOCAL.SetLanguage(langs[language_choise]);
+	SETTINGS.stg.rendering_resolution = getResolution(render_resolution);
+	SETTINGS.stg.screenshot_resolution = getResolution(screenshot_resolution);
+
+}
+
+
+
+void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float* fps, bool *vsync, float *mouse_sensitivity, float *wheel_sensitivity, float *music_vol, float *target_fps)
+{
+	scene_ptr = scene;
+	overlays_ptr = overlays;
+	renderer_ptr = rd;
+
+	overlays_ptr->stats = TwNewBar("Statistics");
+	TwDefine(" GLOBAL help='Marble Marcher: Community Edition. Use F5 to take screenshots. F4 to open or close settings windows.' ");
+
+	std::map<int, std::string> level_list = scene->levels.getLevelNames();
+	TwEnumVal *level_enums = new TwEnumVal[level_list.size() + 1];
+	TwEnumVal enumval;
+	enumval.Label = "None";
+	enumval.Value = -1;
+	level_enums[0] = enumval;
+	int i = 0;
+	for (auto &name : level_list)
+	{
+		enumval.Label = name.second.c_str();
+		enumval.Value = i;
+		level_enums[i + 1] = enumval;
+		i++;
+	}
+
+	TwType Levels = TwDefineEnum("levels", level_enums, level_list.size() + 1);
+
+	TwEnumVal resolutions[] = { { 0, "320x240"  },
+								{ 1,  "480x320" },
+								{ 2,  "640x480" },
+								{ 3,  "800x480" },
+								{ 4,  "960x540" },
+								{ 5,  "1136x640" },
+								{ 6,  "1280x720" },
+								{ 7,  "1600x900" },
+								{ 8,  "1920x1080" },
+								{ 9,  "2048x1152" },
+								{ 10,  "2560x1440" },
+								{ 11,  "3840x2160" },
+								{ 12,  "7680x4320" },
+								{ 13,  "10240x4320" } };
+
+	TwType Resolutions = TwDefineEnum("Resolutions", resolutions, 14);
+
+	std::vector<std::string> music_list = scene->levels.GetMusicNames();
+	TwEnumVal *music_enums = new TwEnumVal[music_list.size()];
+	for (int i = 0; i < music_list.size(); i++)
+	{
+		TwEnumVal enumval;
+		enumval.Label = music_list[i].c_str();
+		enumval.Value = i;
+		music_enums[i] = enumval;
+	}
+
+	TwType Level_music = TwDefineEnum("Level music", music_enums, music_list.size());
+
+	std::vector<std::string> langs = LOCAL.GetLanguages();
+	TwEnumVal *language_enums = new TwEnumVal[langs.size()];
+
+	for (int j = 0; j < langs.size(); j++)
+	{
+		enumval.Label = langs[j].c_str();
+		enumval.Value = j;
+		language_enums[j] = enumval;
+	}
+
+	TwType Languages = TwDefineEnum("Languages", language_enums, langs.size());
+
+	std::vector<std::string> configs = rd->GetConfigurationsList();
+	TwEnumVal *config_enums = new TwEnumVal[configs.size()];
+
+	for (int j = 0; j < configs.size(); j++)
+	{
+		enumval.Label = configs[j].c_str();
+		enumval.Value = j;
+		config_enums[j] = enumval;
+	}
+
+	TwType Configurations = TwDefineEnum("Configurations", config_enums, configs.size());
+
+	// Change bar position
+	int barPos[2] = { 16, 60 };
+	TwSetParam(overlays_ptr->stats, NULL, "position", TW_PARAM_INT32, 2, &barPos);
+	TwAddVarRO(overlays_ptr->stats, "FPS", TW_TYPE_FLOAT, fps, " label='FPS' ");
+	TwAddVarRO(overlays_ptr->stats, "Marble velocity", TW_TYPE_DIR3F, scene->marble_vel.data(), " ");
+	TwAddVarRO(overlays_ptr->stats, "Marble position", TW_TYPE_DIR3F, scene->marble_pos.data(), " ");
+
+	overlays_ptr->settings = TwNewBar("Settings");
+
+	TwAddVarRW(overlays_ptr->settings, "Rendering resolution", Resolutions, &render_resolution, "group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &screenshot_resolution, "group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Shader configuration", Configurations, &shader_config, "group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "MRRM scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Shadow downscaling", TW_TYPE_INT32, &SETTINGS.stg.shadow_resolution, "min=1 max=8 group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Bloom downscaling", TW_TYPE_INT32, &SETTINGS.stg.bloom_resolution, "min=1 max=8 group='Rendering settings'");
+
+	TwAddVarRW(overlays_ptr->settings, "VSYNC", TW_TYPE_BOOLCPP, vsync, "group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Shadows", TW_TYPE_BOOLCPP, &scene->Shadows_Enabled, "group='Graphics settings'");
+	//TwAddVarRW(settings, "Reflection and Refraction", TW_TYPE_BOOLCPP, &scene->Refl_Refr_Enabled, "group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Blur", TW_TYPE_FLOAT, &rd->camera.mblur, "min=0 step=0.001 max=0.75 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Exposure", TW_TYPE_FLOAT, &rd->camera.exposure, "min=0 max=5 step=0.001 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Bloom Treshold", TW_TYPE_FLOAT, &rd->camera.bloomtreshold, "min=0 max=5 step=0.001 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Bloom Intensity", TW_TYPE_FLOAT, &rd->camera.bloomintensity, "min=0 max=5 step=0.001 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Bloom Radius", TW_TYPE_FLOAT, &rd->camera.bloomradius, "min=1 max=10 step=0.1 group='Graphics settings'");
+
+
+	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &language_choise, "group='Gameplay settings'");
+	TwEnumVal marble_type[] = { { 0, "Glass"  },
+								{ 1,  "Metal" } };
+
+	TwType Marble_type = TwDefineEnum("Marble type", marble_type, 2);
+	TwAddVarRW(overlays_ptr->settings, "Marble type", Marble_type, &scene->MarbleType, "group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Mouse sensitivity", TW_TYPE_FLOAT, mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Wheel sensitivity", TW_TYPE_FLOAT, wheel_sensitivity, "min=0.01 max=0.5 step=0.01 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Music volume", TW_TYPE_FLOAT, music_vol, "min=0 max=100 step=1 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=144 step=1 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Camera size", TW_TYPE_FLOAT, &scene->camera_size, "min=0 max=10 step=0.001 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Camera speed(Free mode)", TW_TYPE_FLOAT, &scene->free_camera_speed, "min=0 max=10 step=0.001 group='Gameplay settings'");
+
+	TwAddButton(overlays_ptr->settings, "Apply", ApplySettings, NULL, " label='Apply settings'  ");
+
+
+	int barPos1[2] = { 16, 250 };
+
+	TwSetParam(overlays_ptr->settings, NULL, "position", TW_PARAM_INT32, 2, &barPos1);
+
+	TwCopyStdStringToClientFunc(CopyStdStringToClient);
+
+	overlays_ptr->level_editor = TwNewBar("LevelEditor");
+	Level *copy = &scene->level_copy;
+
+	TwAddVarRW(overlays_ptr->level_editor, "Level Name", TW_TYPE_STDSTRING, &copy->txt, "");
+	TwAddVarRW(overlays_ptr->level_editor, "Level Description", TW_TYPE_STDSTRING, &copy->desc, "");
+
+	TwAddButton(overlays_ptr->level_editor, "Save", SaveLevel, NULL,
+		" label='Save Level'  ");
+
+	TwAddButton(overlays_ptr->level_editor, "Set Marble", MarbleSet, NULL,
+		" label='Set Marble Position'  help='Click on the fractal to place' ");
+
+	TwAddButton(overlays_ptr->level_editor, "Set Flag", FlagSet, NULL,
+		" label='Set Flag Position'  help='Click on the fractal to place' ");
+
+	TwAddVarRW(overlays_ptr->level_editor, "Flag Position", TW_TYPE_DIR3F, copy->end_pos.data(), "");
+	TwAddVarRW(overlays_ptr->level_editor, "Marble Position", TW_TYPE_DIR3F, copy->start_pos.data(), "");
+	TwAddVarRW(overlays_ptr->level_editor, "Marble Radius(Scale)", TW_TYPE_FLOAT, &copy->marble_rad, "min=0 max=10 step=0.001 ");
+
+	
+	TwAddVarRW(overlays_ptr->level_editor, "Level music", Level_music, &music_id, "");
+
+	TwAddButton(overlays_ptr->level_editor, "Play", PlayMusic, NULL, " label='Play/Stop current music'  ");
+
+	
+	TwAddVarRW(overlays_ptr->level_editor, "Play level after finish(TODO)", Levels, &copy->link_level, "");
+
+	TwAddVarRW(overlays_ptr->level_editor, "Sun direction", TW_TYPE_DIR3F, copy->light_dir.data(), "group='Level parameters'");
+	TwAddVarRW(overlays_ptr->level_editor, "Sun color", TW_TYPE_DIR3F, copy->light_col.data(), "group='Level parameters'");
+	//TwAddVarRW(level_editor, "Background color", TW_TYPE_DIR3F, copy->background_col.data(), "group='Level parameters'");
+	TwAddVarRW(overlays_ptr->level_editor, "Gravity strength", TW_TYPE_FLOAT, &copy->gravity, "min=-0.5 max=0.5 step=0.0001 group='Level parameters'");
+	TwAddVarRW(overlays_ptr->level_editor, "Kill y position (restart level)", TW_TYPE_FLOAT, &copy->kill_y, "min=-100 max=100 step=0.1 group='Level parameters'");
+	TwAddVarRW(overlays_ptr->level_editor, "Is planet", TW_TYPE_BOOLCPP, &copy->planet, "group='Level parameters'");
+	TwAddVarRW(overlays_ptr->level_editor, "Starting look direction angle", TW_TYPE_FLOAT, &copy->start_look_x, "min=-3.14159 max=3.14159 step=0.01 group='Level parameters'");
+
+	overlays_ptr->fractal_editor = TwNewBar("FractalEditor");
+
+	TwAddVarRW(overlays_ptr->fractal_editor, "PBR roughness", TW_TYPE_FLOAT, &copy->PBR_roughness, "min=0 max=1 step=0.001 group='Fractal Material'");
+	TwAddVarRW(overlays_ptr->fractal_editor, "PBR metallic", TW_TYPE_FLOAT, &copy->PBR_metal, "min=0 max=1 step=0.001 group='Fractal Material'");
+	float *p = copy->params.data();
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Iterations", TW_TYPE_INT32, &copy->FractalIter, "min=1 max=20 step=1 group='Fractal Coefficients'");
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Scale", TW_TYPE_FLOAT, p, "min=0 max=5 step=0.0001 group='Fractal Coefficients'");
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Angle1", TW_TYPE_FLOAT, p + 1, "min=-10 max=10 step=0.0001 group='Fractal Coefficients'");
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Angle2", TW_TYPE_FLOAT, p + 2, "min=-10 max=10 step=0.0001  group='Fractal Coefficients'");
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Shift", TW_TYPE_DIR3F, p + 3, "group='Fractal Coefficients'");
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Color", TW_TYPE_DIR3F, p + 6, "group='Fractal Coefficients'");
+
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Animation1", TW_TYPE_FLOAT, &copy->anim_1, "min=0 max=0.5 step=0.0001 group='Fractal Animation'");
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Animation2", TW_TYPE_FLOAT, &copy->anim_2, "min=0 max=0.5 step=0.0001 group='Fractal Animation'");
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Animation3", TW_TYPE_FLOAT, &copy->anim_3, "min=0 max=0.5 step=0.0001 group='Fractal Animation'");
+
+	overlays_ptr->flaunch = TwNewBar("First_launch");
+
+	TwAddVarRW(overlays_ptr->flaunch, "Rendering resolution", Resolutions, &render_resolution, "");
+	TwAddVarRW(overlays_ptr->flaunch, "Screenshot resolution", Resolutions, &screenshot_resolution, "");
+	TwAddVarRW(overlays_ptr->flaunch, "Language", Languages, &language_choise, "");
+	TwAddButton(overlays_ptr->flaunch, "OK", InitialOK, NULL, " label='OK'  ");
+	TwSetParam(overlays_ptr->flaunch, NULL, "position", TW_PARAM_INT32, 2, &barPos1);
+
+	TwDefine(" GLOBAL fontsize=3 ");
+	TwDefine("LevelEditor visible=false size='420 350' color='0 80 230' alpha=210 label='Level editor' valueswidth=200");
+	TwDefine("FractalEditor visible=false size='420 350' color='0 120 200' alpha=210 label='Fractal editor' valueswidth=200");
+	TwDefine("Settings color='255 128 0' alpha=210 size='420 350' valueswidth=200");
+	TwDefine("First_launch visible=true color='0 0 0' alpha=255 size='500 200' valueswidth=300");
+	TwDefine("Statistics color='0 128 255' alpha=210 size='420 160' valueswidth=200");
 }

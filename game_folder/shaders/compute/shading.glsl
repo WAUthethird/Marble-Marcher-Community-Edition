@@ -92,6 +92,12 @@ vec3 sky_color(in vec3 pos)
 	return sky_col*sky_col;
 }
 
+vec3 ambient_sky_color(in vec3 pos)
+{
+	float y = pos.y;
+	pos.xyz = normalize(vec3(1,0,0));
+	return sky_color(pos)*exp(-abs(y));
+}
 
 vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 {
@@ -107,18 +113,17 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	float integral = 0;
 	float i_coef = 0;
 	
-	vec3 ambient_color = vec3(0);
+	vec3 ambient_color = ambient_sky_color(norm.xyz);
 	
 	//march in the direction of the normal
 	#pragma unroll
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
 		//moving in a zig-zag
-		vec3 direction = normalize(norm.xyz + 0.25*((mod(shifter,3.f)-1)*dir1 +  (mod(shifter+1,3.f)-1)*dir2));
+		vec3 direction = normalize(norm.xyz + 0.6*((mod(shifter,3.f)-1)*dir1 +  (mod(shifter+1,3.f)-1)*dir2));
+		shifter += 1;
 		pos.xyz += pos.w*direction;
 		pos.w = DE(pos.xyz);
-		
-		ambient_color += sky_color(direction);
 		
 		norm.w = length(pos0 - pos.xyz);
 		i_coef = 1/(dcoef*norm.w+1);//importance
@@ -127,7 +132,6 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	}
 	
 	occlusion_angle /= integral; // average weighted by importance
-	ambient_color /= integral;
 	return vec4(ambient_color,1)*(0.5-cos(3.14159265*occlusion_angle)*0.5);
 }
 
@@ -150,7 +154,7 @@ void refraction_marble(vec3 p, vec3 r)
 }
 */
 
-vec4 lighting(vec4 pos, vec4 dir, vec4 norm, vec3 reflection, vec3 refraction, float shadow) 
+vec3 lighting(vec4 pos, vec4 dir, vec4 norm, vec3 reflection, vec3 refraction, float shadow) 
 {
 	//optimize color sampling 
 	vec3 cpos = pos.xyz - norm.w*norm.xyz;
@@ -202,77 +206,81 @@ vec4 lighting(vec4 pos, vec4 dir, vec4 norm, vec3 reflection, vec3 refraction, f
 	vec3 sun_color = sky_color(LIGHT_DIRECTION);
 
 	{ //light contribution
-			float roughness = PBR_ROUGHNESS;
-			vec3 L = normalize(LIGHT_DIRECTION);
-			vec3 H = normalize(V + L);
-			vec3 radiance = sun_color*shadow*(0.6+0.4*ambient_color.w);        
-			
-			// cook-torrance brdf
-			float NDF = DistributionGGX(N, H, roughness);        
-			float G   = GeometrySmith(N, V, L, roughness);      
-			vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
-			
-			vec3 kS = F;
-			vec3 kD = vec3(1.0) - kS;
-			kD *= 1.0 - metallic;	  
-			
-			vec3 numerator    = NDF * G * F;
-			float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-			vec3 specular     = numerator / max(denominator, 0.001);  
-				
-			// add to outgoing radiance Lo
-			float NdotL = max(dot(N, L), 0.0);                
-			Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-		}
+		float roughness = PBR_ROUGHNESS;
+		vec3 L = normalize(LIGHT_DIRECTION);
+		vec3 H = normalize(V + L);
+		vec3 radiance = sun_color*shadow*(0.6+0.4*ambient_color.w);        
 		
-		{ //light reflection, GI imitation
-			float roughness = max(PBR_ROUGHNESS,0.5);
-			vec3 L = normalize(-LIGHT_DIRECTION);
-			vec3 H = normalize(V + L);
-			vec3 radiance = 0.35*sun_color*ambient_color.w*(1-ambient_color.w);        
+		// cook-torrance brdf
+		float NDF = DistributionGGX(N, H, roughness);        
+		float G   = GeometrySmith(N, V, L, roughness);      
+		vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+		
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - metallic;	  
+		
+		vec3 numerator    = NDF * G * F;
+		float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+		vec3 specular     = numerator / max(denominator, 0.001);  
 			
-			// cook-torrance brdf
-			float NDF = DistributionGGX(N, H, roughness);        
-			float G   = GeometrySmith(N, V, L, roughness);      
-			vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
-			
-			vec3 kS = F;
-			vec3 kD = vec3(1.0) - kS;
-			kD *= 1.0 - metallic;	  
-			
-			vec3 numerator    = NDF * G * F;
-			float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-			vec3 specular     = numerator / max(denominator, 0.001);  
-				
-			// add to outgoing radiance Lo
-			float NdotL = max(dot(N, L), 0.0);                
-			Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-		}
+		// add to outgoing radiance Lo
+		float NdotL = max(dot(N, L), 0.0);                
+		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+	}
 	
-	return vec4(Lo,1);
+	{ //light reflection, GI imitation
+		float roughness = max(PBR_ROUGHNESS,0.5);
+		vec3 L = normalize(-LIGHT_DIRECTION);
+		vec3 H = normalize(V + L);
+		vec3 radiance = 0.35*sun_color*ambient_color.w*(1-ambient_color.w);        
+		
+		// cook-torrance brdf
+		float NDF = DistributionGGX(N, H, roughness);        
+		float G   = GeometrySmith(N, V, L, roughness);      
+		vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+		
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - metallic;	  
+		
+		vec3 numerator    = NDF * G * F;
+		float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+		vec3 specular     = numerator / max(denominator, 0.001);  
+			
+		// add to outgoing radiance Lo
+		float NdotL = max(dot(N, L), 0.0);                
+		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+	}
+
+	return Lo;
 }
 
-vec4 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
+vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 {
 	//calculate the normal
-	float error = fov*dir.w;
-	vec4 norm = calcNormal(pos.xyz, error/2); 
+	float error = 0.5*fov*dir.w;
+	vec4 norm = calcNormal(pos.xyz, max(MIN_DIST, error)); 
 	norm.xyz = normalize(norm.xyz);
-
-	return lighting(pos, dir, norm, vec3(0), vec3(0), shadow); 
+	if(norm.w < -error)
+	{
+		return COL(pos.xyz);
+	}
+	else
+	{
+		return lighting(pos, dir, norm, vec3(0), vec3(0), shadow); 
+	}
 }
 
-/*
+
 vec3 render_ray(in vec4 pos, in vec4 dir, float fov)
 {
 	vec4 var = vec4(0);
 	ray_march(pos, dir, var, fov, MIN_DIST); 
-	float shadow = shadow_march(pos, LIGHT_DIRECTION, MAX_DIST, LIGHT_ANGLE);
-	shading(pos, dir, fov, shadow);
-	
-	
+	float shadow = shadow_march(pos, vec4(LIGHT_DIRECTION,0), MAX_DIST, LIGHT_ANGLE);
+	return shading(pos, dir, fov, shadow);
 }
-*/
+
 
 vec3 HDRmapping(vec3 color, float exposure, float gamma)
 {

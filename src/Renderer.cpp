@@ -1,7 +1,14 @@
 #include "Renderer.h"
 
+
 Renderer::Renderer(int w, int h,std::string config_file)
 {
+	std::vector<fs::path> configs = GetFilesInFolder(fs::path(config_file).parent_path().string(), ".cfg");
+	for (auto &file : configs)
+	{
+		rendering_configurations.push_back(file.filename().string());
+	}
+	config_folder = fs::path(config_file).parent_path().string();
 	Initialize(w, h, config_file);
 }
 
@@ -14,19 +21,15 @@ Renderer::Renderer()
 
 void Renderer::Initialize(int w, int h, std::string config_f)
 {
-	//glDeleteTextures(main_textures.size(), main_textures.data());
 	main_textures.clear();
-
-	for (int i = 0; i < shader_textures.size(); i++)
-	{
-	//	glDeleteTextures(shader_textures[i].size(), shader_textures[i].data());
-	}
 	shader_textures.clear();
-
 	global_size.clear();
 
 	width = w;
 	height = h;
+
+	variables["width"] = width;
+	variables["height"] = height;
 	camera.SetResolution(vec2(w, h));
 	camera.SetAspectRatio((float)w / (float)h);
 
@@ -45,9 +48,7 @@ void Renderer::Initialize(int w, int h, std::string config_f)
 	int element = -1;
 	int cur_shader = 0;
 
-	std::map<std::string, float> variables;
-	variables["width"] = width;
-	variables["height"] = height;
+	
 
 	std::vector<GLuint> stage_textures;
 	std::string shader_file;
@@ -106,6 +107,8 @@ void Renderer::ReInitialize(int w, int h)
 
 	width = w;
 	height = h;
+	variables["width"] = width;
+	variables["height"] = height;
 	camera.SetResolution(vec2(w, h));
 	camera.SetAspectRatio((float)w / (float)h);
 
@@ -123,10 +126,6 @@ void Renderer::ReInitialize(int w, int h)
 
 	int element = -1;
 	int cur_shader = 0;
-
-	std::map<std::string, float> variables;
-	variables["width"] = width;
-	variables["height"] = height;
 
 	std::vector<GLuint> stage_textures;
 	std::string shader_file;
@@ -186,6 +185,16 @@ void Renderer::SetOutputTexture(sf::Texture & tex)
 void Renderer::LoadShader(std::string shader_file)
 {
 	shader_pipeline.push_back(ComputeShader(shader_file));
+}
+
+std::vector<std::string> Renderer::GetConfigurationsList()
+{
+	return rendering_configurations;
+}
+
+std::string Renderer::GetConfigFolder()
+{
+	return config_folder;
 }
 
 void Renderer::Render()

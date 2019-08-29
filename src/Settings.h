@@ -17,6 +17,10 @@
 #pragma once
 #include <fstream>
 #include <sstream>
+#include <SFML/Graphics.hpp>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 class Settings {
 public:
@@ -95,7 +99,94 @@ public:
 	}
 };
 
+struct MainSettings
+{
+	sf::Vector2i rendering_resolution;
+	sf::Vector2i screenshot_resolution;
+	int MRRM_scale;
+	int shadow_resolution;
+	int bloom_resolution;
+	std::string language;
+
+	bool shadows;
+	bool refl_refr;
+	bool fog;
+
+	float bloom_intensity;
+	float bloom_treshold;
+	float bloom_radius;
+	float gamma;
+	float FOV;
+
+	float music_volume;
+	float fx_volume;
+	float mouse_sensitivity;
+
+	bool loop_level;
+};
+
+static const MainSettings default_settings = { sf::Vector2i(1280, 800),
+	sf::Vector2i(2560, 1440), 4, 2, 2, "English", true, true, true, 0.05, 2.7, 3, 2.2, 75, 1, 1, 0.005, false };
+
+
 class AllSettings
 {
+public:
+	AllSettings()
+	{
+		stg = default_settings;
+	}
 
+	AllSettings(std::string settings_file)
+	{
+		Load(settings_file);
+	}
+
+	void Load(std::string settings_file)
+	{
+		if (!LoadFromFile(settings_file))
+		{
+			stg = default_settings;
+		}
+	}
+
+	bool LoadFromFile(std::string settings_file)
+	{
+		filename = settings_file;
+		int cfg_size = fs::file_size(settings_file);
+		int MainSettings_size = sizeof(MainSettings);
+
+		if (cfg_size != MainSettings_size)
+		{
+			return false;
+		}
+
+		std::ifstream cfg_file(settings_file, std::ios_base::in | std::ios_base::binary);
+
+		cfg_file.seekg(0);
+		cfg_file.read(reinterpret_cast<char *>(&stg), sizeof(MainSettings));
+
+		cfg_file.close();
+	}
+
+	void SaveToFile(std::string settings_file)
+	{
+		std::ofstream cfg_file(settings_file, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
+
+		cfg_file.write(reinterpret_cast<char *>(&stg), sizeof(MainSettings));
+
+		cfg_file.close();
+	}
+
+	bool new_settings;
+
+	MainSettings stg;
+	std::string filename;
+
+	~AllSettings()
+	{
+		SaveToFile(filename);
+	}
 };
+
+extern AllSettings SETTINGS;

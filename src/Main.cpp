@@ -15,7 +15,7 @@
 * along with this program.If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include<Gamemodes.h>
+#include <Gamemodes.h>
 #include "Level.h"
 #include "Res.h"
 #include "SelectRes.h"
@@ -250,7 +250,8 @@ int main(int argc, char *argv[]) {
  
 
   scene.StartDefault();
-  overlays.SetAntTweakBar(window.getSize().x, window.getSize().y, smooth_fps, &scene, &rend, &VSYNC, &mouse_sensitivity, &wheel_sensitivity, &music_vol, &target_fps);
+  overlays.SetAntTweakBar(window.getSize().x, window.getSize().y);
+  InitializeATBWindows(&scene, &overlays, &rend, &smooth_fps, &VSYNC, &mouse_sensitivity, &wheel_sensitivity, &music_vol, &target_fps);
   
   io_state.window_size = sf::Vector2f(window.getSize().x, window.getSize().y);
   float prev_s = 0;

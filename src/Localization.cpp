@@ -94,11 +94,17 @@ void Localization::LoadLocalFromFile(fs::path path)
 
 	locales[lang] = local;
 	fonts[lang] = fontmap;
+	languages.push_back(lang);
 }
 
 void Localization::SetLanguage(std::string lang)
 {
 	cur_language = lang;
+}
+
+std::vector<std::string> Localization::GetLanguages()
+{
+	return languages;
 }
 
 std::wstring Localization::operator[](std::string str)
