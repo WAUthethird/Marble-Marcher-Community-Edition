@@ -11,8 +11,8 @@ uniform float iMarbleRad;
 uniform float iFlagScale;
 uniform vec3 iFlagPos;
 uniform int FRACTAL_ITER;
-
-uniform int time;
+uniform int MARBLE_MODE;
+uniform float time;
 
 ///Original MM distance estimators
 
@@ -137,8 +137,10 @@ float de_flag(vec4 p)
 	vec4 p_s = p/iMarbleRad;
 	vec4 d_pos = p - vec4(f_pos, 0);
 	vec4 caps_pos = p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0);
-	float oscillation = sin(4*p_s.x + 1*p_s.y + 5*time) + 0.2*sin(6*p_s.x - 2*p_s.y + 6*time) + 0.08*sin(15*p_s.x + 3*p_s.y + 7*time);
-	float d = 0.8*de_box(d_pos + caps_pos.x*vec4(0,0.005*oscillation,0.03*oscillation,0), vec3(1.5, 0.8, 0.01)*iMarbleRad);
+	//animated flag woooo
+	float oscillation = sin(4*p_s.x + 1*p_s.y - 10*time) + 0.4*sin(6*p_s.x - 2*p_s.y - 12*time) + 0.1*sin(16*p_s.x + 5*p_s.y - 14*time);
+	//scale the flag displacement amplitude by the distance from the flagpole
+	float d = 0.7*de_box(d_pos + caps_pos.x*vec4(0,0.005*oscillation,0.03*oscillation,0), vec3(1.5, 0.8, 0.01)*iMarbleRad);
 	d = min(d, de_capsule(caps_pos, iMarbleRad*2.4, iMarbleRad*0.05));
 	return d;
 }

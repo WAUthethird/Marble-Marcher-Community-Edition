@@ -33,15 +33,7 @@ void main() {
 	pos = sph;
 	dir.w += td; 
 	
-	vec3 color;
-	if(pos.w < max(16*fovray*td, MIN_DIST))
-	{
-		color = shading(pos, dir, fovray, illum.x);
-	}
-	else
-	{
-		color = sky_color(dir.xyz);
-	}
+	vec3 color = shading(pos, dir, fovray, illum.x);
 	
 	vec3 prev_color = imageLoad(color_HDR, global_pos).xyz;
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))

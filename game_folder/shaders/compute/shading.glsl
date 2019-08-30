@@ -12,6 +12,7 @@ uniform float PBR_ROUGHNESS;
 uniform vec3 LIGHT_COLOR;
 uniform bool SHADOWS_ENABLED; 
 
+
 //better to use a sampler though
 vec4 interp(layout (rgba32f) image2D text, vec2 coord)
 {
@@ -141,27 +142,10 @@ vec3 refraction(vec3 rd, vec3 n, float p) {
 	return p * (rd - dot_nd * n) + sqrt(1.0 - (p * p) * (1.0 - dot_nd * dot_nd)) * n;
 }
 
-/*
-void refraction_marble(vec3 p, vec3 r)
+vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, float shadow) 
 {
-	vec3 n = normalize(iMarblePos - p.xyz);
-	vec3 q = refraction(r, n, 1.0 / 1.5);
-	vec3 p2 = p.xyz + (dot(q, n) * 2.0 * iMarbleRad) * q;
-	n = normalize(p2 - iMarblePos);
-	q = (dot(q, r) * 2.0) * q - r;
-	vec4 p_temp = vec4(p2 + n * (MIN_DIST * 10), 1.0);
-	vec4 r_temp = vec4(q, 0.0);
-}
-*/
-
-vec3 lighting(vec4 pos, vec4 dir, vec4 norm, vec3 reflection, vec3 refraction, float shadow) 
-{
-	//optimize color sampling 
-	vec3 cpos = pos.xyz - norm.w*norm.xyz;
-	cpos = cpos - DE(cpos)*norm.xyz;
-	cpos = cpos - DE(cpos)*norm.xyz;
-	vec3 albedo = COL(cpos).xyz;
-	albedo *= albedo;
+	vec3 albedo = color.xyz;
+	albedo *= albedo; //square it to make the fractals more colorfull 
 	
 	vec4 ambient_color = ambient_occlusion(pos, norm, dir);
 	
@@ -253,34 +237,132 @@ vec3 lighting(vec4 pos, vec4 dir, vec4 norm, vec3 reflection, vec3 refraction, f
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
+	if(color.w>0.5) // if marble
+	{
+		vec3 n = normalize(pos.xyz - iMarblePos);
+		vec3 q = dir.xyz - n*(2*dot(dir.xyz,n));
+		//Combine for final marble color
+		if(MARBLE_MODE == 0)
+		{
+			//glass
+			vec3 F0 = vec3(0.03); 
+			vec3 L = normalize(q);
+			vec3 H = normalize(V + L);
+			vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);  
+			
+			vec3 kS = F;
+			vec3 kD = vec3(1.0) - kS;
+			Lo += kS*refl + kD*refr;
+		}
+		else
+		{
+			//metal
+			vec3 F0 = vec3(0.6); 
+			vec3 L = normalize(q);
+			vec3 H = normalize(V + L);
+			vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);  
+			
+			vec3 kS = F;
+			vec3 kD = vec3(1.0) - kS;
+			Lo += kS*refl;
+		}
+	}
+	
 	return Lo;
 }
 
-vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
+vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, float shadow)
 {
-	//calculate the normal
-	float error = 0.5*fov*dir.w;
-	vec4 norm = calcNormal(pos.xyz, max(MIN_DIST, error)); 
-	norm.xyz = normalize(norm.xyz);
-	if(norm.w < -error)
+	
+	
+	if(pos.w < max(16*fovray*dir.w, MIN_DIST))
 	{
-		return COL(pos.xyz);
+		//calculate the normal
+		float error = 0.5*fov*dir.w;
+		vec4 norm = calcNormal(pos.xyz, max(MIN_DIST, error)); 
+		norm.xyz = normalize(norm.xyz);
+		if(norm.w < -error)
+		{
+			return COL(pos.xyz);
+		}
+		else
+		{
+			//optimize color sampling 
+			vec3 cpos = pos.xyz - norm.w*norm.xyz;
+			cpos = cpos - DE(cpos)*norm.xyz;
+			cpos = cpos - DE(cpos)*norm.xyz;
+			
+			vec4 color = COL(cpos);
+			return lighting(color, pos, dir, norm, vec3(0), vec3(0), shadow); 
+		}
 	}
 	else
 	{
-		return lighting(pos, dir, norm, vec3(0), vec3(0), shadow); 
+		return sky_color(dir.xyz);
 	}
 }
 
 
 vec3 render_ray(in vec4 pos, in vec4 dir, float fov)
 {
-	vec4 var = vec4(0);
+	vec4 var = vec4(0,0,0,1);
 	ray_march(pos, dir, var, fov, MIN_DIST); 
 	float shadow = shadow_march(pos, vec4(LIGHT_DIRECTION,0), MAX_DIST, LIGHT_ANGLE);
-	return shading(pos, dir, fov, shadow);
+	return shading_simple(pos, dir, fov, shadow);
 }
 
+vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
+{
+	if(pos.w < max(16*fovray*dir.w, MIN_DIST))
+	{
+		//calculate the normal
+		float error = 0.5*fov*dir.w;
+		vec4 norm = calcNormal(pos.xyz, max(MIN_DIST, error)); 
+		norm.xyz = normalize(norm.xyz);
+		if(norm.w < -error)
+		{
+			return COL(pos.xyz);
+		}
+		else
+		{
+			//optimize color sampling 
+			vec3 cpos = pos.xyz - norm.w*norm.xyz;
+			cpos = cpos - DE(cpos)*norm.xyz;
+			cpos = cpos - DE(cpos)*norm.xyz;
+			
+			vec4 color = COL(cpos);
+			vec3 refl = vec3(0);
+			vec3 refr = vec3(0);
+			if(color.w>0.5) // if marble
+			{
+				vec3 n = normalize(iMarblePos - cpos.xyz);
+				vec3 q = refraction(dir.xyz, n, 1.0 / 1.5);
+				vec3 p2 = cpos.xyz + (dot(q, n) * 2.0 * iMarbleRad) * q;
+				n = normalize(p2 - iMarblePos);
+				q = (dot(q, dir.xyz) * 2.0) * q - dir.xyz;
+				vec4 p_temp = vec4(p2 + n * (MIN_DIST * 10), 0);
+				vec4 r_temp = vec4(q, 0);
+				
+				refr = render_ray(p_temp, r_temp, fov);
+
+				//Calculate reflection
+				n = normalize(cpos.xyz - iMarblePos);
+				q = dir.xyz - n*(2*dot(dir.xyz,n));
+				p_temp = vec4(cpos.xyz + n * (MIN_DIST * 10), 0);
+				r_temp = vec4(q, dir.w);
+				
+				refl = render_ray(p_temp, r_temp, fov);
+			}
+			
+			return lighting(color, vec4(cpos, pos.w), dir, norm, refl, refr, shadow); 
+		}
+	}
+	else
+	{
+		return sky_color(dir.xyz);
+	}
+	
+}
 
 vec3 HDRmapping(vec3 color, float exposure, float gamma)
 {
