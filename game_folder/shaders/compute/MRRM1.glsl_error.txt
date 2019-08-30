@@ -1,3 +1,68 @@
+#version 430
+#define group_size 8
+#define block_size 64
+
+layout(local_size_x = group_size, local_size_y = group_size) in;
+layout(rgba32f, binding = 0) uniform image2D DE_output; //calculate final DE spheres
+layout(rgba32f, binding = 1) uniform image2D DE2_output;
+layout(rgba32f, binding = 2) uniform image2D var_output; 
+layout(rgba32f, binding = 3) uniform image2D DE_input; 
+layout(rgba32f, binding = 4) uniform image2D color_HDR; //calculate final color
+
+//make all the local distance estimator spheres shared
+shared vec4 de_sph[group_size][group_size]; 
+
+
+struct ray
+{
+	vec3 pos;
+	vec3 dir;
+};		
+
+struct gl_camera
+{
+	vec3 position;
+	vec3 dirx;
+	vec3 diry;
+	vec3 dirz;
+	vec2 resolution;
+	float aspect_ratio;
+	float FOV;
+	float focus;
+	float bokeh;
+	float exposure;
+	float mblur;
+	float speckle;
+	float size;
+	float bloomintensity;
+	float bloomtreshold;
+	float bloomradius;
+	int stepN;
+	int step;
+};
+
+
+ivec2 getGpos(int index)
+{
+	int y = index/group_size;
+	int x = index%group_size;
+	return ivec2(x,y);
+}
+
+uniform gl_camera Camera;
+float fovray;
+
+ray get_ray(vec2 screen_pos)
+{
+	vec2 shift = Camera.FOV*(2.f*screen_pos - 1.f)*vec2(Camera.aspect_ratio, 1.f);
+	ray cray;
+	cray.pos = Camera.position + Camera.size*(Camera.dirx*shift.x + Camera.diry*shift.y);
+	cray.dir = normalize(Camera.dirx*shift.x + Camera.diry*shift.y + Camera.dirz);
+	float aspect_ratio_ratio = Camera.aspect_ratio/(Camera.resolution.x/Camera.resolution.y);
+	fovray = 1.41*Camera.FOV*max(1.f/aspect_ratio_ratio, aspect_ratio_ratio)/Camera.resolution.x; //pixel FOV
+	return cray;
+}
+
 #define COL col_scene
 #define DE de_scene
 
@@ -163,15 +228,11 @@ float de_flag(vec4 p)
 vec4 col_flag(vec4 p) 
 {
 	vec3 f_pos = iFlagPos + vec3(1.5, 4, 0)*iFlagScale;
-	vec4 d_pos = p - vec4(f_pos, 0);
-	vec3 fsize = vec3(1.5, 0.8, 0.08)*iMarbleRad;
-	float d1 = de_box(d_pos, fsize);
+	float d1 = de_box(p - vec4(f_pos, 0), vec3(1.5, 0.8, 0.08)*iMarbleRad);
 	float d2 = de_capsule(p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0), iMarbleRad*2.4, iMarbleRad*0.18);
 	if (d1 < d2) {
-		vec2 color_flag_s = vec2(imageSize(color_flag));
-		vec2 texture_coord = d_pos.xy*vec2(0.45,-0.4)/fsize.xy + vec2(0.45,0.5);
-		vec3 flagcolor = imageLoad(color_flag, ivec2(texture_coord*color_flag_s)).xyz;
-		return vec4(flagcolor, d1);
+		vec2 color_flag_s = vec2(imageLoad(color_flag));
+		return vec4(1.0, 0.2, 0.1, d1);
 	} else {
 		return vec4(0.9, 0.9, 0.1, d2);
 	}
@@ -212,3 +273,166 @@ vec4 calcNormal(vec3 p, float dx) {
 			 k.yxyx*DE(p + k.yxy*dx) +
 			 k.xxxx*DE(p + k.xxx*dx))/vec4(4*dx,4*dx,4*dx,4);
 }
+
+
+#define MAX_DIST 50
+#define MIN_DIST 1e-7
+#define MAX_MARCHES 512
+#define NORMARCHES 2
+
+
+void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float d0) 
+{
+	//March the ray
+	for (; var.x < MAX_MARCHES; var.x += 1.0) {
+		//if the distance from the surface is less than the distance per pixel we stop
+		if(dir.w > MAX_DIST || pos.w<0)
+		{
+			break;
+		}
+		
+		if(pos.w < max(fov*dir.w, MIN_DIST) && var.x > 0 && var.w < 1)
+		{
+			break;
+		}
+		
+		dir.w += pos.w;
+		pos.xyz += pos.w*dir.xyz;
+		pos.w = DE(pos.xyz)-d0*dir.w;
+		var.w = 0;
+	}
+	
+	pos.w += d0*dir.w;
+}
+
+float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
+{
+	float light_visibility = 1;
+	float ph = 1e5;
+	float dDEdt = 0;
+	pos.w = DE(pos.xyz);
+	int i = 0;
+	for (; i < MAX_MARCHES; i++) {
+	
+		dir.w += pos.w;
+		pos.xyz += pos.w*dir.xyz;
+		pos.w = DE(pos.xyz);
+		
+		float y = pos.w*pos.w/(2.0*ph);
+        float d = (pos.w+ph)*0.5*(1-dDEdt);
+		float angle = d/(max(MIN_DIST,dir.w-y)*light_angle);
+		
+        light_visibility = min(light_visibility, angle);
+		
+		dDEdt = dDEdt*0.75 + 0.25*(pos.w-ph)/ph;
+		ph = pos.w;
+		
+		if(dir.w >= distance2light)
+		{
+			break;
+		}
+		
+		if(dir.w > MAX_DIST || pos.w < max(fovray*dir.w, MIN_DIST))
+		{
+			return 0;
+		}
+	}
+	//return light_visibility; //bad
+	return 0.5-cos(3.14159265*light_visibility)*0.5; //looks better and is more physically accurate(for a circular light source)
+}
+
+float sphere_intersection(vec3 r, vec3 p, vec4 sphere)
+{
+	p = p - sphere.xyz;
+	if(p == vec3(0)) return sphere.w;
+	
+	float b = dot(p, r);
+	float c = sphere.w*sphere.w - dot(p,p);
+	float d = b*b + c;
+	
+	if((d <= 0) || (c <= 0)) //if no intersection
+	{
+		return 0;
+	}
+	else
+	{
+		return sqrt(d) - b; //use furthest solution in the direction of the ray
+	}
+}
+
+float find_furthest_intersection(vec3 r, vec3 p, ivec2 id)
+{
+	float d = 0;
+	ivec2 idR = min(id+1, group_size-1);
+	ivec2 idL = max(id-1, 0);
+	for(int i = idL.x; i <= idR.x; i++)
+	{
+		for(int j = idL.y; j <= idR.y; j++)
+		{
+			d = max(d, sphere_intersection(r,p,de_sph[i][j]));
+		}
+	}
+	return d;
+}
+
+
+float find_furthest_intersection_all(vec3 r, vec3 p, ivec2 id)
+{
+	float d = 0;
+	for(int i = 0; i < group_size; i++)
+	{
+		for(int j = 0; j < group_size; j++)
+		{
+			d = max(d, sphere_intersection(r,p,de_sph[i][j]));
+		}
+	}
+	return d;
+}
+
+void normarch(inout vec4 pos)
+{
+	//calculate the normal
+	vec4 norm = calcNormal(pos.xyz, pos.w/8); 
+	norm.xyz = normalize(norm.xyz);
+	pos.w = norm.w;
+	
+	//march in the direction of the normal
+	#pragma unroll
+	for(int i = 0; i < NORMARCHES; i++)
+	{
+		pos.xyz += pos.w*norm.xyz;
+		pos.w = DE(pos.xyz);
+	}
+}
+
+
+///The first step of multi resolution ray marching
+
+void main() {
+	ivec2 global_pos = ivec2(gl_GlobalInvocationID.x,gl_GlobalInvocationID.y);
+	int local_indx = int(gl_LocalInvocationIndex);
+	vec2 img_size = vec2(imageSize(DE_output));
+	//if within the texture
+	
+	//initialize the ray
+	ray rr = get_ray(vec2(global_pos)/img_size);
+	vec4 pos = vec4(rr.pos,0);
+	vec4 dir = vec4(rr.dir,0);
+	vec4 var = vec4(0);
+	float res_ratio = float(imageSize(color_HDR).x/imageSize(DE_output).x);;
+	fovray *= res_ratio;
+	dir.w = 4*Camera.size;
+	ray_march(pos, dir, var, fovray, fovray);
+	
+	vec4 pos1 = pos;
+	
+	normarch(pos1);
+	
+	//save the DE spheres
+	imageStore(DE_output, global_pos, pos);	 
+	imageStore(DE2_output, global_pos, pos1);	 
+	imageStore(var_output, global_pos, var);			
+}
+
+ERROR: 0:235: 'imageLoad' : no matching overloaded function found (using implicit conversion) 
+

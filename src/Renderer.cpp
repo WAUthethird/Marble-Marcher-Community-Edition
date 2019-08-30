@@ -198,6 +198,17 @@ std::string Renderer::GetConfigFolder()
 	return config_folder;
 }
 
+void Renderer::LoadExternalTextures(std::string texture_folder)
+{
+	std::vector<fs::path> images = GetFilesInFolder(texture_folder, ".png");
+	for (auto &path : images)
+	{
+		sf::Texture textr; 
+		textr.loadFromFile(path.string());
+		input_textures.push_back(textr);
+	}
+}
+
 void Renderer::Render()
 {
 	int stages = global_size.size();
@@ -224,6 +235,11 @@ void Renderer::Render()
 		for (int j = 0; j < main_textures.size(); j++)
 		{
 			glBindImageTexture(tex_id++, main_textures[j], 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+		}
+
+		for (auto &extr_text : input_textures)
+		{
+			glBindImageTexture(tex_id++, extr_text.getNativeHandle(), 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 		}
 		
 		shader_pipeline[i].setCamera(camera.GetGLdata());

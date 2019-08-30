@@ -31,6 +31,7 @@ public:
 	void LoadShader(std::string shader_file);
 	std::vector<std::string> GetConfigurationsList();
 	std::string GetConfigFolder();
+	void LoadExternalTextures(std::string texture_folder);
 
 	void Render();
 	std::vector<ComputeShader> shader_pipeline;
@@ -48,4 +49,5 @@ private:
 	std::vector<vec2> global_size;
 	std::vector<GLuint> main_textures;
 	std::vector<std::vector<GLuint>> shader_textures;
+	std::vector<sf::Texture> input_textures;
 };

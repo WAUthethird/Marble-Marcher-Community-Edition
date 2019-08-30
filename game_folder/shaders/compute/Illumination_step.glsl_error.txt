@@ -1,0 +1,821 @@
+#version 430
+//4*4 ray bundle
+#define group_size 8
+#define block_size 64
+
+layout(local_size_x = group_size, local_size_y = group_size) in;
+layout(rgba32f, binding = 0) uniform image2D illumination; 
+layout(rgba32f, binding = 1) uniform image2D DE_input; 
+layout(rgba32f, binding = 2) uniform image2D color_HDR; //calculate final color
+
+//make all the local distance estimator spheres shared
+shared vec4 de_sph[group_size][group_size]; 
+
+
+struct ray
+{
+	vec3 pos;
+	vec3 dir;
+};		
+
+struct gl_camera
+{
+	vec3 position;
+	vec3 dirx;
+	vec3 diry;
+	vec3 dirz;
+	vec2 resolution;
+	float aspect_ratio;
+	float FOV;
+	float focus;
+	float bokeh;
+	float exposure;
+	float mblur;
+	float speckle;
+	float size;
+	float bloomintensity;
+	float bloomtreshold;
+	float bloomradius;
+	int stepN;
+	int step;
+};
+
+
+ivec2 getGpos(int index)
+{
+	int y = index/group_size;
+	int x = index%group_size;
+	return ivec2(x,y);
+}
+
+uniform gl_camera Camera;
+float fovray;
+
+ray get_ray(vec2 screen_pos)
+{
+	vec2 shift = Camera.FOV*(2.f*screen_pos - 1.f)*vec2(Camera.aspect_ratio, 1.f);
+	ray cray;
+	cray.pos = Camera.position + Camera.size*(Camera.dirx*shift.x + Camera.diry*shift.y);
+	cray.dir = normalize(Camera.dirx*shift.x + Camera.diry*shift.y + Camera.dirz);
+	float aspect_ratio_ratio = Camera.aspect_ratio/(Camera.resolution.x/Camera.resolution.y);
+	fovray = 1.41*Camera.FOV*max(1.f/aspect_ratio_ratio, aspect_ratio_ratio)/Camera.resolution.x; //pixel FOV
+	return cray;
+}
+
+#define COL col_scene
+#define DE de_scene
+
+uniform float iFracScale;
+uniform float iFracAng1;
+uniform float iFracAng2;
+uniform vec3 iFracShift;
+uniform vec3 iFracCol;
+uniform vec3 iMarblePos;
+uniform float iMarbleRad;
+uniform float iFlagScale;
+uniform vec3 iFlagPos;
+uniform int FRACTAL_ITER;
+uniform int MARBLE_MODE;
+uniform float time;
+
+///Original MM distance estimators
+
+float s1 = sin(iFracAng1), c1 = cos(iFracAng1), s2 = sin(iFracAng2), c2 = cos(iFracAng2);
+
+//##########################################
+//   Space folding
+//##########################################
+void planeFold(inout vec4 z, vec3 n, float d) {
+	z.xyz -= 2.0 * min(0.0, dot(z.xyz, n) - d) * n;
+}
+void sierpinskiFold(inout vec4 z) {
+	z.xy -= min(z.x + z.y, 0.0);
+	z.xz -= min(z.x + z.z, 0.0);
+	z.yz -= min(z.y + z.z, 0.0);
+}
+
+// Polynomial smooth minimum by iq
+float smoothmin(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5*(a-b)/k, 0.0, 1.0);
+  return mix(a, b, h) - k*h*(1.0-h);
+}
+
+void mengerFold(inout vec4 z) {
+	float a = smoothmin(z.x - z.y, 0.0, 0.03);
+	z.x -= a;
+	z.y += a;
+	a = smoothmin(z.x - z.z, 0.0, 0.03);
+	z.x -= a;
+	z.z += a;
+	a = smoothmin(z.y - z.z, 0.0, 0.03);
+	z.y -= a;
+	z.z += a;
+}
+void boxFold(inout vec4 z, vec3 r) {
+	z.xyz = clamp(z.xyz, -r, r) * 2.0 - z.xyz;
+}
+void rotX(inout vec4 z, float s, float c) {
+	z.yz = vec2(c*z.y + s*z.z, c*z.z - s*z.y);
+}
+void rotY(inout vec4 z, float s, float c) {
+	z.xz = vec2(c*z.x - s*z.z, c*z.z + s*z.x);
+}
+void rotZ(inout vec4 z, float s, float c) {
+	z.xy = vec2(c*z.x + s*z.y, c*z.y - s*z.x);
+}
+void rotX(inout vec4 z, float a) {
+	rotX(z, sin(a), cos(a));
+}
+void rotY(inout vec4 z, float a) {
+	rotY(z, sin(a), cos(a));
+}
+void rotZ(inout vec4 z, float a) {
+	rotZ(z, sin(a), cos(a));
+}
+
+//##########################################
+//   Primitive DEs
+//##########################################
+float de_sphere(vec4 p, float r) {
+	return (length(p.xyz) - r) / p.w;
+}
+float de_box(vec4 p, vec3 s) {
+	vec3 a = abs(p.xyz) - s;
+	return (min(max(max(a.x, a.y), a.z), 0.0) + length(max(a, 0.0))) / p.w;
+}
+float de_tetrahedron(vec4 p, float r) {
+	float md = max(max(-p.x - p.y - p.z, p.x + p.y - p.z),
+				max(-p.x + p.y + p.z, p.x - p.y + p.z));
+	return (md - r) / (p.w * sqrt(3.0));
+}
+float de_capsule(vec4 p, float h, float r) {
+	p.y -= clamp(p.y, -h, h);
+	return (length(p.xyz) - r) / p.w;
+}
+
+//##########################################
+//   Main DEs
+//##########################################
+float de_fractal(vec4 p)
+{
+	for (int i = 0; i < FRACTAL_ITER; ++i) {
+		p.xyz = abs(p.xyz);
+		rotZ(p, s1, c1);
+		mengerFold(p);
+		rotX(p, s2, c2);
+		p *= iFracScale;
+		p.xyz += iFracShift;
+	}
+	return de_box(p, vec3(6.0));
+}
+
+vec4 col_fractal(vec4 p) 
+{
+	vec3 orbit = vec3(0.0);
+	for (int i = 0; i < FRACTAL_ITER; ++i) {
+		p.xyz = abs(p.xyz);
+		rotZ(p, s1, c1);
+		mengerFold(p);
+		rotX(p, s2, c2);
+		p *= iFracScale;
+		p.xyz += iFracShift;
+		orbit = max(orbit, p.xyz*iFracCol);
+	}
+	return vec4(orbit, de_box(p, vec3(6.0)));
+}
+
+float de_marble(vec4 p) 
+{
+	return de_sphere(p - vec4(iMarblePos, 0), iMarbleRad);
+}
+
+vec4 col_marble(vec4 p) 
+{
+	vec4 col = vec4(0, 0, 0, de_sphere(p - vec4(iMarblePos, 0), iMarbleRad));
+	return vec4(col.x, col.y, col.z, de_sphere(p - vec4(iMarblePos, 0), iMarbleRad));
+}
+
+float de_flag(vec4 p) 
+{
+	vec3 f_pos = iFlagPos + vec3(1.5, 4, 0)*iFlagScale;
+	vec4 p_s = p/iMarbleRad;
+	vec4 d_pos = p - vec4(f_pos, 0);
+	vec4 caps_pos = p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0);
+	//animated flag woooo
+	float oscillation = sin(4*p_s.x + 1*p_s.y - 10*time) + 0.4*sin(6*p_s.x - 2*p_s.y - 12*time) + 0.1*sin(16*p_s.x + 5*p_s.y - 14*time);
+	//scale the flag displacement amplitude by the distance from the flagpole
+	float d = 0.7*de_box(d_pos + caps_pos.x*vec4(0,0.005*oscillation,0.03*oscillation,0), vec3(1.5, 0.8, 0.01)*iMarbleRad);
+	d = min(d, de_capsule(caps_pos, iMarbleRad*2.4, iMarbleRad*0.05));
+	return d;
+}
+
+vec4 col_flag(vec4 p) 
+{
+	vec3 f_pos = iFlagPos + vec3(1.5, 4, 0)*iFlagScale;
+	float d1 = de_box(p - vec4(f_pos, 0), vec3(1.5, 0.8, 0.08)*iMarbleRad);
+	float d2 = de_capsule(p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0), iMarbleRad*2.4, iMarbleRad*0.18);
+	if (d1 < d2) {
+		return vec4(1.0, 0.2, 0.1, d1);
+	} else {
+		return vec4(0.9, 0.9, 0.1, d2);
+	}
+}
+
+//float DE_count = 0;
+
+float de_scene(vec3 pos) 
+{
+	//DE_count = DE_count+1;
+	vec4 p = vec4(pos,1.f);
+	float d = de_fractal(p);
+	d = min(d, de_marble(p));
+	d = min(d, de_flag(p));
+	return d;
+}
+
+vec4 col_scene(vec3 pos) 
+{
+	//DE_count = DE_count+1;
+	vec4 p = vec4(pos,1.f);
+	vec4 col = col_fractal(p);
+	vec4 col_f = col_flag(p);
+	if (col_f.w < col.w) { col = col_f; }
+	vec4 col_m = col_marble(p);
+	if (col_m.w < col.w) {
+		return vec4(col_m.xyz, 1.0);
+	}
+	return vec4(min(col.xyz,1), 0.0);
+}
+
+//A faster formula to find the gradient/normal direction of the DE
+//credit to http://www.iquilezles.org/www/articles/normalsSDF/normalsSDF.htm
+vec4 calcNormal(vec3 p, float dx) {
+	const vec3 k = vec3(1,-1,0);
+	return   (k.xyyx*DE(p + k.xyy*dx) +
+			 k.yyxx*DE(p + k.yyx*dx) +
+			 k.yxyx*DE(p + k.yxy*dx) +
+			 k.xxxx*DE(p + k.xxx*dx))/vec4(4*dx,4*dx,4*dx,4);
+}
+
+
+#define MAX_DIST 50
+#define MIN_DIST 1e-5
+#define MAX_MARCHES 512
+#define NORMARCHES 5
+
+
+void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float d0) 
+{
+	//March the ray
+	for (; var.x < MAX_MARCHES; var.x += 1.0) {
+		//if the distance from the surface is less than the distance per pixel we stop
+		if(dir.w > MAX_DIST || pos.w<0)
+		{
+			break;
+		}
+		
+		if(pos.w < max(fov*dir.w, MIN_DIST) && var.x > 0 && var.w < 1)
+		{
+			break;
+		}
+		
+		dir.w += pos.w;
+		pos.xyz += pos.w*dir.xyz;
+		pos.w = DE(pos.xyz)-d0*dir.w;
+		var.w = 0;
+	}
+	
+	pos.w += d0*dir.w;
+}
+
+// Polynomial smooth minimum by iq
+float smin(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5*(a-b)/k, 0.0, 1.0);
+  return mix(a, b, h) - k*h*(1.0-h);
+}
+
+float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
+{
+	float light_visibility = 1;
+	float ph = 1e5;
+	float dDEdt = 0;
+	pos.w = DE(pos.xyz);
+	int i = 0;
+	for (; i < MAX_MARCHES; i++) {
+	
+		dir.w += pos.w;
+		pos.xyz += pos.w*dir.xyz;
+		pos.w = DE(pos.xyz);
+		
+		float y = pos.w*pos.w/(2.0*ph);
+        float d = (pos.w+ph)*0.5*(1-dDEdt);
+		float angle = d/(max(MIN_DIST,dir.w-y)*light_angle);
+		
+        light_visibility = min(light_visibility, angle);
+		
+		dDEdt = dDEdt*0.75 + 0.25*(pos.w-ph)/ph;
+		ph = pos.w;
+		
+		if(dir.w >= distance2light)
+		{
+			break;
+		}
+		
+		if(dir.w > MAX_DIST || pos.w < max(fovray*dir.w, MIN_DIST))
+		{
+			return 0;
+		}
+	}
+	//return light_visibility; //bad
+	return 0.5-cos(3.14159265*light_visibility)*0.5; //looks better and is more physically accurate(for a circular light source)
+}
+
+float sphere_intersection(vec3 r, vec3 p, vec4 sphere)
+{
+	p = p - sphere.xyz;
+	if(p == vec3(0)) return sphere.w;
+	
+	float b = dot(p, r);
+	float c = sphere.w*sphere.w - dot(p,p);
+	float d = b*b + c;
+	
+	if((d <= 0) || (c <= 0)) //if no intersection
+	{
+		return 0;
+	}
+	else
+	{
+		return sqrt(d) - b; //use furthest solution in the direction of the ray
+	}
+}
+
+float find_furthest_intersection(vec3 r, vec3 p, ivec2 id)
+{
+	float d = 0;
+	ivec2 idR = min(id+1, group_size-1);
+	ivec2 idL = max(id-1, 0);
+	for(int i = idL.x; i <= idR.x; i++)
+	{
+		for(int j = idL.y; j <= idR.y; j++)
+		{
+			d = max(d, sphere_intersection(r,p,de_sph[i][j]));
+		}
+	}
+	return d;
+}
+
+
+float find_furthest_intersection_all(vec3 r, vec3 p, ivec2 id)
+{
+	float d = 0;
+	for(int i = 0; i < group_size; i++)
+	{
+		for(int j = 0; j < group_size; j++)
+		{
+			d = max(d, sphere_intersection(r,p,de_sph[i][j]));
+		}
+	}
+	return d;
+}
+
+void normarch(inout vec4 pos)
+{
+	//calculate the normal
+	vec4 norm = calcNormal(pos.xyz, pos.w/8); 
+	norm.xyz = normalize(norm.xyz);
+	pos.w = norm.w;
+	
+	float prev_w = 0;
+	//march in the direction of the normal
+	#pragma unroll
+	for(int i = 0; i < NORMARCHES; i++)
+	{
+		pos.xyz += pos.w*norm.xyz;
+		pos.w = DE(pos.xyz);
+		if(pos.w < prev_w)
+		{
+			pos.xyz -= prev_w*norm.xyz;
+			pos.w = prev_w;
+			break;
+		}
+		prev_w = pos.w;
+	}
+}
+
+
+#define PI 3.14159265
+#define AMBIENT_MARCHES 5
+#define AMBIENT_COLOR 2*vec4(1,1,1,1)
+#define LIGHT_ANGLE 0.08
+
+uniform vec3 BACKGROUND_COLOR;
+uniform vec3 LIGHT_DIRECTION;
+uniform float PBR_METALLIC;
+uniform float PBR_ROUGHNESS;
+uniform vec3 LIGHT_COLOR;
+uniform bool SHADOWS_ENABLED; 
+
+
+//better to use a sampler though
+vec4 interp(layout (rgba32f) image2D text, vec2 coord)
+{
+	//coord *= 0.99;
+	ivec2 ci = ivec2(coord);
+	vec2 d = coord - floor(coord);
+	return imageLoad(text, ci)*(1-d.x)*(1-d.y) +
+		   imageLoad(text, ci+ivec2(1,0))*d.x*(1-d.y) +
+		   imageLoad(text, ci+ivec2(0,1))*(1-d.x)*d.y +
+		   imageLoad(text, ci+ivec2(1))*d.x*d.y;
+}
+
+
+///PBR functions 
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}  
+
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a      = roughness*roughness;
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+	
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+	
+    return num / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float num   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return num / denom;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
+	
+    return ggx1 * ggx2;
+}
+///END PBR functions
+
+const float Br = 0.0025;
+const float Bm = 0.0003;
+const float g =  0.9800;
+const vec3 nitrogen = vec3(0.650, 0.570, 0.475);
+const vec3 Kr = Br / pow(nitrogen, vec3(4.0));
+const vec3 Km = Bm / pow(nitrogen, vec3(0.84));
+
+vec3 sky_color(in vec3 pos)
+{
+	// Atmosphere Scattering
+	vec3 fsun = LIGHT_DIRECTION;
+	float brightnees = exp(min(5*pos.y,0));
+	if(pos.y < 0)
+	{
+		pos.y = 0; 
+		pos.xyz = normalize(pos.xyz);
+	}
+    float mu = dot(normalize(pos), normalize(fsun));
+	
+	vec3 extinction = mix(exp(-exp(-((pos.y + fsun.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0, vec3(1.0 - exp(fsun.y)) * 0.2, -fsun.y * 0.2 + 0.5);
+	vec3 sky_col = brightnees* 3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
+	sky_col = 0.4*clamp(sky_col,0,10);
+	return sky_col*sky_col;
+}
+
+vec3 ambient_sky_color(in vec3 pos)
+{
+	float y = pos.y;
+	pos.xyz = normalize(vec3(1,0,0));
+	return sky_color(pos)*exp(-abs(y));
+}
+
+vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
+{
+	vec3 dir1 = normalize(cross(dir.xyz,norm.xyz));
+	vec3 dir2 = normalize(cross(dir1,norm.xyz));
+	pos.w = iMarbleRad/2; 
+	
+	vec3 pos0 = pos.xyz;
+	
+	float shifter = 2;
+	float dcoef = 0.02/iMarbleRad;
+	float occlusion_angle = 0;
+	float integral = 0;
+	float i_coef = 0;
+	
+	vec3 ambient_color = ambient_sky_color(norm.xyz);
+	
+	//march in the direction of the normal
+	#pragma unroll
+	for(int i = 0; i < AMBIENT_MARCHES; i++)
+	{
+		//moving in a zig-zag
+		vec3 direction = normalize(norm.xyz + 0.6*((mod(shifter,3.f)-1)*dir1 +  (mod(shifter+1,3.f)-1)*dir2));
+		shifter += 1;
+		pos.xyz += pos.w*direction;
+		pos.w = DE(pos.xyz);
+		
+		norm.w = length(pos0 - pos.xyz);
+		i_coef = 1/(dcoef*norm.w+1);//importance
+		occlusion_angle += i_coef*clamp(pos.w/norm.w,0,1);
+		integral += i_coef;
+	}
+	
+	occlusion_angle /= integral; // average weighted by importance
+	return vec4(ambient_color,1)*(0.5-cos(3.14159265*occlusion_angle)*0.5);
+}
+
+
+vec3 refraction(vec3 rd, vec3 n, float p) {
+	float dot_nd = dot(rd, n);
+	return p * (rd - dot_nd * n) + sqrt(1.0 - (p * p) * (1.0 - dot_nd * dot_nd)) * n;
+}
+
+vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, float shadow) 
+{
+	vec3 albedo = color.xyz;
+	albedo *= albedo; //square it to make the fractals more colorfull 
+	
+	vec4 ambient_color = ambient_occlusion(pos, norm, dir);
+	
+	float metallic = PBR_METALLIC;
+	vec3 F0 = vec3(0.04); 
+	F0 = mix(F0, albedo, metallic);
+	
+	//reflectance equation
+	vec3 Lo = vec3(0.0);
+	vec3 V = -dir.xyz;
+	vec3 N = norm.xyz;
+	
+	{ //ambient occlusion contribution
+		float roughness = max(PBR_ROUGHNESS,0.5);
+		vec3 L = normalize(N);
+		vec3 H = normalize(V + L);
+		vec3 radiance = ambient_color.xyz;        
+		
+		// cook-torrance brdf
+		float NDF = DistributionGGX(N, H, roughness);        
+		float G   = GeometrySmith(N, V, L, roughness);      
+		vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+		
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - metallic;	  
+		
+		vec3 numerator    = NDF * G * F;
+		float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+		vec3 specular     = numerator / max(denominator, 0.001);  
+			
+		// add to outgoing radiance Lo
+		float NdotL = max(dot(N, L), 0.0);                
+		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+	}
+	
+	if(!SHADOWS_ENABLED)
+	{
+		shadow = ambient_color.w;
+	}
+	
+	vec3 sun_color = sky_color(LIGHT_DIRECTION);
+
+	{ //light contribution
+		float roughness = PBR_ROUGHNESS;
+		vec3 L = normalize(LIGHT_DIRECTION);
+		vec3 H = normalize(V + L);
+		vec3 radiance = sun_color*shadow*(0.6+0.4*ambient_color.w);        
+		
+		// cook-torrance brdf
+		float NDF = DistributionGGX(N, H, roughness);        
+		float G   = GeometrySmith(N, V, L, roughness);      
+		vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+		
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - metallic;	  
+		
+		vec3 numerator    = NDF * G * F;
+		float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+		vec3 specular     = numerator / max(denominator, 0.001);  
+			
+		// add to outgoing radiance Lo
+		float NdotL = max(dot(N, L), 0.0);                
+		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+	}
+	
+	{ //light reflection, GI imitation
+		float roughness = max(PBR_ROUGHNESS,0.5);
+		vec3 L = normalize(-LIGHT_DIRECTION);
+		vec3 H = normalize(V + L);
+		vec3 radiance = 0.35*sun_color*ambient_color.w*(1-ambient_color.w);        
+		
+		// cook-torrance brdf
+		float NDF = DistributionGGX(N, H, roughness);        
+		float G   = GeometrySmith(N, V, L, roughness);      
+		vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+		
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - metallic;	  
+		
+		vec3 numerator    = NDF * G * F;
+		float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+		vec3 specular     = numerator / max(denominator, 0.001);  
+			
+		// add to outgoing radiance Lo
+		float NdotL = max(dot(N, L), 0.0);                
+		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+	}
+
+	if(color.w>0.5) // if marble
+	{
+		vec3 n = normalize(pos.xyz - iMarblePos);
+		vec3 q = dir.xyz - n*(2*dot(dir.xyz,n));
+		//Combine for final marble color
+		if(MARBLE_MODE == 0)
+		{
+			//glass
+			vec3 F0 = vec3(0.03); 
+			vec3 L = normalize(q);
+			vec3 H = normalize(V + L);
+			vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);  
+			
+			vec3 kS = F;
+			vec3 kD = vec3(1.0) - kS;
+			Lo += kS*refl + kD*refr;
+		}
+		else
+		{
+			//metal
+			vec3 F0 = vec3(0.6); 
+			vec3 L = normalize(q);
+			vec3 H = normalize(V + L);
+			vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);  
+			
+			vec3 kS = F;
+			vec3 kD = vec3(1.0) - kS;
+			Lo += kS*refl;
+		}
+	}
+	
+	return Lo;
+}
+
+vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, float shadow)
+{
+	
+	
+	if(pos.w < max(16*fovray*dir.w, MIN_DIST))
+	{
+		//calculate the normal
+		float error = 0.5*fov*dir.w;
+		vec4 norm = calcNormal(pos.xyz, max(MIN_DIST, error)); 
+		norm.xyz = normalize(norm.xyz);
+		if(norm.w < -error)
+		{
+			return COL(pos.xyz);
+		}
+		else
+		{
+			//optimize color sampling 
+			vec3 cpos = pos.xyz - norm.w*norm.xyz;
+			cpos = cpos - DE(cpos)*norm.xyz;
+			cpos = cpos - DE(cpos)*norm.xyz;
+			
+			vec4 color = COL(cpos);
+			return lighting(color, pos, dir, norm, vec3(0), vec3(0), shadow); 
+		}
+	}
+	else
+	{
+		return sky_color(dir.xyz);
+	}
+}
+
+
+vec3 render_ray(in vec4 pos, in vec4 dir, float fov)
+{
+	vec4 var = vec4(0,0,0,1);
+	ray_march(pos, dir, var, fov, MIN_DIST); 
+	float shadow = shadow_march(pos, vec4(LIGHT_DIRECTION,0), MAX_DIST, LIGHT_ANGLE);
+	return shading_simple(pos, dir, fov, shadow);
+}
+
+vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
+{
+	if(pos.w < max(16*fovray*dir.w, MIN_DIST))
+	{
+		//calculate the normal
+		float error = 0.5*fov*dir.w;
+		vec4 norm = calcNormal(pos.xyz, max(MIN_DIST, error)); 
+		norm.xyz = normalize(norm.xyz);
+		if(norm.w < -error)
+		{
+			return COL(pos.xyz);
+		}
+		else
+		{
+			//optimize color sampling 
+			vec3 cpos = pos.xyz - norm.w*norm.xyz;
+			cpos = cpos - DE(cpos)*norm.xyz;
+			cpos = cpos - DE(cpos)*norm.xyz;
+			
+			vec4 color = COL(cpos);
+			vec3 refl = vec3(0);
+			vec3 refr = vec3(0);
+			if(color.w>0.5) // if marble
+			{
+				vec3 n = normalize(iMarblePos - cpos.xyz);
+				vec3 q = refraction(dir.xyz, n, 1.0 / 1.5);
+				vec3 p2 = cpos.xyz + (dot(q, n) * 2.0 * iMarbleRad) * q;
+				n = normalize(p2 - iMarblePos);
+				q = (dot(q, dir.xyz) * 2.0) * q - dir.xyz;
+				vec4 p_temp = vec4(p2 + n * (MIN_DIST * 10), 0);
+				vec4 r_temp = vec4(q, 0);
+				
+				refr = render_ray(p_temp, r_temp, fov);
+
+				//Calculate reflection
+				n = normalize(cpos.xyz - iMarblePos);
+				q = dir.xyz - n*(2*dot(dir.xyz,n));
+				p_temp = vec4(cpos.xyz + n * (MIN_DIST * 10), 0);
+				r_temp = vec4(q, dir.w);
+				
+				refl = render_ray(p_temp, r_temp, fov);
+			}
+			
+			return lighting(color, cpos, dir, norm, refl, refr, shadow); 
+		}
+	}
+	else
+	{
+		return sky_color(dir.xyz);
+	}
+	
+}
+
+vec3 HDRmapping(vec3 color, float exposure, float gamma)
+{
+	// Exposure tone mapping
+    vec3 mapped = vec3(1.0) - exp(-color * exposure);
+    // Gamma correction 
+    return pow(mapped, vec3(1.0 / gamma));
+}
+
+
+///Half-resolution illumination step
+
+
+void main() {
+
+	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);
+	
+	vec2 img_size = vec2(imageSize(illumination));
+	vec2 pimg_size = vec2(imageSize(DE_input));
+	vec2 step_scale = img_size/pimg_size;
+	
+	ivec2 prev_pos = min(ivec2((vec2(global_pos)/step_scale) + 0.5),ivec2(pimg_size)-1);
+	
+	vec4 sph = imageLoad(DE_input, prev_pos);
+	
+	ray rr = get_ray(vec2(global_pos)/img_size);
+	vec4 pos = vec4(rr.pos,0);
+	vec4 dir = vec4(rr.dir,0);
+	vec4 var = vec4(0);
+	
+	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
+	
+	pos = sph;
+	dir.w += td; 
+	
+	vec4 illum = vec4(0);
+	
+	if(pos.w < max(2*fovray*td, MIN_DIST) && SHADOWS_ENABLED)
+	{
+		vec4 norm = calcNormal(pos.xyz, max(2*fovray*td, MIN_DIST)); 
+		norm.xyz = normalize(norm.xyz);
+		pos.xyz += norm.xyz*max(2*fovray*td, MIN_DIST);
+		illum.x = shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, LIGHT_ANGLE);
+		
+		//illum.y = ambient_occlusion(pos, norm);
+	}
+	
+	imageStore(illumination, global_pos, illum);	 
+}
+
+ERROR: 0:760: 'lighting' : no matching overloaded function found (using implicit conversion) 
+

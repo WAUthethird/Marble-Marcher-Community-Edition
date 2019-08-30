@@ -183,6 +183,8 @@ int main(int argc, char *argv[]) {
   fullscreen = true;
 
   Renderer rend(resolution->width, resolution->height, "shaders/compute/MAIN.cfg");
+  rend.LoadExternalTextures("shaders/textures/");
+ 
   rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
   
   sf::RenderTexture renderTexture;
