@@ -21,6 +21,9 @@ enum GameMode {
 	MIDPOINT
 };
 
+
+
+
 //Global variables
 extern sf::Vector2i mouse_pos, mouse_prev_pos;
 extern bool all_keys[sf::Keyboard::KeyCount];
@@ -63,6 +66,8 @@ void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene);
 int DirExists(const char *path);
 
 void FirstStart(Overlays* overlays);
+
+void SetPointers(sf::RenderTexture * render, sf::RenderTexture * screenshot, sf::Texture * main, sf::Texture * screensht, sf::RectangleShape * rmain, sf::RectangleShape * rscr, sf::Shader * shader);
 
 void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float* fps, bool *vsync, float *mouse_sensitivity, float *wheel_sensitivity, float *music_vol, float *target_fps);
 

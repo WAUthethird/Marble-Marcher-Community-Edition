@@ -1050,6 +1050,7 @@ void Scene::Cheat_Param(int param) {
 
 void Scene::ExitEditor()
 {
+	levels.StopAllMusic();
 	level_editor = false;
 }
 

@@ -36,7 +36,7 @@ float smoothmin(float a, float b, float k) {
   return mix(a, b, h) - k*h*(1.0-h);
 }
 
-void mengerFold(inout vec4 z) {
+/*void mengerFold(inout vec4 z) {
 	float a = smoothmin(z.x - z.y, 0.0, 0.03);
 	z.x -= a;
 	z.y += a;
@@ -44,6 +44,19 @@ void mengerFold(inout vec4 z) {
 	z.x -= a;
 	z.z += a;
 	a = smoothmin(z.y - z.z, 0.0, 0.03);
+	z.y -= a;
+	z.z += a;
+}*/
+
+
+void mengerFold(inout vec4 z) {
+	float a = min(z.x - z.y, 0.0);
+	z.x -= a;
+	z.y += a;
+	a = min(z.x - z.z, 0.0);
+	z.x -= a;
+	z.z += a;
+	a = min(z.y - z.z, 0.0);
 	z.y -= a;
 	z.z += a;
 }
@@ -138,9 +151,9 @@ float de_flag(vec4 p)
 	vec4 d_pos = p - vec4(f_pos, 0);
 	vec4 caps_pos = p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0);
 	//animated flag woooo
-	float oscillation = sin(4*p_s.x + 1*p_s.y - 10*time) + 0.4*sin(6*p_s.x - 2*p_s.y - 12*time) + 0.1*sin(16*p_s.x + 5*p_s.y - 14*time);
+	float oscillation = sin(8*p_s.x - 1*p_s.y - 20*time) + 0.4*sin(11*p_s.x + 2*p_s.y - 25*time) + 0.15*sin(20*p_s.x - 5*p_s.y - 27*time);
 	//scale the flag displacement amplitude by the distance from the flagpole
-	float d = 0.7*de_box(d_pos + caps_pos.x*vec4(0,0.005*oscillation,0.03*oscillation,0), vec3(1.5, 0.8, 0.01)*iMarbleRad);
+	float d = 0.4*de_box(d_pos + caps_pos.x*vec4(0,0.02+ caps_pos.x* 0.5+0.01*oscillation,0.04*oscillation,0), vec3(1.5, 0.8, 0.005)*iMarbleRad);
 	d = min(d, de_capsule(caps_pos, iMarbleRad*2.4, iMarbleRad*0.05));
 	return d;
 }

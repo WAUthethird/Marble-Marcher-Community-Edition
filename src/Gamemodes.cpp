@@ -1,5 +1,7 @@
 #include "Gamemodes.h"
 
+
+
 //Global variables
 sf::Vector2i mouse_pos, mouse_prev_pos;
 InputState io_state;
@@ -609,26 +611,66 @@ void FirstStart(Overlays* overlays)
 
 //ANTTWEAKBAR
 
-
 Scene *scene_ptr;
 Overlays *overlays_ptr;
 Renderer *renderer_ptr;
+sf::Shader *shader_ptr;
+sf::RenderTexture *renderTexture;
+sf::RenderTexture *screenshotTexture;
+sf::Texture *main_txt;
+sf::Texture *screenshot_txt;
+sf::RectangleShape *rectmain;
+sf::RectangleShape *rectscr;
 
-extern bool confirmed = false;
-extern bool canceled = false;
+
+void SetPointers(sf::RenderTexture *render, sf::RenderTexture *screenshot, sf::Texture *main, sf::Texture *screensht, sf::RectangleShape *rmain, sf::RectangleShape *rscr, sf::Shader *shader)
+{
+	renderTexture = render;
+	screenshotTexture = screenshot;
+	shader_ptr = shader;
+	main_txt = main;
+	screenshot_txt = screensht;
+	rectmain = rmain;
+	rectscr = rscr;
+}
+
+void InitializeRendering(std::string config)
+{
+	scene_ptr->SetResolution(*shader_ptr, SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y);
+	renderer_ptr->Initialize(SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y, renderer_ptr->GetConfigFolder() + "/" + config);
+	renderer_ptr->variables["MRRM_scale"] = SETTINGS.stg.MRRM_scale;
+	renderer_ptr->variables["shadow_scale"] = SETTINGS.stg.shadow_resolution;
+	renderer_ptr->variables["bloom_scale"] = SETTINGS.stg.bloom_resolution;
+	renderer_ptr->camera.bloomintensity = SETTINGS.stg.bloom_intensity;
+	renderer_ptr->camera.bloomradius = SETTINGS.stg.bloom_intensity;
+	renderer_ptr->camera.bloomtreshold = SETTINGS.stg.bloom_intensity;
+	renderer_ptr->camera.SetFOV(SETTINGS.stg.FOV);
+
+	//GL settings
+	sf::ContextSettings settings;
+	settings.majorVersion = 4;
+	settings.minorVersion = 3;
+
+	renderTexture->clear();
+	renderTexture->create(SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y, settings);
+	main_txt->create(SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y);
+	renderTexture->setSmooth(false);
+	renderer_ptr->SetOutputTexture(*main_txt);
+
+	screenshotTexture->clear();
+	screenshotTexture->create(SETTINGS.stg.screenshot_resolution.x, SETTINGS.stg.screenshot_resolution.y, settings);
+	screenshot_txt->create(SETTINGS.stg.screenshot_resolution.x, SETTINGS.stg.screenshot_resolution.y);
+	screenshotTexture->setSmooth(false);
+
+	const sf::Glsl::Vec2 window_res((float)SETTINGS.stg.rendering_resolution.x, (float)SETTINGS.stg.rendering_resolution.y);
+	const sf::Glsl::Vec2 sres_res((float)SETTINGS.stg.screenshot_resolution.x, (float)SETTINGS.stg.screenshot_resolution.y);
+	//Create screen rectangle
+	rectmain->setSize(window_res);
+	rectscr->setSize(sres_res);
+}
+
 int music_id = 0;
 bool music_play = false;
-
-
-void TW_CALL Confirm(void *data)
-{
-	confirmed = true;
-}
-
-void TW_CALL Cancel(void *data)
-{
-	canceled = true;
-}
 
 void TW_CALL MarbleSet(void *data)
 {
@@ -738,6 +780,12 @@ void TW_CALL ApplySettings(void *data)
 	SETTINGS.stg.rendering_resolution = getResolution(render_resolution);
 	SETTINGS.stg.screenshot_resolution = getResolution(screenshot_resolution);
 
+	std::vector<std::string> configs = renderer_ptr->GetConfigurationsList();
+
+	InitializeRendering(configs[shader_config]);
+
+	if(current_music != nullptr)
+		current_music->setVolume(SETTINGS.stg.music_volume);
 }
 
 
@@ -837,14 +885,17 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 	TwAddVarRW(overlays_ptr->settings, "Shadow downscaling", TW_TYPE_INT32, &SETTINGS.stg.shadow_resolution, "min=1 max=8 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom downscaling", TW_TYPE_INT32, &SETTINGS.stg.bloom_resolution, "min=1 max=8 group='Rendering settings'");
 
+	
+	TwAddVarRW(overlays_ptr->settings, "FOV", TW_TYPE_FLOAT, &SETTINGS.stg.FOV, "min=30 step=1 max=180 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "VSYNC", TW_TYPE_BOOLCPP, vsync, "group='Graphics settings'");
-	TwAddVarRW(overlays_ptr->settings, "Shadows", TW_TYPE_BOOLCPP, &scene->Shadows_Enabled, "group='Graphics settings'");
-	//TwAddVarRW(settings, "Reflection and Refraction", TW_TYPE_BOOLCPP, &scene->Refl_Refr_Enabled, "group='Graphics settings'");
-	TwAddVarRW(overlays_ptr->settings, "Blur", TW_TYPE_FLOAT, &rd->camera.mblur, "min=0 step=0.001 max=0.75 group='Graphics settings'");
-	TwAddVarRW(overlays_ptr->settings, "Exposure", TW_TYPE_FLOAT, &rd->camera.exposure, "min=0 max=5 step=0.001 group='Graphics settings'");
-	TwAddVarRW(overlays_ptr->settings, "Bloom Treshold", TW_TYPE_FLOAT, &rd->camera.bloomtreshold, "min=0 max=5 step=0.001 group='Graphics settings'");
-	TwAddVarRW(overlays_ptr->settings, "Bloom Intensity", TW_TYPE_FLOAT, &rd->camera.bloomintensity, "min=0 max=5 step=0.001 group='Graphics settings'");
-	TwAddVarRW(overlays_ptr->settings, "Bloom Radius", TW_TYPE_FLOAT, &rd->camera.bloomradius, "min=1 max=10 step=0.1 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Shadows", TW_TYPE_BOOLCPP, &SETTINGS.stg.shadows, "group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Reflection and Refraction", TW_TYPE_BOOLCPP, &SETTINGS.stg.refl_refr, "group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Volumetric fog", TW_TYPE_BOOLCPP, &SETTINGS.stg.fog, "group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Blur", TW_TYPE_FLOAT, &SETTINGS.stg.motion_blur, "min=0 step=0.001 max=0.75 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Exposure", TW_TYPE_FLOAT, &SETTINGS.stg.exposure, "min=0 max=5 step=0.001 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Bloom Treshold", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_treshold, "min=0 max=5 step=0.001 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Bloom Intensity", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_intensity, "min=0 max=5 step=0.001 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Bloom Radius", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_radius, "min=1 max=10 step=0.1 group='Graphics settings'");
 
 
 	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &language_choise, "group='Gameplay settings'");
@@ -853,9 +904,10 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 
 	TwType Marble_type = TwDefineEnum("Marble type", marble_type, 2);
 	TwAddVarRW(overlays_ptr->settings, "Marble type", Marble_type, &scene->MarbleType, "group='Gameplay settings'");
-	TwAddVarRW(overlays_ptr->settings, "Mouse sensitivity", TW_TYPE_FLOAT, mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Gameplay settings'");
-	TwAddVarRW(overlays_ptr->settings, "Wheel sensitivity", TW_TYPE_FLOAT, wheel_sensitivity, "min=0.01 max=0.5 step=0.01 group='Gameplay settings'");
-	TwAddVarRW(overlays_ptr->settings, "Music volume", TW_TYPE_FLOAT, music_vol, "min=0 max=100 step=1 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Mouse sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Wheel sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.wheel_sensitivity, "min=0.01 max=0.5 step=0.01 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Music volume", TW_TYPE_FLOAT, &SETTINGS.stg.music_volume, "min=0 max=100 step=1 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "FX volume", TW_TYPE_FLOAT, &SETTINGS.stg.fx_volume, "min=0 max=100 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=144 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera size", TW_TYPE_FLOAT, &scene->camera_size, "min=0 max=10 step=0.001 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera speed(Free mode)", TW_TYPE_FLOAT, &scene->free_camera_speed, "min=0 max=10 step=0.001 group='Gameplay settings'");
@@ -932,6 +984,6 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 	TwDefine("LevelEditor visible=false size='420 350' color='0 80 230' alpha=210 label='Level editor' valueswidth=200");
 	TwDefine("FractalEditor visible=false size='420 350' color='0 120 200' alpha=210 label='Fractal editor' valueswidth=200");
 	TwDefine("Settings color='255 128 0' alpha=210 size='420 350' valueswidth=200");
-	TwDefine("First_launch visible=true color='0 0 0' alpha=255 size='500 200' valueswidth=300");
+	TwDefine("First_launch visible=false color='0 0 0' alpha=255 size='500 200' valueswidth=300");
 	TwDefine("Statistics color='0 128 255' alpha=210 size='420 160' valueswidth=200");
 }

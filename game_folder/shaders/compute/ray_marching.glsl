@@ -1,9 +1,9 @@
 #include<distance_estimators.glsl>
 
 #define MAX_DIST 50
-#define MIN_DIST 1e-5
+#define MIN_DIST 1e-7
 #define MAX_MARCHES 512
-#define NORMARCHES 5
+#define NORMARCHES 2
 
 
 void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float d0) 
@@ -28,12 +28,6 @@ void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float 
 	}
 	
 	pos.w += d0*dir.w;
-}
-
-// Polynomial smooth minimum by iq
-float smin(float a, float b, float k) {
-  float h = clamp(0.5 + 0.5*(a-b)/k, 0.0, 1.0);
-  return mix(a, b, h) - k*h*(1.0-h);
 }
 
 float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
@@ -127,19 +121,11 @@ void normarch(inout vec4 pos)
 	norm.xyz = normalize(norm.xyz);
 	pos.w = norm.w;
 	
-	float prev_w = 0;
 	//march in the direction of the normal
 	#pragma unroll
 	for(int i = 0; i < NORMARCHES; i++)
 	{
 		pos.xyz += pos.w*norm.xyz;
 		pos.w = DE(pos.xyz);
-		if(pos.w < prev_w)
-		{
-			pos.xyz -= prev_w*norm.xyz;
-			pos.w = prev_w;
-			break;
-		}
-		prev_w = pos.w;
 	}
 }

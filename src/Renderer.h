@@ -35,15 +35,15 @@ public:
 	void Render();
 	std::vector<ComputeShader> shader_pipeline;
 	Camera camera;
+	std::map<std::string, float> variables;
 
 private:
-	std::string config_file;
-	std::string config_folder;
 	GLuint GenerateTexture(float w, float h);
 
+	std::string config_file;
+	std::string config_folder;
 	int width, height;
-
-	std::map<std::string, float> variables;
+	
 	std::vector<std::string> rendering_configurations;
 	std::vector<vec2> global_size;
 	std::vector<GLuint> main_textures;

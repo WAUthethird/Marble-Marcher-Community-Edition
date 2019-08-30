@@ -184,17 +184,29 @@ int main(int argc, char *argv[]) {
 
   Renderer rend(resolution->width, resolution->height, "shaders/compute/MAIN.cfg");
   rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
-  //fullscreen = false;
-  //Create the render texture if needed
+  
   sf::RenderTexture renderTexture;
+  sf::RenderTexture screenshotTexture;
+  sf::Texture main_txt, screenshot_txt;
+  const sf::Glsl::Vec2 window_res((float)resolution->width, (float)resolution->height);
+  const sf::Glsl::Vec2 sres_res((float)screenshot_size.x, (float)screenshot_size.y);
+  //Create screen rectangle
+  sf::RectangleShape rect;
+  rect.setSize(window_res);
+  rect.setPosition(0, 0);
+
+  sf::RectangleShape rect_scrshot;
+  rect_scrshot.setSize(sres_res);
+  rect_scrshot.setPosition(0, 0);
+
+  SetPointers(&renderTexture, &screenshotTexture, &main_txt, &screenshot_txt, &rect, &rect_scrshot, &shader);
+
   //screenshot number
   int screenshot_i = 0;
-  sf::RenderTexture screenshotTexture;
-
   //new rendering textures
   sf::Image mimg, simg;
   mimg.create(resolution->width, resolution->height, sf::Color::Blue);
-  sf::Texture main_txt, screenshot_txt;
+ 
   main_txt.loadFromImage(mimg);
   screenshot_txt.create(screenshot_size.x, screenshot_size.y);
 
@@ -210,19 +222,12 @@ int main(int argc, char *argv[]) {
 
   //Create the fractal scene
   Scene scene(level_music);
-  const sf::Glsl::Vec2 window_res((float)resolution->width, (float)resolution->height);
-  const sf::Glsl::Vec2 sres_res((float)screenshot_size.x, (float)screenshot_size.y);
+ 
   scene.Write(shader);
   scene.SetResolution(shader, window_res.x, window_res.y);
   scene.SetWindowResolution(window.getSize().x, window.getSize().y);
-  //Create screen rectangle
-  sf::RectangleShape rect;
-  rect.setSize(window_res);
-  rect.setPosition(0, 0);
-
-  sf::RectangleShape rect_scrshot;
-  rect_scrshot.setSize(sres_res);
-  rect_scrshot.setPosition(0, 0);
+  
+   
   
   menu_music.setVolume(GetVol());
   //menu_music.play();
@@ -357,8 +362,8 @@ int main(int argc, char *argv[]) {
 					///Screenshot
 					screenshot_i++;
 					//Update the shader values
-					scene.SetResolution(shader, sres_res.x, sres_res.y);
-					rend.ReInitialize(sres_res.x, sres_res.y);
+					scene.SetResolution(shader, SETTINGS.stg.screenshot_resolution.x, SETTINGS.stg.screenshot_resolution.y);
+					rend.ReInitialize(SETTINGS.stg.screenshot_resolution.x, SETTINGS.stg.screenshot_resolution.y);
 					scene.WriteRenderer(rend);
 					shader.setUniform("render_texture", screenshot_txt);
 					rend.SetOutputTexture(screenshot_txt);
@@ -384,9 +389,8 @@ int main(int argc, char *argv[]) {
 					screenshotTexture.setActive(false);
 					window.setActive(true);
 
-					scene.SetResolution(shader, window_res.x, window_res.y);
-					rend.ReInitialize(window_res.x, window_res.y);
-					rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
+					scene.SetResolution(shader, SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y);
+					rend.ReInitialize(SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y);
 					scene.Write(shader);
 			    } else if (keycode == sf::Keyboard::F4) {
 					overlays.TWBAR_ENABLED = !overlays.TWBAR_ENABLED;
@@ -639,6 +643,7 @@ int main(int argc, char *argv[]) {
       //Update the shader values
       scene.Write(shader);
 	  scene.WriteRenderer(rend);
+	  rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
 	  shader.setUniform("render_texture", main_txt);
 	  rend.SetOutputTexture(main_txt);
 
@@ -657,8 +662,8 @@ int main(int argc, char *argv[]) {
 
         //Draw render texture to main window
         sf::Sprite sprite(renderTexture.getTexture());
-        sprite.setScale(float(screen_size.width) / float(resolution->width),
-                        float(screen_size.height) / float(resolution->height));
+        sprite.setScale(float(window.getSize().x) / float(rend.variables["width"]),
+                        float(window.getSize().y) / float(rend.variables["height"]));
         window.draw(sprite);
 		renderTexture.setActive(false);
 		window.setActive(true);

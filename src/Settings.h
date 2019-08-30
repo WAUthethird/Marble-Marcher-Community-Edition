@@ -121,12 +121,16 @@ struct MainSettings
 	float music_volume;
 	float fx_volume;
 	float mouse_sensitivity;
+	float wheel_sensitivity;
 
 	bool loop_level;
+
+	float motion_blur;
+	float exposure;
 };
 
 static const MainSettings default_settings = { sf::Vector2i(1280, 800),
-	sf::Vector2i(2560, 1440), 4, 2, 2, "English", true, true, true, 0.05, 2.7, 3, 2.2, 75, 1, 1, 0.005, false };
+	sf::Vector2i(2560, 1440), 4, 2, 2, "English", true, true, true, 0.05, 2.7, 3, 2.2, 75, 1, 1, 0.005, false, 0.005, 0.7 };
 
 
 class AllSettings

@@ -24,6 +24,7 @@ void Renderer::Initialize(int w, int h, std::string config_f)
 	main_textures.clear();
 	shader_textures.clear();
 	global_size.clear();
+	shader_pipeline.clear();
 
 	width = w;
 	height = h;
@@ -219,7 +220,7 @@ void Renderer::Render()
 			glBindImageTexture(tex_id++, shader_textures[i][j], 0, GL_FALSE, 0, GL_READ_WRITE, (i == stages-1)?GL_RGBA8:GL_RGBA32F);
 		}
 
-
+		//global textures
 		for (int j = 0; j < main_textures.size(); j++)
 		{
 			glBindImageTexture(tex_id++, main_textures[j], 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
