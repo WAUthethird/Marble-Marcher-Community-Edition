@@ -19,7 +19,7 @@
 #include <sstream>
 #include <SFML/Graphics.hpp>
 #include <filesystem>
-
+#include <AntTweakBar.h>
 namespace fs = std::filesystem;
 
 class Settings {
@@ -44,69 +44,14 @@ public:
   int    mouse_sensitivity;
 };
 
-class AdditionalSettings
-{
-public:
-	int screenshot_width;
-	int screenshot_height;
-	std::string lang;
-
-	AdditionalSettings() :
-		screenshot_width(1920),
-		screenshot_height(1080),
-		lang("English")
-	{}
-
-	void Load(const std::string& fname) {
-		int increment = 0;
-		std::ifstream config;
-		config.open(fname);
-		if (config.fail())
-		{
-			return;
-		}
-		std::string line;
-		while (getline(config, line))
-		{
-			if (line.substr(0, 1) != "#")
-			{
-				increment++;
-				std::istringstream iss(line);
-				float num;
-				while ((iss >> num))
-				{
-					switch (increment)
-					{
-					case 1:
-						screenshot_width = num;
-						break;
-					case 2:
-						screenshot_height = num;
-						break;
-					case 4:
-						
-						break;
-					default:
-						break;
-					}
-				}
-				if (increment == 3)
-				{
-					lang = line;
-				}
-			}
-		}
-	}
-};
-
 struct MainSettings
 {
-	sf::Vector2i rendering_resolution;
-	sf::Vector2i screenshot_resolution;
+	int rendering_resolution;
+	int screenshot_resolution;
 	int MRRM_scale;
 	int shadow_resolution;
 	int bloom_resolution;
-	std::string language;
+	int language;
 
 	bool shadows;
 	bool refl_refr;
@@ -127,10 +72,16 @@ struct MainSettings
 
 	float motion_blur;
 	float exposure;
+	int shader_config;
+
+	bool fullscreen;
+	bool VSYNC;
 };
 
-static const MainSettings default_settings = { sf::Vector2i(1280, 800),
-	sf::Vector2i(2560, 1440), 4, 2, 2, "English", true, true, true, 0.05, 2.7, 3, 2.2, 90, 1, 1, 0.005, false, 0.005, 0.7 };
+extern TwEnumVal resolutions[];
+
+static const MainSettings default_settings = { 6,
+	10, 4, 2, 2, 0, true, true, true, 0.05, 2.7, 3, 2.2, 90, 20, 20, 0.005, 0.2, false, 0.005, 0.7, 0, false, true };
 
 
 class AllSettings
@@ -146,17 +97,26 @@ public:
 		Load(settings_file);
 	}
 
-	void Load(std::string settings_file)
+	bool Load(std::string settings_file)
 	{
 		if (!LoadFromFile(settings_file))
 		{
-			stg = default_settings;
+			stg = default_settings;	
+			first_start = true;
+			return true;
 		}
+		first_start = false;
+		return false;
 	}
 
 	bool LoadFromFile(std::string settings_file)
 	{
 		filename = settings_file;
+		if (!fs::exists(settings_file))
+		{
+			return false;
+		}
+
 		int cfg_size = fs::file_size(settings_file);
 		int MainSettings_size = sizeof(MainSettings);
 
@@ -182,10 +142,10 @@ public:
 		cfg_file.close();
 	}
 
-	bool new_settings;
-
 	MainSettings stg;
 	std::string filename;
+
+	bool first_start;
 
 	~AllSettings()
 	{

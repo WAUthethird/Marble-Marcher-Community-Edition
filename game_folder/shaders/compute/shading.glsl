@@ -1,7 +1,7 @@
 #include<ray_marching.glsl>
 
 #define PI 3.14159265
-#define AMBIENT_MARCHES 5
+#define AMBIENT_MARCHES 7
 #define AMBIENT_COLOR 2*vec4(1,1,1,1)
 #define LIGHT_ANGLE 0.08
 
@@ -16,7 +16,6 @@ uniform bool SHADOWS_ENABLED;
 //better to use a sampler though
 vec4 interp(layout (rgba32f) image2D text, vec2 coord)
 {
-	//coord *= 0.99;
 	ivec2 ci = ivec2(coord);
 	vec2 d = coord - floor(coord);
 	return imageLoad(text, ci)*(1-d.x)*(1-d.y) +
@@ -121,7 +120,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
 		//moving in a zig-zag
-		vec3 direction = normalize(norm.xyz + 0.6*((mod(shifter,3.f)-1)*dir1 +  (mod(shifter+1,3.f)-1)*dir2));
+		vec3 direction = normalize(norm.xyz + 0.8*((mod(shifter,3.f)-1)*dir1 +  (mod(shifter+1,3.f)-1)*dir2));
 		shifter += 1;
 		pos.xyz += pos.w*direction;
 		pos.w = DE(pos.xyz);
@@ -193,7 +192,7 @@ vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, f
 		float roughness = PBR_ROUGHNESS;
 		vec3 L = normalize(LIGHT_DIRECTION);
 		vec3 H = normalize(V + L);
-		vec3 radiance = sun_color*shadow*(0.6+0.4*ambient_color.w);        
+		vec3 radiance = sun_color*shadow*(0.8+0.2*ambient_color.w);        
 		
 		// cook-torrance brdf
 		float NDF = DistributionGGX(N, H, roughness);        

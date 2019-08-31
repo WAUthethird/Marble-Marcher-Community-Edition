@@ -142,8 +142,8 @@ float de_marble(vec4 p)
 
 vec4 col_marble(vec4 p) 
 {
-	vec4 col = vec4(0, 0, 0, de_sphere(p - vec4(iMarblePos, 0), iMarbleRad));
-	return vec4(col.x, col.y, col.z, de_sphere(p - vec4(iMarblePos, 0), iMarbleRad));
+	vec4 col = vec4(0.5, 0.5, 0.5, de_sphere(p - vec4(iMarblePos, 0), iMarbleRad));
+	return col;
 }
 
 float de_flag(vec4 p) 

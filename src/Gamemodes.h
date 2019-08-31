@@ -5,7 +5,6 @@
 #include<Localization.h>
 #include<Interface.h>
 
-#include<Settings.h>
 #include <AntTweakBar.h>
 
 enum GameMode {
@@ -32,9 +31,6 @@ extern bool show_cheats;
 extern InputState io_state;
 
 //Constants
-extern float mouse_sensitivity;
-extern float wheel_sensitivity;
-extern float music_vol;
 extern float target_fps;
 
 extern GameMode game_mode;
@@ -58,8 +54,6 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays);
 void ConfirmLevelDeletion(int lvl, Scene* scene, Overlays* overlays);
 
 void ConfirmEditorExit(Scene * scene, Overlays * overlays);
-
-float GetVol();
 void LockMouse(sf::RenderWindow& window);
 void UnlockMouse(sf::RenderWindow& window);
 void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene);
@@ -67,9 +61,12 @@ int DirExists(const char *path);
 
 void FirstStart(Overlays* overlays);
 
-void SetPointers(sf::RenderTexture * render, sf::RenderTexture * screenshot, sf::Texture * main, sf::Texture * screensht, sf::RectangleShape * rmain, sf::RectangleShape * rscr, sf::Shader * shader);
+void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, sf::RenderTexture *render, sf::RenderTexture *screenshot, sf::Texture *main, sf::Texture *screensht, sf::RectangleShape *rmain, sf::RectangleShape *rscr, sf::Shader *shader);
+void TakeScreenshot();
 
-void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float* fps, bool *vsync, float *mouse_sensitivity, float *wheel_sensitivity, float *music_vol, float *target_fps);
+void TW_CALL ApplySettings(void * data);
+
+void InitializeATBWindows(float * fps, float * target_fps);
 
 template < typename T > std::string num2str(const T& n)
 {

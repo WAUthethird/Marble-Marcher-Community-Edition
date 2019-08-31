@@ -5,7 +5,7 @@ struct ray
 	vec3 dir;
 };		
 
-struct gl_camera
+struct glcamera
 {
 	vec3 position;
 	vec3 dirx;
@@ -23,8 +23,6 @@ struct gl_camera
 	float bloomintensity;
 	float bloomtreshold;
 	float bloomradius;
-	int stepN;
-	int step;
 };
 
 
@@ -35,7 +33,7 @@ ivec2 getGpos(int index)
 	return ivec2(x,y);
 }
 
-uniform gl_camera Camera;
+uniform glcamera Camera;
 float fovray;
 
 ray get_ray(vec2 screen_pos)

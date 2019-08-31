@@ -20,7 +20,7 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <Eigen/Dense>
-
+#include<Settings.h>
 
 #define MAX_DIST 20.f
 #define MAX_MARCHES 1000
@@ -59,6 +59,7 @@ public:
   bool PBR_Enabled;
   bool Refl_Refr_Enabled;
   bool Shadows_Enabled;
+  bool Fog_Enabled;
   int Fractal_Iterations;
   float camera_size;
   float free_camera_speed;
@@ -72,6 +73,10 @@ public:
   Eigen::Vector3f marble_pos;
   Eigen::Vector3f marble_vel;
   Eigen::Matrix3f marble_mat;
+
+  void SetCurrentMusic(sf::Music * new_music);
+
+  void StopMusic();
 
   Scene(sf::Music* level_music);
 
@@ -150,6 +155,17 @@ public:
   Eigen::Vector3f MouseRayCast(int mousex, int mousey, float min_dist = MIN_DIST);
   Eigen::Vector3f RayMarch(const Eigen::Vector3f& pt, const Eigen::Vector3f& ray, float min_dist = MIN_DIST);
 
+  sf::Sound sound_goal;
+  sf::SoundBuffer buff_goal;
+  sf::Sound sound_bounce1;
+  sf::SoundBuffer buff_bounce1;
+  sf::Sound sound_bounce2;
+  sf::SoundBuffer buff_bounce2;
+  sf::Sound sound_bounce3;
+  sf::SoundBuffer buff_bounce3;
+  sf::Sound sound_shatter;
+  sf::SoundBuffer buff_shatter;
+
 protected:
   void SetLevel(int level);
 
@@ -191,16 +207,7 @@ private:
   int             sum_time;
   float           exposure;
 
-  sf::Sound sound_goal;
-  sf::SoundBuffer buff_goal;
-  sf::Sound sound_bounce1;
-  sf::SoundBuffer buff_bounce1;
-  sf::Sound sound_bounce2;
-  sf::SoundBuffer buff_bounce2;
-  sf::Sound sound_bounce3;
-  sf::SoundBuffer buff_bounce3;
-  sf::Sound sound_shatter;
-  sf::SoundBuffer buff_shatter;
+
 
   sf::Music* music;
 

@@ -1,7 +1,25 @@
 #include "Renderer.h"
+#include "Renderer.h"
+#include "Renderer.h"
 
 
-Renderer::Renderer(int w, int h,std::string config_file)
+Renderer::Renderer(int w, int h, std::string config_file)
+{
+	LoadConfigs(config_file);
+	Initialize(w, h, config_file);
+}
+
+Renderer::Renderer(std::string config_file)
+{
+	LoadConfigs(config_file);
+}
+
+Renderer::Renderer()
+{
+
+}
+
+void Renderer::LoadConfigs(std::string config_file)
 {
 	std::vector<fs::path> configs = GetFilesInFolder(fs::path(config_file).parent_path().string(), ".cfg");
 	for (auto &file : configs)
@@ -9,14 +27,6 @@ Renderer::Renderer(int w, int h,std::string config_file)
 		rendering_configurations.push_back(file.filename().string());
 	}
 	config_folder = fs::path(config_file).parent_path().string();
-	Initialize(w, h, config_file);
-}
-
-Renderer::Renderer()
-{
-	main_textures.clear();
-	shader_textures.clear();
-	global_size.clear();
 }
 
 void Renderer::Initialize(int w, int h, std::string config_f)

@@ -1,4 +1,5 @@
 #include "Gamemodes.h"
+#include "Gamemodes.h"
 
 
 
@@ -11,9 +12,7 @@ bool mouse_clicked = false;
 bool show_cheats = false;
 
 //Constants
-float mouse_sensitivity = 0.005f;
-float wheel_sensitivity = 0.2f;
-float music_vol = 75.0f;
+
 float target_fps = 60.0f;
 
 GameMode game_mode = MAIN_MENU;
@@ -23,13 +22,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	RemoveAllObjects();
 	game_mode = MAIN_MENU;
 
-	if (current_music != scene->levels.GetMusic("menu.ogg"))
-	{
-		if (current_music != nullptr)
-			current_music->stop();
-		current_music = scene->levels.GetMusic("menu.ogg");
-		current_music->play();
-	}
+	scene->SetCurrentMusic(scene->levels.GetMusic("menu.ogg"));
 
 	scene->SetExposure(1.0f);
 	scene->SetMode(Scene::INTRO);
@@ -148,6 +141,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 
 void OpenEditor(Scene * scene, Overlays * overlays, int level)
 {
+	scene->StopMusic();
 	RemoveAllObjects();
 	//go to level editor
 	game_mode = LEVEL_EDITOR;
@@ -217,7 +211,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	margin.SetBackgroundColor(sf::Color::Transparent);
 	pausemenu.AddObject(&margin, Object::Allign::LEFT);
 
-	//PLAY
+	
 	Box resumebtn(600, 50);
 	Text button1(LOCAL["Resume"], LOCAL("default"), 40, sf::Color::White);
 	button1.SetBorderColor(sf::Color::Black);
@@ -228,7 +222,6 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	{
 		RemoveAllObjects();
 		game_mode = PLAYING;
-		scene->GetCurMusic().setVolume(GetVol());
 		scene->SetExposure(1.0f);
 		LockMouse(*window);
 		overlays->sound_click.play();
@@ -236,7 +229,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	resumebtn.AddObject(&button1, Object::Allign::CENTER);
 	pausemenu.AddObject(&resumebtn, Object::Allign::LEFT);
 
-	//LEVELS
+
 	Box rstbtn(600, 50);
 	Text button2(LOCAL["Restart"], LOCAL("default"), 40, sf::Color::White);
 	button2.SetBorderColor(sf::Color::Black);
@@ -248,7 +241,6 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 		RemoveAllObjects();
 		game_mode = PLAYING;
 		scene->ResetLevel();
-		scene->GetCurMusic().setVolume(GetVol());
 		scene->SetExposure(1.0f);
 		LockMouse(*window);
 		overlays->sound_click.play();
@@ -256,7 +248,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	rstbtn.AddObject(&button2, Object::Allign::CENTER);
 	pausemenu.AddObject(&rstbtn, Object::Allign::LEFT);
 
-	//Settings
+	
 	Box sttbtn(600, 50);
 	Text buttonstt(LOCAL["Settings"], LOCAL("default"), 40, sf::Color::White);
 	buttonstt.SetBorderColor(sf::Color::Black);
@@ -271,7 +263,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	sttbtn.AddObject(&buttonstt, Object::Allign::CENTER);
 	pausemenu.AddObject(&sttbtn, Object::Allign::LEFT);
 
-	//Exit
+	
 	Box exitbtn(600, 50);
 	Text button5(LOCAL["Quit"], LOCAL("default"), 40, sf::Color::White);
 	button5.SetBorderColor(sf::Color::Black);
@@ -290,7 +282,6 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 			OpenMainMenu(scene, overlays);
 		}
 		scene->SetMode(Scene::INTRO);
-		scene->StopAllMusic();
 	}, true);
 	exitbtn.AddObject(&button5, Object::Allign::CENTER);
 	pausemenu.AddObject(&exitbtn, Object::Allign::LEFT);
@@ -300,7 +291,6 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 
 void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene) {
 	game_mode = PAUSED;
-	scene->GetCurMusic().setVolume(GetVol());
 	UnlockMouse(window);
 	OpenPauseMenu(scene, overlays);
 	scene->SetExposure(0.5f);
@@ -347,6 +337,9 @@ void OpenTestWindow()
 void OpenLevelMenu(Scene* scene, Overlays* overlays)
 {
 	RemoveAllObjects();
+
+	scene->SetCurrentMusic(scene->levels.GetMusic("menu.ogg"));
+
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
 	MenuBox levels(wsize.x*0.95f, vsize.y*0.95f, (vsize.x - wsize.x*0.95f)/2, vsize.y*0.025f);
@@ -567,16 +560,6 @@ void ConfirmEditorExit(Scene* scene, Overlays* overlays)
 	});
 }
 
-
-float GetVol() {
-	if (game_mode == PAUSED) {
-		return music_vol / 4;
-	}
-	else {
-		return music_vol;
-	}
-}
-
 void LockMouse(sf::RenderWindow& window) {
 	window.setMouseCursorVisible(false);
 	const sf::Vector2u size = window.getSize();
@@ -601,20 +584,83 @@ int DirExists(const char *path) {
 
 void FirstStart(Overlays* overlays)
 {
-	TwDefine("First_launch visible=true");
+	TwDefine("First_launch visible=true color='0 0 0' alpha=255 size='500 200' valueswidth=300 position='500 500'");
 	TwDefine("Statistics visible=false");
 	TwDefine("Settings visible=false");
 	game_mode = FIRST_START;
 	overlays->TWBAR_ENABLED = true;
+
+	RemoveAllObjects();
+
+	sf::Vector2f wsize = default_size;
+	sf::Vector2f vsize = default_view.getSize();
+	MenuBox mainmenu(1000, vsize.y*0.95f, wsize.x*0.025, wsize.y*0.025f);
+	mainmenu.SetBackgroundColor(sf::Color::Transparent);
+	//make the menu static
+	mainmenu.static_object = true;
+
+	//TITLE
+	Text ttl("Marble\nMarcher", LOCAL("default"), 120, sf::Color::White);
+	ttl.SetBorderColor(sf::Color::Black);
+	ttl.SetBorderWidth(4);
+	mainmenu.AddObject(&ttl, Object::Allign::LEFT);
+
+	Box margin1(800, 5);
+	margin1.SetBackgroundColor(sf::Color::Transparent);
+	mainmenu.AddObject(&margin1, Object::Allign::LEFT);
+
+	Text CE("Community Edition", LOCAL("default"), 60, sf::Color::White);
+	CE.SetBorderColor(sf::Color::Black);
+	CE.SetBorderWidth(4);
+	mainmenu.AddObject(&CE, Object::Allign::LEFT);
+
+	AddGlobalObject(mainmenu);
 }
 
 
-//ANTTWEAKBAR
+//ANTTWEAKBAR stuff
+
+
+sf::Vector2i getResolution(int i)
+{
+	switch (i)
+	{
+	case 0:
+		return sf::Vector2i(320, 240);
+	case 1:
+		return sf::Vector2i(480, 320);
+	case 2:
+		return sf::Vector2i(640, 480);
+	case 3:
+		return sf::Vector2i(800, 480);
+	case 4:
+		return sf::Vector2i(960, 540);
+	case 5:
+		return sf::Vector2i(1136, 640);
+	case 6:
+		return sf::Vector2i(1280, 720);
+	case 7:
+		return sf::Vector2i(1600, 900);
+	case 8:
+		return sf::Vector2i(1920, 1080);
+	case 9:
+		return sf::Vector2i(2048, 1152);
+	case 10:
+		return sf::Vector2i(2560, 1440);
+	case 11:
+		return sf::Vector2i(3840, 2160);
+	case 12:
+		return sf::Vector2i(7680, 4320);
+	case 13:
+		return sf::Vector2i(10240, 4320);
+	}
+}
 
 Scene *scene_ptr;
 Overlays *overlays_ptr;
 Renderer *renderer_ptr;
 sf::Shader *shader_ptr;
+sf::RenderWindow *window;
 sf::RenderTexture *renderTexture;
 sf::RenderTexture *screenshotTexture;
 sf::Texture *main_txt;
@@ -622,9 +668,12 @@ sf::Texture *screenshot_txt;
 sf::RectangleShape *rectmain;
 sf::RectangleShape *rectscr;
 
-
-void SetPointers(sf::RenderTexture *render, sf::RenderTexture *screenshot, sf::Texture *main, sf::Texture *screensht, sf::RectangleShape *rmain, sf::RectangleShape *rscr, sf::Shader *shader)
+void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, sf::RenderTexture *render, sf::RenderTexture *screenshot, sf::Texture *main, sf::Texture *screensht, sf::RectangleShape *rmain, sf::RectangleShape *rscr, sf::Shader *shader)
 {
+	window = w;
+	scene_ptr = scene;
+	overlays_ptr = overlays;
+	renderer_ptr = rd;
 	renderTexture = render;
 	screenshotTexture = screenshot;
 	shader_ptr = shader;
@@ -634,17 +683,63 @@ void SetPointers(sf::RenderTexture *render, sf::RenderTexture *screenshot, sf::T
 	rectscr = rscr;
 }
 
+
+void TakeScreenshot()
+{
+	sf::Vector2i rendering_resolution = getResolution(SETTINGS.stg.rendering_resolution);
+	sf::Vector2i screenshot_resolution = getResolution(SETTINGS.stg.screenshot_resolution);
+
+	scene_ptr->SetResolution(*shader_ptr, screenshot_resolution.x, screenshot_resolution.y);
+	renderer_ptr->ReInitialize(screenshot_resolution.x, screenshot_resolution.y);
+	scene_ptr->WriteRenderer(*renderer_ptr);
+
+	shader_ptr->setUniform("render_texture", *screenshot_txt);
+	renderer_ptr->SetOutputTexture(*screenshot_txt);
+	scene_ptr->Write(*shader_ptr);
+
+	//Setup full-screen shader
+	sf::RenderStates states = sf::RenderStates::Default;
+	states.shader = shader_ptr;
+
+	window->setActive(false);
+	screenshotTexture->setActive(true);
+
+	renderer_ptr->camera.SetMotionBlur(0);
+	renderer_ptr->Render();
+
+	screenshotTexture->draw(*rectscr, states);
+	screenshotTexture->display();
+	screenshotTexture->getTexture().copyToImage().saveToFile((std::string)"screenshots/screenshot" + (std::string)num2str(time(NULL)) + ".jpg");
+
+	screenshotTexture->setActive(false);
+	window->setActive(true);
+
+	scene_ptr->SetResolution(*shader_ptr, rendering_resolution.x, rendering_resolution.y);
+	renderer_ptr->ReInitialize(rendering_resolution.x, rendering_resolution.y);
+	scene_ptr->Write(*shader_ptr);
+}
+
 void InitializeRendering(std::string config)
 {
-	scene_ptr->SetResolution(*shader_ptr, SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y);
-	renderer_ptr->Initialize(SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y, renderer_ptr->GetConfigFolder() + "/" + config);
+
+	sf::Vector2i rendering_resolution = getResolution(SETTINGS.stg.rendering_resolution);
+	sf::Vector2i screenshot_resolution = getResolution(SETTINGS.stg.screenshot_resolution);
+
+	scene_ptr->SetResolution(*shader_ptr, rendering_resolution.x, rendering_resolution.y);
+	renderer_ptr->Initialize(rendering_resolution.x, rendering_resolution.y, renderer_ptr->GetConfigFolder() + "/" + config);
 	renderer_ptr->variables["MRRM_scale"] = SETTINGS.stg.MRRM_scale;
 	renderer_ptr->variables["shadow_scale"] = SETTINGS.stg.shadow_resolution;
 	renderer_ptr->variables["bloom_scale"] = SETTINGS.stg.bloom_resolution;
 	renderer_ptr->camera.bloomintensity = SETTINGS.stg.bloom_intensity;
-	renderer_ptr->camera.bloomradius = SETTINGS.stg.bloom_intensity;
-	renderer_ptr->camera.bloomtreshold = SETTINGS.stg.bloom_intensity;
+	renderer_ptr->camera.bloomradius = SETTINGS.stg.bloom_radius;
+	renderer_ptr->camera.bloomtreshold = SETTINGS.stg.bloom_treshold;
+	renderer_ptr->camera.SetMotionBlur(SETTINGS.stg.motion_blur);
 	renderer_ptr->camera.SetFOV(SETTINGS.stg.FOV);
+	renderer_ptr->camera.SetExposure(SETTINGS.stg.exposure);
+
+	scene_ptr->Refl_Refr_Enabled = SETTINGS.stg.refl_refr;
+	scene_ptr->Shadows_Enabled = SETTINGS.stg.shadows;
+	scene_ptr->Fog_Enabled = SETTINGS.stg.fog;
 
 	//GL settings
 	sf::ContextSettings settings;
@@ -652,18 +747,18 @@ void InitializeRendering(std::string config)
 	settings.minorVersion = 3;
 
 	renderTexture->clear();
-	renderTexture->create(SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y, settings);
-	main_txt->create(SETTINGS.stg.rendering_resolution.x, SETTINGS.stg.rendering_resolution.y);
+	renderTexture->create(rendering_resolution.x, rendering_resolution.y, settings);
+	main_txt->create(rendering_resolution.x, rendering_resolution.y);
 	renderTexture->setSmooth(false);
 	renderer_ptr->SetOutputTexture(*main_txt);
 
 	screenshotTexture->clear();
-	screenshotTexture->create(SETTINGS.stg.screenshot_resolution.x, SETTINGS.stg.screenshot_resolution.y, settings);
-	screenshot_txt->create(SETTINGS.stg.screenshot_resolution.x, SETTINGS.stg.screenshot_resolution.y);
+	screenshotTexture->create(screenshot_resolution.x, screenshot_resolution.y, settings);
+	screenshot_txt->create(screenshot_resolution.x, screenshot_resolution.y);
 	screenshotTexture->setSmooth(false);
 
-	const sf::Glsl::Vec2 window_res((float)SETTINGS.stg.rendering_resolution.x, (float)SETTINGS.stg.rendering_resolution.y);
-	const sf::Glsl::Vec2 sres_res((float)SETTINGS.stg.screenshot_resolution.x, (float)SETTINGS.stg.screenshot_resolution.y);
+	const sf::Glsl::Vec2 window_res((float)rendering_resolution.x, (float)rendering_resolution.y);
+	const sf::Glsl::Vec2 sres_res((float)screenshot_resolution.x, (float)screenshot_resolution.y);
 	//Create screen rectangle
 	rectmain->setSize(window_res);
 	rectscr->setSize(sres_res);
@@ -720,52 +815,73 @@ void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const s
 	destinationClientString = sourceLibraryString;
 }
 
-int render_resolution = 3;
-int screenshot_resolution = 10;
-int language_choise = 0;
-int shader_config = 0;
 
-sf::Vector2i getResolution(int i)
+
+
+void TW_CALL ApplySettings(void *data)
 {
-	switch (i)
+	if (!window->isOpen() || SETTINGS.first_start)
 	{
-	case 0:
-		return sf::Vector2i(320, 240);
-	case 1:
-		return sf::Vector2i(480, 320);
-	case 2:
-		return sf::Vector2i(640, 480);
-	case 3:
-		return sf::Vector2i(800, 480);
-	case 4:
-		return sf::Vector2i(960, 540);
-	case 5:
-		return sf::Vector2i(1136, 640);
-	case 6:
-		return sf::Vector2i(1280, 720);
-	case 7:
-		return sf::Vector2i(1600, 900);
-	case 8:
-		return sf::Vector2i(1920, 1080);
-	case 9:
-		return sf::Vector2i(2048, 1152);
-	case 10:
-		return sf::Vector2i(2560, 1440);
-	case 11:
-		return sf::Vector2i(3840, 2160);
-	case 12:
-		return sf::Vector2i(7680, 4320);
-	case 13:
-		return sf::Vector2i(10240, 4320);
+		sf::VideoMode screen_size;
+		sf::Uint32 window_style;
+		bool fullscreen = SETTINGS.stg.fullscreen;
+		if (fullscreen) {
+			screen_size = sf::VideoMode::getDesktopMode();
+			window_style = sf::Style::Fullscreen;
+		}
+		else {
+			screen_size = sf::VideoMode::getDesktopMode();
+			window_style = sf::Style::Default;
+		}
+
+		//GL settings
+		sf::ContextSettings settings;
+		settings.majorVersion = 4;
+		settings.minorVersion = 3;
+
+		window->create(screen_size, "Marble Marcher Community Edition", window_style, settings);
+		window->setVerticalSyncEnabled(SETTINGS.stg.VSYNC);
+		window->setKeyRepeatEnabled(false);
+		
+		INIT();
+
+		if (!fullscreen)
+		{
+			sf::VideoMode fs_size = sf::VideoMode::getDesktopMode();
+			window->setSize(sf::Vector2u(fs_size.width, fs_size.height - 100.f));
+			window->setPosition(sf::Vector2i(0, 0));
+		}
+
+		SETTINGS.first_start = false;
+
+		overlays_ptr->SetAntTweakBar(window->getSize().x, window->getSize().y);
 	}
+
+	std::vector<std::string> langs = LOCAL.GetLanguages();
+	LOCAL.SetLanguage(langs[SETTINGS.stg.language]);
+
+	std::vector<std::string> configs = renderer_ptr->GetConfigurationsList();
+
+	InitializeRendering(configs[SETTINGS.stg.shader_config]);
+
+	if (current_music != nullptr)
+		current_music->setVolume(SETTINGS.stg.music_volume);
+
+	scene_ptr->sound_goal.setVolume(SETTINGS.stg.fx_volume);
+	scene_ptr->sound_bounce1.setVolume(SETTINGS.stg.fx_volume);
+	scene_ptr->sound_bounce2.setVolume(SETTINGS.stg.fx_volume);
+	scene_ptr->sound_bounce3.setVolume(SETTINGS.stg.fx_volume);
+	scene_ptr->sound_shatter.setVolume(SETTINGS.stg.fx_volume);
+
+	overlays_ptr->sound_hover.setVolume(SETTINGS.stg.fx_volume);
+	overlays_ptr->sound_click.setVolume(SETTINGS.stg.fx_volume);
+	overlays_ptr->sound_count.setVolume(SETTINGS.stg.fx_volume);
+	overlays_ptr->sound_go.setVolume(SETTINGS.stg.fx_volume);
 }
 
 void TW_CALL InitialOK(void *data)
 {
-	std::vector<std::string> langs = LOCAL.GetLanguages();
-	LOCAL.SetLanguage(langs[language_choise]);
-	SETTINGS.stg.rendering_resolution = getResolution(render_resolution);
-	SETTINGS.stg.screenshot_resolution = getResolution(screenshot_resolution);
+	ApplySettings(nullptr);
 	TwDefine("First_launch visible=false");
 	TwDefine("Statistics visible=true");
 	TwDefine("Settings visible=true");
@@ -773,33 +889,13 @@ void TW_CALL InitialOK(void *data)
 	OpenMainMenu(scene_ptr, overlays_ptr);
 }
 
-void TW_CALL ApplySettings(void *data)
+
+void InitializeATBWindows(float* fps, float *target_fps)
 {
-	std::vector<std::string> langs = LOCAL.GetLanguages();
-	LOCAL.SetLanguage(langs[language_choise]);
-	SETTINGS.stg.rendering_resolution = getResolution(render_resolution);
-	SETTINGS.stg.screenshot_resolution = getResolution(screenshot_resolution);
-
-	std::vector<std::string> configs = renderer_ptr->GetConfigurationsList();
-
-	InitializeRendering(configs[shader_config]);
-
-	if(current_music != nullptr)
-		current_music->setVolume(SETTINGS.stg.music_volume);
-}
-
-
-
-void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float* fps, bool *vsync, float *mouse_sensitivity, float *wheel_sensitivity, float *music_vol, float *target_fps)
-{
-	scene_ptr = scene;
-	overlays_ptr = overlays;
-	renderer_ptr = rd;
-
 	overlays_ptr->stats = TwNewBar("Statistics");
 	TwDefine(" GLOBAL help='Marble Marcher: Community Edition. Use F5 to take screenshots. F4 to open or close settings windows.' ");
 
-	std::map<int, std::string> level_list = scene->levels.getLevelNames();
+	std::map<int, std::string> level_list = scene_ptr->levels.getLevelNames();
 	TwEnumVal *level_enums = new TwEnumVal[level_list.size() + 1];
 	TwEnumVal enumval;
 	enumval.Label = "None";
@@ -816,24 +912,9 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 
 	TwType Levels = TwDefineEnum("levels", level_enums, level_list.size() + 1);
 
-	TwEnumVal resolutions[] = { { 0, "320x240"  },
-								{ 1,  "480x320" },
-								{ 2,  "640x480" },
-								{ 3,  "800x480" },
-								{ 4,  "960x540" },
-								{ 5,  "1136x640" },
-								{ 6,  "1280x720" },
-								{ 7,  "1600x900" },
-								{ 8,  "1920x1080" },
-								{ 9,  "2048x1152" },
-								{ 10,  "2560x1440" },
-								{ 11,  "3840x2160" },
-								{ 12,  "7680x4320" },
-								{ 13,  "10240x4320" } };
-
 	TwType Resolutions = TwDefineEnum("Resolutions", resolutions, 14);
 
-	std::vector<std::string> music_list = scene->levels.GetMusicNames();
+	std::vector<std::string> music_list = scene_ptr->levels.GetMusicNames();
 	TwEnumVal *music_enums = new TwEnumVal[music_list.size()];
 	for (int i = 0; i < music_list.size(); i++)
 	{
@@ -857,7 +938,7 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 
 	TwType Languages = TwDefineEnum("Languages", language_enums, langs.size());
 
-	std::vector<std::string> configs = rd->GetConfigurationsList();
+	std::vector<std::string> configs = renderer_ptr->GetConfigurationsList();
 	TwEnumVal *config_enums = new TwEnumVal[configs.size()];
 
 	for (int j = 0; j < configs.size(); j++)
@@ -873,21 +954,22 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 	int barPos[2] = { 16, 60 };
 	TwSetParam(overlays_ptr->stats, NULL, "position", TW_PARAM_INT32, 2, &barPos);
 	TwAddVarRO(overlays_ptr->stats, "FPS", TW_TYPE_FLOAT, fps, " label='FPS' ");
-	TwAddVarRO(overlays_ptr->stats, "Marble velocity", TW_TYPE_DIR3F, scene->marble_vel.data(), " ");
-	TwAddVarRO(overlays_ptr->stats, "Marble position", TW_TYPE_DIR3F, scene->marble_pos.data(), " ");
+	TwAddVarRO(overlays_ptr->stats, "Marble velocity", TW_TYPE_DIR3F, scene_ptr->marble_vel.data(), " ");
+	TwAddVarRO(overlays_ptr->stats, "Marble position", TW_TYPE_DIR3F, scene_ptr->marble_pos.data(), " ");
 
 	overlays_ptr->settings = TwNewBar("Settings");
 
-	TwAddVarRW(overlays_ptr->settings, "Rendering resolution", Resolutions, &render_resolution, "group='Rendering settings'");
-	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &screenshot_resolution, "group='Rendering settings'");
-	TwAddVarRW(overlays_ptr->settings, "Shader configuration", Configurations, &shader_config, "group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Rendering resolution", Resolutions, &SETTINGS.stg.rendering_resolution, "group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, "group='Graphics settings' help='You need to restart the game for chages to take effect'");
+	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Shader configuration", Configurations, &SETTINGS.stg.shader_config, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "MRRM scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Shadow downscaling", TW_TYPE_INT32, &SETTINGS.stg.shadow_resolution, "min=1 max=8 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom downscaling", TW_TYPE_INT32, &SETTINGS.stg.bloom_resolution, "min=1 max=8 group='Rendering settings'");
 
 	
 	TwAddVarRW(overlays_ptr->settings, "FOV", TW_TYPE_FLOAT, &SETTINGS.stg.FOV, "min=30 step=1 max=180 group='Graphics settings'");
-	TwAddVarRW(overlays_ptr->settings, "VSYNC", TW_TYPE_BOOLCPP, vsync, "group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "VSYNC", TW_TYPE_BOOLCPP, &SETTINGS.stg.VSYNC, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Shadows", TW_TYPE_BOOLCPP, &SETTINGS.stg.shadows, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Reflection and Refraction", TW_TYPE_BOOLCPP, &SETTINGS.stg.refl_refr, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Volumetric fog", TW_TYPE_BOOLCPP, &SETTINGS.stg.fog, "group='Graphics settings'");
@@ -898,19 +980,19 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 	TwAddVarRW(overlays_ptr->settings, "Bloom Radius", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_radius, "min=1 max=10 step=0.1 group='Graphics settings'");
 
 
-	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &language_choise, "group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &SETTINGS.stg.language, "group='Gameplay settings'");
 	TwEnumVal marble_type[] = { { 0, "Glass"  },
 								{ 1,  "Metal" } };
 
 	TwType Marble_type = TwDefineEnum("Marble type", marble_type, 2);
-	TwAddVarRW(overlays_ptr->settings, "Marble type", Marble_type, &scene->MarbleType, "group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Marble type", Marble_type, &scene_ptr->MarbleType, "group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Mouse sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Wheel sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.wheel_sensitivity, "min=0.01 max=0.5 step=0.01 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Music volume", TW_TYPE_FLOAT, &SETTINGS.stg.music_volume, "min=0 max=100 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "FX volume", TW_TYPE_FLOAT, &SETTINGS.stg.fx_volume, "min=0 max=100 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=144 step=1 group='Gameplay settings'");
-	TwAddVarRW(overlays_ptr->settings, "Camera size", TW_TYPE_FLOAT, &scene->camera_size, "min=0 max=10 step=0.001 group='Gameplay settings'");
-	TwAddVarRW(overlays_ptr->settings, "Camera speed(Free mode)", TW_TYPE_FLOAT, &scene->free_camera_speed, "min=0 max=10 step=0.001 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Camera size", TW_TYPE_FLOAT, &scene_ptr->camera_size, "min=0 max=10 step=0.001 group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Camera speed(Free mode)", TW_TYPE_FLOAT, &scene_ptr->free_camera_speed, "min=0 max=100 step=0.001 group='Gameplay settings'");
 
 	TwAddButton(overlays_ptr->settings, "Apply", ApplySettings, NULL, " label='Apply settings'  ");
 
@@ -922,7 +1004,7 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 	TwCopyStdStringToClientFunc(CopyStdStringToClient);
 
 	overlays_ptr->level_editor = TwNewBar("LevelEditor");
-	Level *copy = &scene->level_copy;
+	Level *copy = &scene_ptr->level_copy;
 
 	TwAddVarRW(overlays_ptr->level_editor, "Level Name", TW_TYPE_STDSTRING, &copy->txt, "");
 	TwAddVarRW(overlays_ptr->level_editor, "Level Description", TW_TYPE_STDSTRING, &copy->desc, "");
@@ -961,7 +1043,7 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 	TwAddVarRW(overlays_ptr->fractal_editor, "PBR roughness", TW_TYPE_FLOAT, &copy->PBR_roughness, "min=0 max=1 step=0.001 group='Fractal Material'");
 	TwAddVarRW(overlays_ptr->fractal_editor, "PBR metallic", TW_TYPE_FLOAT, &copy->PBR_metal, "min=0 max=1 step=0.001 group='Fractal Material'");
 	float *p = copy->params.data();
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Iterations", TW_TYPE_INT32, &copy->FractalIter, "min=1 max=20 step=1 group='Fractal Coefficients'");
+	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Iterations", TW_TYPE_INT32, &copy->FractalIter, "min=1 max=32 step=1 group='Fractal Coefficients'");
 	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Scale", TW_TYPE_FLOAT, p, "min=0 max=5 step=0.0001 group='Fractal Coefficients'");
 	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Angle1", TW_TYPE_FLOAT, p + 1, "min=-10 max=10 step=0.0001 group='Fractal Coefficients'");
 	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Angle2", TW_TYPE_FLOAT, p + 2, "min=-10 max=10 step=0.0001  group='Fractal Coefficients'");
@@ -974,9 +1056,10 @@ void InitializeATBWindows(Scene* scene, Overlays* overlays, Renderer* rd, float*
 
 	overlays_ptr->flaunch = TwNewBar("First_launch");
 
-	TwAddVarRW(overlays_ptr->flaunch, "Rendering resolution", Resolutions, &render_resolution, "");
-	TwAddVarRW(overlays_ptr->flaunch, "Screenshot resolution", Resolutions, &screenshot_resolution, "");
-	TwAddVarRW(overlays_ptr->flaunch, "Language", Languages, &language_choise, "");
+	TwAddVarRW(overlays_ptr->flaunch, "Rendering resolution", Resolutions, &SETTINGS.stg.rendering_resolution, "");
+	TwAddVarRW(overlays_ptr->flaunch, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, " help='You need to restart the game for chages to take effect'");
+	TwAddVarRW(overlays_ptr->flaunch, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "");
+	TwAddVarRW(overlays_ptr->flaunch, "Language", Languages, &SETTINGS.stg.language, "");
 	TwAddButton(overlays_ptr->flaunch, "OK", InitialOK, NULL, " label='OK'  ");
 	TwSetParam(overlays_ptr->flaunch, NULL, "position", TW_PARAM_INT32, 2, &barPos1);
 

@@ -22,7 +22,10 @@ class Renderer
 {
 public:
 	Renderer(int w, int h, std::string config);
+	Renderer(std::string config_file);
 	Renderer();
+
+	void LoadConfigs(std::string config_file);
 
 	void Initialize(int w, int h, std::string config);
 	void ReInitialize(int w, int h);

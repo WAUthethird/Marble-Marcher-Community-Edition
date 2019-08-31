@@ -36,12 +36,28 @@ static const int frame_orbit = 600;
 static const int frame_deorbit = 800;
 static const int frame_countdown = frame_deorbit + 3*60;
 static const float default_zoom = 15.0f;
-static const int fractal_iters = 16;
 static const float ground_ratio = 1.15f;
 static const int mus_switches[num_level_music] = {9, 15, 21, 24};
 static const int num_levels_midpoint = 15;
 
 sf::Music *current_music = nullptr;
+
+void Scene::SetCurrentMusic(sf::Music *new_music)
+{
+	if (current_music != new_music)
+	{
+		StopMusic();
+		current_music = new_music;
+		current_music->play();
+		current_music->setVolume(SETTINGS.stg.music_volume);
+	}
+}
+
+void Scene::StopMusic()
+{
+	if (current_music != nullptr)
+		current_music->stop();
+}
 
 static void ModPi(float& a, float b) {
   if (a - b > PI) {
@@ -129,13 +145,7 @@ void Scene::SetFlag(float x, float y, float z) {
 void Scene::SetLevel(int level) {
   cur_level = level;    
   level_copy = levels.GetLevel(level);
-  if (current_music != levels.GetLevelMusic(level))
-  {
-	  if (current_music != nullptr)
-		  current_music->stop();
-	  current_music = levels.GetLevelMusic(level);
-	  current_music->play();
-  }
+  SetCurrentMusic(levels.GetLevelMusic(level));
 }
 
 void Scene::SetMode(CamMode mode) {
@@ -214,6 +224,7 @@ void Scene::StartNewGame() {
   sum_time = 0;
   play_single = false;
   ResetCheats();
+  is_fullrun = true;
   SetLevel(0);
   HideObjects();
   SetMode(ORBIT);
@@ -231,12 +242,6 @@ void Scene::StartNextLevel() {
     SetLevel(cur_level + 1);
     HideObjects();
     SetMode(ORBIT);
-    for (int i = 0; i < num_level_music; ++i) {
-      if (cur_level == mus_switches[i]) {
-        StopAllMusic();
-        GetCurMusic().play();
-      }
-    }
   }
 }
 
@@ -395,7 +400,7 @@ void Scene::UpdateMarble(float dx, float dy) {
     } else if (bounce_delta_v > 0.25f) {
       sound_bounce2.play();
     } else if (bounce_delta_v > 0.1f) {
-      sound_bounce3.setVolume(100.0f * (bounce_delta_v / 0.25f));
+      sound_bounce3.setVolume(SETTINGS.stg.fx_volume * (bounce_delta_v / 0.25f));
       sound_bounce3.play();
     }
 
@@ -845,6 +850,7 @@ void Scene::WriteShader(ComputeShader& shader)
 
 
 	shader.setUniform("SHADOWS_ENABLED", Shadows_Enabled);
+	shader.setUniform("FOG_ENABLED", Fog_Enabled);
 	shader.setUniform("CAMERA_SIZE", camera_size*level_copy.marble_rad / 0.035f);
 	shader.setUniform("FRACTAL_ITER", level_copy.FractalIter);
 	shader.setUniform("REFL_REFR_ENABLED", Refl_Refr_Enabled);
@@ -864,7 +870,7 @@ float Scene::DE(const Eigen::Vector3f& pt) const {
 
   Eigen::Vector4f p;
   p << pt, 1.0f;
-  for (int i = 0; i < fractal_iters; ++i) {
+  for (int i = 0; i < level_copy.FractalIter; ++i) {
     //absFold
     p.segment<3>(0) = p.segment<3>(0).cwiseAbs();
     //rotZ
@@ -908,7 +914,7 @@ Eigen::Vector3f Scene::NP(const Eigen::Vector3f& pt) const {
   Eigen::Vector4f p;
   p << pt, 1.0f;
   //Fold the point, keeping history
-  for (int i = 0; i < fractal_iters; ++i) {
+  for (int i = 0; i < level_copy.FractalIter; ++i) {
     //absFold
     p_hist.push_back(p);
     p.segment<3>(0) = p.segment<3>(0).cwiseAbs();
@@ -939,7 +945,7 @@ Eigen::Vector3f Scene::NP(const Eigen::Vector3f& pt) const {
   //Get the nearest point
   Eigen::Vector3f n = p.segment<3>(0).cwiseMax(-6.0f).cwiseMin(6.0f);
   //Then unfold the nearest point (reverse order)
-  for (int i = 0; i < fractal_iters; ++i) {
+  for (int i = 0; i < level_copy.FractalIter; ++i) {
     //scaleTrans
     n.segment<3>(0) -= frac_shift;
     n /= frac_scale;
