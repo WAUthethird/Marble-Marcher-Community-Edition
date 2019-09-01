@@ -688,15 +688,16 @@ void TakeScreenshot()
 {
 	sf::Vector2i rendering_resolution = getResolution(SETTINGS.stg.rendering_resolution);
 	sf::Vector2i screenshot_resolution = getResolution(SETTINGS.stg.screenshot_resolution);
-
+	
 	scene_ptr->SetResolution(*shader_ptr, screenshot_resolution.x, screenshot_resolution.y);
 	renderer_ptr->ReInitialize(screenshot_resolution.x, screenshot_resolution.y);
+
+	scene_ptr->Write(*shader_ptr);
 	scene_ptr->WriteRenderer(*renderer_ptr);
 
 	shader_ptr->setUniform("render_texture", *screenshot_txt);
 	renderer_ptr->SetOutputTexture(*screenshot_txt);
-	scene_ptr->Write(*shader_ptr);
-
+	
 	//Setup full-screen shader
 	sf::RenderStates states = sf::RenderStates::Default;
 	states.shader = shader_ptr;
@@ -960,7 +961,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	overlays_ptr->settings = TwNewBar("Settings");
 
 	TwAddVarRW(overlays_ptr->settings, "Rendering resolution", Resolutions, &SETTINGS.stg.rendering_resolution, "group='Rendering settings'");
-	TwAddVarRW(overlays_ptr->settings, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, "group='Graphics settings' help='You need to restart the game for chages to take effect'");
+	TwAddVarRW(overlays_ptr->settings, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, "group='Graphics settings' help='You need to restart the game for changes to take effect'");
 	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Shader configuration", Configurations, &SETTINGS.stg.shader_config, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "MRRM scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings'");
@@ -1057,7 +1058,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	overlays_ptr->flaunch = TwNewBar("First_launch");
 
 	TwAddVarRW(overlays_ptr->flaunch, "Rendering resolution", Resolutions, &SETTINGS.stg.rendering_resolution, "");
-	TwAddVarRW(overlays_ptr->flaunch, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, " help='You need to restart the game for chages to take effect'");
+	TwAddVarRW(overlays_ptr->flaunch, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, " help='You need to restart the game for changes to take effect'");
 	TwAddVarRW(overlays_ptr->flaunch, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "");
 	TwAddVarRW(overlays_ptr->flaunch, "Language", Languages, &SETTINGS.stg.language, "");
 	TwAddButton(overlays_ptr->flaunch, "OK", InitialOK, NULL, " label='OK'  ");

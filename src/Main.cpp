@@ -436,8 +436,8 @@ int main(int argc, char *argv[]) {
 		else
 		{
 			window.setMouseCursorVisible(false);
-			const sf::Vector2i mouse_delta = mouse_pos - sf::Vector2i(window.getSize().x*0.5, window.getSize().x*0.5);
-			sf::Mouse::setPosition(sf::Vector2i(window.getSize().x*0.5, window.getSize().x*0.5), window);
+			const sf::Vector2i mouse_delta = mouse_pos - sf::Vector2i(window.getSize().x*0.5, window.getSize().y*0.5);
+			sf::Mouse::setPosition(sf::Vector2i(window.getSize().x*0.5, window.getSize().y*0.5), window);
 
 			float ms = SETTINGS.stg.mouse_sensitivity;
 
