@@ -47,8 +47,8 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 - ingame statistics added (marble speed, ground/air state, ...). Press `o` to toggle.
 - AntTweakBar editor added. Press `F4` to toggle.
 - Level Editor and custom level support
-![Editor](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/EDITOR.PNG)
-![Levels](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/LEVELS.PNG)
+![Editor](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/development/doc/EDITOR.PNG)
+![Levels](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/development/doc/LEVELS.PNG)
 
 
 ## Proposed Changes
