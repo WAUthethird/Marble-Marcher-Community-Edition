@@ -50,18 +50,14 @@ void main() {
 	//calculate new best pos, second order, MRRBM
 	#if(RBM1)
 		barrier();
-		float d = find_furthest_intersection(dir.xyz, pos.xyz, local_indx);
+		pos.w = find_furthest_intersection(dir.xyz, pos.xyz, local_indx);
 	#else
-		float d = sphere_intersection(dir.xyz, pos.xyz, sph);
-		d = max(d, sphere_intersection(dir.xyz, pos.xyz, sph_norm));
+		pos.w = sphere_intersection(dir.xyz, pos.xyz, sph);
+		pos.w = max(pos.w, sphere_intersection(dir.xyz, pos.xyz, sph_norm));
 	#endif
 	
-	pos.w = d;
-	var.w = 1;
 	
-	//pos.xyz += d*dir.xyz;
-	//pos.w = sph.w;
-	ray_march(pos, dir, var, fovray, 0);
+	ray_march_continue(pos, dir, var, fovray);
 	
 	//save the DE spheres
 	imageStore(DE_output, global_pos, pos);	 	

@@ -56,6 +56,7 @@ public:
   Level           level_copy;
   All_Levels	  levels;
 
+  bool PlayNext;
   bool PBR_Enabled;
   bool Refl_Refr_Enabled;
   bool Shadows_Enabled;

@@ -163,6 +163,7 @@ public:
 	void LoadLevelsFromFolder(std::string folder);
 	void LoadMusicFromFolder(std::string folder);
 
+	bool LevelExists(int ID);
 	Level GetLevel(int ID);
 	int GetLevelNum();
 	std::map<int, std::string> getLevelNames();

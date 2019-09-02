@@ -1,33 +1,77 @@
 #include<distance_estimators.glsl>
 
-#define MAX_DIST 50
-#define MIN_DIST 1e-7
-#define MAX_MARCHES 512
+#define MAX_DIST 500
+#define MIN_DIST 1e-5
+#define MAX_MARCHES 700
 #define NORMARCHES 2
 
 
-void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float d0) 
+void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov) 
 {
 	//March the ray
+	for (; var.x < MAX_MARCHES; var.x += 1.0) {	
+		dir.w += pos.w;
+		pos.xyz += pos.w*dir.xyz;
+		pos.w = DE(pos.xyz);
+		
+		//if the distance from the surface is less than the distance per pixel we stop
+		if(dir.w > MAX_DIST || pos.w < max(fov*dir.w, MIN_DIST))
+		{
+			break;
+		}
+	}
+}
+
+void ray_march_limited(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float d0) 
+{
+
+	pos.w = DE(pos.xyz)-d0*dir.w;
+	
 	for (; var.x < MAX_MARCHES; var.x += 1.0) {
 		//if the distance from the surface is less than the distance per pixel we stop
-		if(dir.w > MAX_DIST || pos.w<0)
+		if(dir.w > MAX_DIST)
 		{
 			break;
 		}
 		
-		if(pos.w < max(fov*dir.w, MIN_DIST) && var.x > 0 && var.w < 1)
+		if(pos.w < max(fov*dir.w, MIN_DIST))
+		{
+			break;
+		}
+	
+		dir.w += pos.w;
+		pos.xyz += pos.w*dir.xyz;
+	
+		pos.w = DE(pos.xyz)-d0*dir.w;
+	}
+	
+	pos.w += d0*dir.w;
+}
+
+void ray_march_continue(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov) 
+{
+	dir.w += pos.w;
+	pos.xyz += pos.w*dir.xyz;
+	
+	if(dir.w > MAX_DIST)
+	{
+		return;
+	}
+	
+	pos.w = DE(pos.xyz);
+	
+	//March the ray
+	for (; var.x < MAX_MARCHES; var.x += 1.0) {
+		//if the distance from the surface is less than the distance per pixel we stop
+		if(dir.w > MAX_DIST || pos.w < max(fov*dir.w, MIN_DIST))
 		{
 			break;
 		}
 		
 		dir.w += pos.w;
 		pos.xyz += pos.w*dir.xyz;
-		pos.w = DE(pos.xyz)-d0*dir.w;
-		var.w = 0;
+		pos.w = DE(pos.xyz);
 	}
-	
-	pos.w += d0*dir.w;
 }
 
 float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)

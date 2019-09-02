@@ -28,10 +28,10 @@ void main() {
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
-	float res_ratio = float(imageSize(color_HDR).x/imageSize(DE_output).x);;
+	float res_ratio = float(imageSize(color_HDR).x/imageSize(DE_output).x);
 	fovray *= res_ratio;
 	dir.w = 4*Camera.size;
-	ray_march(pos, dir, var, fovray, fovray);
+	ray_march_limited(pos, dir, var, 0.33*fovray, 0.8*fovray);
 	
 	vec4 pos1 = pos;
 	

@@ -287,9 +287,9 @@ vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, float shadow)
 		else
 		{
 			//optimize color sampling 
-			vec3 cpos = pos.xyz - norm.w*norm.xyz;
-			cpos = cpos - DE(cpos)*norm.xyz;
-			cpos = cpos - DE(cpos)*norm.xyz;
+			vec3 cpos = pos.xyz - pos.w*norm.xyz;
+			//cpos = cpos - DE(cpos)*norm.xyz;
+			//cpos = cpos - DE(cpos)*norm.xyz;
 			
 			vec4 color = COL(cpos);
 			return lighting(color, pos, dir, norm, vec3(0), vec3(0), shadow); 
@@ -305,7 +305,7 @@ vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, float shadow)
 vec3 render_ray(in vec4 pos, in vec4 dir, float fov)
 {
 	vec4 var = vec4(0,0,0,1);
-	ray_march(pos, dir, var, fov, MIN_DIST); 
+	ray_march(pos, dir, var, fov); 
 	float shadow = shadow_march(pos, vec4(LIGHT_DIRECTION,0), MAX_DIST, LIGHT_ANGLE);
 	return shading_simple(pos, dir, fov, shadow);
 }
@@ -325,9 +325,10 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 		else
 		{
 			//optimize color sampling 
-			vec3 cpos = pos.xyz - norm.w*norm.xyz;
-			cpos = cpos - DE(cpos)*norm.xyz;
-			cpos = cpos - DE(cpos)*norm.xyz;
+			vec3 cpos = pos.xyz - pos.w*norm.xyz;
+		//	cpos = cpos - DE(cpos)*norm.xyz;
+		//	cpos = cpos - DE(cpos)*norm.xyz;
+		//	cpos = cpos - DE(cpos)*norm.xyz;
 			
 			vec4 color = COL(cpos);
 			vec3 refl = vec3(0);

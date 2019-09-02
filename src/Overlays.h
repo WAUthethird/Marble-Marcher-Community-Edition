@@ -58,6 +58,7 @@ public:
   sf::Sound sound_hover;
   sf::Sound sound_click;
   sf::Sound sound_count;
+  sf::Sound sound_screenshot;
   sf::Sound sound_go;
 
   Overlays(sf::Font* _font, sf::Font* _font_mono, Scene* scene);
@@ -107,6 +108,7 @@ private:
   sf::SoundBuffer buff_hover;
   sf::SoundBuffer buff_click;
   sf::SoundBuffer buff_count;
+  sf::SoundBuffer buff_screenshot;
   sf::SoundBuffer buff_go;
 
   sf::Texture arrow_tex;

@@ -39,6 +39,7 @@ static const char bounce1_wav[] = "sound/fx/bounce1.wav";
 static const char bounce2_wav[] = "sound/fx/bounce2.wav";
 static const char bounce3_wav[] = "sound/fx/bounce3.wav";
 static const char shatter_wav[] = "sound/fx/shatter.wav";
+static const char screenshot_wav[] = "sound/fx/screenshot.wav";
 
 static const char level_folder[] = "levels";
 static const char music_folder[] = "sound/music";

@@ -233,7 +233,17 @@ void Scene::StartNewGame() {
 void Scene::StartNextLevel() {
   if (play_single) {
     cam_mode = MARBLE;
-    ResetLevel();
+	if (PlayNext && levels.LevelExists(level_copy.link_level))
+	{
+		SetLevel(level_copy.link_level);
+		HideObjects();
+		SetMode(ORBIT);
+	}
+	else
+	{
+		ResetLevel();
+	}
+    
   } else if (cur_level + 1 == num_levels_midpoint && cam_mode != MIDPOINT) {
     cam_mode = MIDPOINT;
   } else if (cur_level + 1 >= num_levels) {

@@ -604,6 +604,15 @@ void All_Levels::LoadMusicFromFolder(std::string folder)
 	}
 }
 
+bool All_Levels::LevelExists(int ID)
+{
+	if (level_map.count(ID) > 0)
+	{
+		return true;
+	}
+	return false;
+}
+
 Level All_Levels::GetLevel(int ID)
 {
 	return level_map[ID];

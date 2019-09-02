@@ -113,6 +113,9 @@ int main(int argc, char *argv[]) {
 
   ApplySettings(nullptr);
 
+  scene.levels.LoadLevelsFromFolder(level_folder);
+  scene.levels.LoadMusicFromFolder(music_folder);
+
   InitializeATBWindows(&smooth_fps, &target_fps);
 
   window.requestFocus();
@@ -132,8 +135,6 @@ int main(int argc, char *argv[]) {
   scene.Write(shader);
   scene.SetWindowResolution(window.getSize().x, window.getSize().y);
 
-
-
   //temporary level generation code
   /*for (int i = 0; i < 24; i++)
   {
@@ -141,8 +142,6 @@ int main(int argc, char *argv[]) {
 	  all_levels[i].SaveToFile(std::string(level_folder) + "/" + ConvertSpaces2_(all_levels[i].txt)+".lvl", i, (i<24)?(i+1):-1);
   }*/
 
-  scene.levels.LoadLevelsFromFolder(level_folder);
-  scene.levels.LoadMusicFromFolder(music_folder);
 
   overlays.SetScale(float(window.getSize().x) / 1280.0f);
 

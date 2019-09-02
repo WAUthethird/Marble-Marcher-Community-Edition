@@ -39,6 +39,10 @@ Overlays::Overlays(sf::Font* _font, sf::Font* _font_mono, Scene* scene) :
   sound_count.setBuffer(buff_count);
   buff_go.loadFromFile(count_go_wav);
   sound_go.setBuffer(buff_go);
+
+  buff_screenshot.loadFromFile(screenshot_wav);
+  sound_screenshot.setBuffer(buff_screenshot);
+
   arrow_tex.loadFromFile(arrow_png);
   arrow_tex.setSmooth(true);
   arrow_spr.setTexture(arrow_tex);

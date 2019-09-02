@@ -76,12 +76,14 @@ struct MainSettings
 
 	bool fullscreen;
 	bool VSYNC;
+	int marble_type;
+	bool play_next;
 };
 
 extern TwEnumVal resolutions[];
 
 static const MainSettings default_settings = { 6,
-	10, 4, 2, 2, 0, true, true, true, 0.05, 2.7, 3, 2.2, 90, 20, 20, 0.005, 0.2, false, 0.005, 0.7, 0, false, true };
+	10, 4, 2, 2, 0, true, true, true, 0.05, 2.7, 3, 2.2, 90, 20, 20, 0.005, 0.2, false, 0.005, 0.7, 0, false, true, 0, true};
 
 
 class AllSettings

@@ -86,6 +86,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	sttbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
 		overlays->TWBAR_ENABLED = !overlays->TWBAR_ENABLED;
+		TwDefine("Settings iconified=false");
 		overlays->sound_click.play();
 	}, true);
 	sttbtn.AddObject(&buttonstt, Object::Allign::CENTER);
@@ -179,7 +180,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	scene->SetExposure(1.0f);
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
-	MenuBox pausemenu(625, 510, wsize.x*0.025, wsize.y*0.025f);
+	MenuBox pausemenu(625, 630, wsize.x*0.025, wsize.y*0.025f);
 	pausemenu.SetBackgroundColor(sf::Color(32, 32, 32, 200));
 	
 	//make the menu static
@@ -248,6 +249,33 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	rstbtn.AddObject(&button2, Object::Allign::CENTER);
 	pausemenu.AddObject(&rstbtn, Object::Allign::LEFT);
 
+
+	Box editbtn(600, 50);
+	Text button_e(LOCAL["Edit"], LOCAL("default"), 40, sf::Color::White);
+	button_e.SetBorderColor(sf::Color::Black);
+	button_e.SetBorderWidth(2);
+	editbtn.SetBackgroundColor(sf::Color(200, 200, 200, 200));
+	editbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
+	editbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
+	{
+		OpenEditor(scene, overlays, scene->level_copy.level_id);
+		overlays->sound_click.play();
+	}, true);
+	editbtn.AddObject(&button_e, Object::Allign::CENTER);
+	pausemenu.AddObject(&editbtn, Object::Allign::LEFT);
+
+	Box screenshotbtn(600, 50);
+	Text button_s(LOCAL["Take screenshot"], LOCAL("default"), 40, sf::Color::White);
+	button_s.SetBorderColor(sf::Color::Black);
+	button_s.SetBorderWidth(2);
+	screenshotbtn.SetBackgroundColor(sf::Color(200, 200, 200, 200));
+	screenshotbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
+	screenshotbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
+	{
+		TakeScreenshot();
+	}, true);
+	screenshotbtn.AddObject(&button_s, Object::Allign::CENTER);
+	pausemenu.AddObject(&screenshotbtn, Object::Allign::LEFT);
 	
 	Box sttbtn(600, 50);
 	Text buttonstt(LOCAL["Settings"], LOCAL("default"), 40, sf::Color::White);
@@ -258,6 +286,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	sttbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
 		overlays->TWBAR_ENABLED = !overlays->TWBAR_ENABLED;
+		TwDefine("Settings iconified=false");
 		overlays->sound_click.play();
 	}, true);
 	sttbtn.AddObject(&buttonstt, Object::Allign::CENTER);
@@ -308,8 +337,6 @@ void PlayNewGame(Scene * scene, sf::RenderWindow * window, int level)
 	RemoveAllObjects();
 	game_mode = PLAYING;
 	scene->StartNewGame();
-//	scene->GetCurMusic().setVolume(GetVol());
-//	scene->GetCurMusic().play();
 	LockMouse(*window);
 }
 
@@ -511,7 +538,7 @@ void ConfirmLevelDeletion(int lvl, Scene* scene, Overlays* overlays)
 		scene->levels.DeleteLevel(lvl);
 		overlays->sound_click.play();
 		OpenLevelMenu(scene, overlays);
-	});
+	}, true);
 
 	get_glob_obj(id).objects[1].get()->objects[0].get()->objects[2].get()->SetCallbackFunction([scene, overlays, id](sf::RenderWindow * window, InputState & state)
 	{
@@ -566,10 +593,10 @@ void LockMouse(sf::RenderWindow& window) {
 	mouse_pos = sf::Vector2i(size.x / 2, size.y / 2);
 	sf::Mouse::setPosition(mouse_pos);
 }
+
 void UnlockMouse(sf::RenderWindow& window) {
 	window.setMouseCursorVisible(true);
 }
-
 
 int DirExists(const char *path) {
 	struct stat info;
@@ -718,6 +745,8 @@ void TakeScreenshot()
 	scene_ptr->SetResolution(*shader_ptr, rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->ReInitialize(rendering_resolution.x, rendering_resolution.y);
 	scene_ptr->Write(*shader_ptr);
+
+	overlays_ptr->sound_screenshot.play();
 }
 
 void InitializeRendering(std::string config)
@@ -726,11 +755,12 @@ void InitializeRendering(std::string config)
 	sf::Vector2i rendering_resolution = getResolution(SETTINGS.stg.rendering_resolution);
 	sf::Vector2i screenshot_resolution = getResolution(SETTINGS.stg.screenshot_resolution);
 
-	scene_ptr->SetResolution(*shader_ptr, rendering_resolution.x, rendering_resolution.y);
-	renderer_ptr->Initialize(rendering_resolution.x, rendering_resolution.y, renderer_ptr->GetConfigFolder() + "/" + config);
 	renderer_ptr->variables["MRRM_scale"] = SETTINGS.stg.MRRM_scale;
 	renderer_ptr->variables["shadow_scale"] = SETTINGS.stg.shadow_resolution;
 	renderer_ptr->variables["bloom_scale"] = SETTINGS.stg.bloom_resolution;
+	scene_ptr->SetResolution(*shader_ptr, rendering_resolution.x, rendering_resolution.y);
+	renderer_ptr->Initialize(rendering_resolution.x, rendering_resolution.y, renderer_ptr->GetConfigFolder() + "/" + config);
+	
 	renderer_ptr->camera.bloomintensity = SETTINGS.stg.bloom_intensity;
 	renderer_ptr->camera.bloomradius = SETTINGS.stg.bloom_radius;
 	renderer_ptr->camera.bloomtreshold = SETTINGS.stg.bloom_treshold;
@@ -809,14 +839,24 @@ void TW_CALL SaveLevel(void *data)
 	}
 }
 
+void TW_CALL PlayThisLevel(void *data)
+{
+	if (scene_ptr->levels.LevelExists(scene_ptr->GetLevel()))
+	{
+		scene_ptr->ExitEditor();
+		TwDefine("LevelEditor visible=false");
+		TwDefine("FractalEditor visible=false");
+		PlayLevel(scene_ptr, window, scene_ptr->GetLevel());
+	}
+}
+
+
 
 void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const std::string& sourceLibraryString)
 {
 	// Copy the content of souceString handled by the AntTweakBar library to destinationClientString handled by your application
 	destinationClientString = sourceLibraryString;
 }
-
-
 
 
 void TW_CALL ApplySettings(void *data)
@@ -873,11 +913,14 @@ void TW_CALL ApplySettings(void *data)
 	scene_ptr->sound_bounce2.setVolume(SETTINGS.stg.fx_volume);
 	scene_ptr->sound_bounce3.setVolume(SETTINGS.stg.fx_volume);
 	scene_ptr->sound_shatter.setVolume(SETTINGS.stg.fx_volume);
+	scene_ptr->MarbleType = SETTINGS.stg.marble_type;
+	scene_ptr->PlayNext = SETTINGS.stg.play_next;
 
 	overlays_ptr->sound_hover.setVolume(SETTINGS.stg.fx_volume);
 	overlays_ptr->sound_click.setVolume(SETTINGS.stg.fx_volume);
 	overlays_ptr->sound_count.setVolume(SETTINGS.stg.fx_volume);
 	overlays_ptr->sound_go.setVolume(SETTINGS.stg.fx_volume);
+	overlays_ptr->sound_screenshot.setVolume(SETTINGS.stg.fx_volume);
 }
 
 void TW_CALL InitialOK(void *data)
@@ -894,21 +937,21 @@ void TW_CALL InitialOK(void *data)
 void InitializeATBWindows(float* fps, float *target_fps)
 {
 	overlays_ptr->stats = TwNewBar("Statistics");
-	TwDefine(" GLOBAL help='Marble Marcher: Community Edition. Use F5 to take screenshots. F4 to open or close settings windows.' ");
+	TwDefine(" GLOBAL help='Marble Marcher: Community Edition. \n Use F5 to take screenshots. \n Use F4 to open or close settings windows.' ");
 
 	std::map<int, std::string> level_list = scene_ptr->levels.getLevelNames();
+	std::vector<int> lvlnum = scene_ptr->levels.getLevelIds();
 	TwEnumVal *level_enums = new TwEnumVal[level_list.size() + 1];
 	TwEnumVal enumval;
 	enumval.Label = "None";
 	enumval.Value = -1;
 	level_enums[0] = enumval;
-	int i = 0;
-	for (auto &name : level_list)
+	int i = 1;
+	for (auto &lvlID : lvlnum)
 	{
-		enumval.Label = name.second.c_str();
-		enumval.Value = i;
-		level_enums[i + 1] = enumval;
-		i++;
+		enumval.Label = level_list[lvlID].c_str();
+		enumval.Value = lvlID;
+		level_enums[i++] = enumval;
 	}
 
 	TwType Levels = TwDefineEnum("levels", level_enums, level_list.size() + 1);
@@ -961,7 +1004,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	overlays_ptr->settings = TwNewBar("Settings");
 
 	TwAddVarRW(overlays_ptr->settings, "Rendering resolution", Resolutions, &SETTINGS.stg.rendering_resolution, "group='Rendering settings'");
-	TwAddVarRW(overlays_ptr->settings, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, "group='Graphics settings' help='You need to restart the game for changes to take effect'");
+	TwAddVarRW(overlays_ptr->settings, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, "group='Rendering settings' help='You need to restart the game for changes to take effect'");
 	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Shader configuration", Configurations, &SETTINGS.stg.shader_config, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "MRRM scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings'");
@@ -986,7 +1029,8 @@ void InitializeATBWindows(float* fps, float *target_fps)
 								{ 1,  "Metal" } };
 
 	TwType Marble_type = TwDefineEnum("Marble type", marble_type, 2);
-	TwAddVarRW(overlays_ptr->settings, "Marble type", Marble_type, &scene_ptr->MarbleType, "group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Marble type", Marble_type, &SETTINGS.stg.marble_type, "group='Gameplay settings'");
+	TwAddVarRW(overlays_ptr->settings, "Play next level", TW_TYPE_BOOLCPP, &SETTINGS.stg.play_next, "group='Gameplay settings' help='Will play next level of a level pack if enabled'");
 	TwAddVarRW(overlays_ptr->settings, "Mouse sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Wheel sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.wheel_sensitivity, "min=0.01 max=0.5 step=0.01 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Music volume", TW_TYPE_FLOAT, &SETTINGS.stg.music_volume, "min=0 max=100 step=1 group='Gameplay settings'");
@@ -1013,6 +1057,9 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddButton(overlays_ptr->level_editor, "Save", SaveLevel, NULL,
 		" label='Save Level'  ");
 
+	TwAddButton(overlays_ptr->level_editor, "Play", PlayThisLevel, NULL,
+		" label='Play (unsaved changes will be lost)'  ");
+
 	TwAddButton(overlays_ptr->level_editor, "Set Marble", MarbleSet, NULL,
 		" label='Set Marble Position'  help='Click on the fractal to place' ");
 
@@ -1026,10 +1073,10 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	
 	TwAddVarRW(overlays_ptr->level_editor, "Level music", Level_music, &music_id, "");
 
-	TwAddButton(overlays_ptr->level_editor, "Play", PlayMusic, NULL, " label='Play/Stop current music'  ");
+	TwAddButton(overlays_ptr->level_editor, "Play Music", PlayMusic, NULL, " label='Play/Stop current music'  ");
 
 	
-	TwAddVarRW(overlays_ptr->level_editor, "Play level after finish(TODO)", Levels, &copy->link_level, "");
+	TwAddVarRW(overlays_ptr->level_editor, "Play level after finish", Levels, &copy->link_level, "help = 'Which level is played after you finish this one, only works if the option Play Next Level is true'");
 
 	TwAddVarRW(overlays_ptr->level_editor, "Sun direction", TW_TYPE_DIR3F, copy->light_dir.data(), "group='Level parameters'");
 	TwAddVarRW(overlays_ptr->level_editor, "Sun color", TW_TYPE_DIR3F, copy->light_col.data(), "group='Level parameters'");
@@ -1037,7 +1084,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->level_editor, "Gravity strength", TW_TYPE_FLOAT, &copy->gravity, "min=-0.5 max=0.5 step=0.0001 group='Level parameters'");
 	TwAddVarRW(overlays_ptr->level_editor, "Kill y position (restart level)", TW_TYPE_FLOAT, &copy->kill_y, "min=-100 max=100 step=0.1 group='Level parameters'");
 	TwAddVarRW(overlays_ptr->level_editor, "Is planet", TW_TYPE_BOOLCPP, &copy->planet, "group='Level parameters'");
-	TwAddVarRW(overlays_ptr->level_editor, "Starting look direction angle", TW_TYPE_FLOAT, &copy->start_look_x, "min=-3.14159 max=3.14159 step=0.01 group='Level parameters'");
+	TwAddVarRW(overlays_ptr->level_editor, "Start look direction angle", TW_TYPE_FLOAT, &copy->start_look_x, "min=-3.14159 max=3.14159 step=0.01 group='Level parameters'");
 
 	overlays_ptr->fractal_editor = TwNewBar("FractalEditor");
 
@@ -1056,7 +1103,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Animation3", TW_TYPE_FLOAT, &copy->anim_3, "min=0 max=0.5 step=0.0001 group='Fractal Animation'");
 
 	overlays_ptr->flaunch = TwNewBar("First_launch");
-
+	 
 	TwAddVarRW(overlays_ptr->flaunch, "Rendering resolution", Resolutions, &SETTINGS.stg.rendering_resolution, "");
 	TwAddVarRW(overlays_ptr->flaunch, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, " help='You need to restart the game for changes to take effect'");
 	TwAddVarRW(overlays_ptr->flaunch, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "");

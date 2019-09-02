@@ -119,7 +119,7 @@ public:
 	void Move(sf::Vector2f dx);
 
 	void SetDefaultFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
-	void SetCallbackFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun, bool limit_repeat = false);
+	void SetCallbackFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun, bool limit_repeat = true);
 	void SetHoverFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
 
 
