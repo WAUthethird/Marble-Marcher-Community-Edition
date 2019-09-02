@@ -3,7 +3,7 @@
 #define MAX_DIST 500
 #define MIN_DIST 1e-5
 #define MAX_MARCHES 700
-#define NORMARCHES 2
+#define NORMARCHES 8
 
 
 void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov) 
@@ -161,15 +161,20 @@ float find_furthest_intersection_all(vec3 r, vec3 p, ivec2 id)
 void normarch(inout vec4 pos)
 {
 	//calculate the normal
+	vec4 pos0 = pos;
 	vec4 norm = calcNormal(pos.xyz, pos.w/8); 
 	norm.xyz = normalize(norm.xyz);
 	pos.w = norm.w;
 	
 	//march in the direction of the normal
-	#pragma unroll
 	for(int i = 0; i < NORMARCHES; i++)
 	{
 		pos.xyz += pos.w*norm.xyz;
 		pos.w = DE(pos.xyz);
+		//if the normal DE sphere is further than the initial DE sphere
+		if(length(pos0.xyz - (pos.xyz+pos.w*norm.xyz))>pos.w+pos0.w)
+		{
+			break;
+		}
 	}
 }

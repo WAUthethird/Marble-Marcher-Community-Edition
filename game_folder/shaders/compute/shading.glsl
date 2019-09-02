@@ -24,7 +24,6 @@ vec4 interp(layout (rgba32f) image2D text, vec2 coord)
 		   imageLoad(text, ci+ivec2(1))*d.x*d.y;
 }
 
-
 ///PBR functions 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {

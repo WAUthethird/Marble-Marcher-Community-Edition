@@ -16,6 +16,27 @@ shared vec4 de_sph[group_size][group_size];
 
 ///Half-resolution illumination step
 
+//find furhest point
+vec4 find_furthest(vec3 ray_pos, ivec2 pos, int step_scale)
+{
+	float best_dist = 0;
+	vec4 best_sph = vec4(0);
+	for(int i = -step_scale/2; i < step_scale/2; i++)
+	{
+		for(int j = -step_scale/2; j < step_scale/2; j++)
+		{
+			vec4 sph = imageLoad(DE_input, pos + ivec2(i,j));
+			float dist = length(sph.xyz - ray_pos);
+			if(dist > best_dist)
+			{
+				best_dist = dist;
+				best_sph = sph;
+			}
+		}
+	}
+	return best_sph;
+}
+
 
 void main() {
 
@@ -28,13 +49,13 @@ void main() {
 	
 	ivec2 prev_pos = min(ivec2((vec2(global_pos)/step_scale) + 0.5),ivec2(pimg_size)-1);
 	
-	vec4 sph = imageLoad(DE_input, prev_pos);
-	
 	ray rr = get_ray(vec2(global_pos)/img_size);
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
 	
+	vec4 sph = find_furthest(pos.xyz, prev_pos, int(1/step_scale.x));
+		
 	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
 	
 	pos = sph;

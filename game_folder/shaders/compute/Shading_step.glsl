@@ -21,12 +21,14 @@ void main() {
 	vec2 img_size = vec2(imageSize(color_HDR));
 	vec2 res_ratio = vec2(imageSize(illumination))/img_size;
 	vec4 sph = imageLoad(DE_input, global_pos);
-	vec4 illum = interp(illumination, vec2(global_pos)*res_ratio);
+	
 	
 	ray rr = get_ray(vec2(global_pos)/img_size);
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
+	
+	vec4 illum = interp(illumination, vec2(global_pos)*res_ratio);
 	
 	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
 	
