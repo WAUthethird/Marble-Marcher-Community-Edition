@@ -959,7 +959,7 @@ void MenuBox::CreateCallbacks()
 		//relative scroll coefficient
 		float rel_coef = (inside_size - height_1) / max_slide_scroll;
 		parent->ScrollBy(state.mouse_speed.y*rel_coef);
-	});
+	}, false);
 
 	this->SetHoverFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{

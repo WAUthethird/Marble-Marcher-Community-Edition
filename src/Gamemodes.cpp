@@ -771,6 +771,9 @@ void InitializeRendering(std::string config)
 	scene_ptr->Refl_Refr_Enabled = SETTINGS.stg.refl_refr;
 	scene_ptr->Shadows_Enabled = SETTINGS.stg.shadows;
 	scene_ptr->Fog_Enabled = SETTINGS.stg.fog;
+	scene_ptr->gamma_camera = SETTINGS.stg.gamma_camera;
+	scene_ptr->gamma_material = SETTINGS.stg.gamma_material;
+	scene_ptr->gamma_sky = SETTINGS.stg.gamma_sky;
 
 	//GL settings
 	sf::ContextSettings settings;
@@ -1022,6 +1025,9 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Bloom Treshold", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_treshold, "min=0 max=5 step=0.001 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom Intensity", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_intensity, "min=0 max=5 step=0.001 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom Radius", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_radius, "min=1 max=10 step=0.1 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Material gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_material, "min=0 max=4 step=0.1 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Sky gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_sky, "min=0 max=4 step=0.1 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Camera gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_camera, "min=0 max=4 step=0.1 group='Graphics settings'");
 
 
 	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &SETTINGS.stg.language, "group='Gameplay settings'");

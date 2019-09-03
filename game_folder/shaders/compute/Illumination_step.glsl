@@ -1,5 +1,4 @@
 #version 430
-//4*4 ray bundle
 #define group_size 8
 #define block_size 64
 

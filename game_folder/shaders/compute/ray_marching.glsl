@@ -8,14 +8,16 @@
 
 void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov) 
 {
+	float pDE = 0;
 	//March the ray
 	for (; var.x < MAX_MARCHES; var.x += 1.0) {	
 		dir.w += pos.w;
 		pos.xyz += pos.w*dir.xyz;
+		pDE =pos.w;
 		pos.w = DE(pos.xyz);
 		
 		//if the distance from the surface is less than the distance per pixel we stop
-		if(dir.w > MAX_DIST || pos.w < max(fov*dir.w, MIN_DIST))
+		if(dir.w > MAX_DIST || (pos.w < max(fov*dir.w, MIN_DIST) && pDE > pos.w))
 		{
 			break;
 		}

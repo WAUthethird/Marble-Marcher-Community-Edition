@@ -24,6 +24,8 @@ public:
 	std::vector<std::string> GetLanguages();
 
 	std::wstring operator[](std::string str);
+	std::string str(std::string str);
+	const char * cstr(std::string str);
 	sf::Font& operator()(std::string str);
 
 private:

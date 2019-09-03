@@ -68,6 +68,11 @@ public:
   Eigen::Vector3f LIGHT_DIRECTION;
   float PBR_METALLIC;
   float PBR_ROUGHNESS;
+
+  float gamma_material;
+  float gamma_sky;
+  float gamma_camera;
+
   std::string original_level_name;
 
   float           marble_rad;

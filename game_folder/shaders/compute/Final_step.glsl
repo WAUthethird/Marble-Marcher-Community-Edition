@@ -27,5 +27,5 @@ void main() {
 	vec3 fin_color = imageLoad(color_HDR, global_pos).xyz + bloom_color;
 	
 	float vignette = 1.0 - VIGNETTE_STRENGTH * length(vec2(global_pos)/img_size - 0.5);
-	imageStore(final_color, global_pos,  vec4(HDRmapping(fin_color, Camera.exposure, 2.2)*vignette, 1));	 
+	imageStore(final_color, global_pos,  vec4(HDRmapping(fin_color, Camera.exposure)*vignette, 1));	 
 }
