@@ -77,7 +77,3 @@ template < typename T > std::string num2str(const T& n)
 }
 
 
-class Sounds
-{
-
-};

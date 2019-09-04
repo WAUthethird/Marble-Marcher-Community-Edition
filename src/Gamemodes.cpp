@@ -105,6 +105,19 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	cntrlbtn.AddObject(&button3, Object::Allign::CENTER);
 	mainmenu.AddObject(&cntrlbtn, Object::Allign::LEFT);
 
+	//Controls
+	Box aboutbtn(600, 50);
+	Text button5(LOCAL["Credits"], LOCAL("default"), 40, sf::Color::White);
+	button5.SetBorderColor(sf::Color::Black);
+	aboutbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
+	aboutbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
+	{
+		overlays->sound_click.play();
+	}, true);
+	aboutbtn.AddObject(&button5, Object::Allign::CENTER);
+	mainmenu.AddObject(&aboutbtn, Object::Allign::LEFT);
+
+
 	//Screen Saver
 	Box ssbtn(600, 50);
 	Text button4(LOCAL["Screen_Saver"], LOCAL("default"), 40, sf::Color::White);
@@ -120,15 +133,15 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 
 	//Exit
 	Box exitbtn(600, 50);
-	Text button5(LOCAL["Exit"], LOCAL("default"), 40, sf::Color::White);
-	button5.SetBorderColor(sf::Color::Black);
+	Text button6(LOCAL["Exit"], LOCAL("default"), 40, sf::Color::White);
+	button6.SetBorderColor(sf::Color::Black);
 	exitbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	exitbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
 		overlays->sound_click.play();
 		window->close();
 	}, true);
-	exitbtn.AddObject(&button5, Object::Allign::CENTER);
+	exitbtn.AddObject(&button6, Object::Allign::CENTER);
 	mainmenu.AddObject(&exitbtn, Object::Allign::LEFT);
 
 	Text about(LOCAL["About"], LOCAL("mono"), 30, sf::Color::White);
