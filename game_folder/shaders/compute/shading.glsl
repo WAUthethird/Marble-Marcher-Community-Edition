@@ -366,6 +366,29 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 	
 }
 
+#define NEON_iterations 3 
+#define NEON_marches 5 
+
+vec3 NEON_shading(in vec4 pos, in vec4 dir)
+{
+	vec3 color = vec3(0);
+	for (int i = 0; i < NEON_iterations; i++) 
+	{	
+		for (int j = 0; j < NEON_marches; j++) 
+		{	
+			dir.w += pos.w;
+			pos.xyz += pos.w*dir.xyz;
+			pos.w = DE(pos.xyz);
+		}
+		//sample color at the closest point
+		vec4 norm = calcNormal(pos.xyz, MIN_DIST); 
+		vec3 cpos = pos.xyz - pos.w*norm.xyz;
+		
+		color += COL(cpos).xyz*(NEON_iterations-i)/(NEON_iterations*(1+pos.w));
+	}
+	return color;
+}
+
 vec3 HDRmapping(vec3 color, float exposure)
 {
 	// Exposure tone mapping
