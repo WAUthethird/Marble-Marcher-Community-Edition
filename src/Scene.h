@@ -91,8 +91,8 @@ public:
   void SetMarbleScale(float r);
   void SetFlag(float x, float y, float z);
   void SetMode(CamMode mode);
+  void SetResolution(int x, int y);
   void SetExposure(float e) { exposure = e; }
-  void SetResolution(sf::Shader& shader, int x, int y);
   void SetWindowResolution(int x, int y);
   void EnbaleCheats() { enable_cheats = true; }
   Eigen::Vector3f GetVelocity();

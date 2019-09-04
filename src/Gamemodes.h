@@ -42,6 +42,8 @@ void PlayLevel(Scene * scene, sf::RenderWindow * window, int level);
 
 void OpenControlMenu(Scene * scene, Overlays * overlays);
 
+void ResumeGame(sf::RenderWindow &window);
+
 void OpenPauseMenu(Scene * scene, Overlays * overlays);
 
 void OpenScreenSaver(Scene * scene, Overlays * overlays);
@@ -61,7 +63,7 @@ int DirExists(const char *path);
 
 void FirstStart(Overlays* overlays);
 
-void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, sf::RenderTexture *render, sf::RenderTexture *screenshot, sf::Texture *main, sf::Texture *screensht, sf::RectangleShape *rmain, sf::RectangleShape *rscr, sf::Shader *shader);
+void SetPointers(sf::RenderWindow * w, Scene * scene, Overlays * overlays, Renderer * rd, sf::Texture * main, sf::Texture * screensht);
 void TakeScreenshot();
 
 void TW_CALL ApplySettings(void * data);

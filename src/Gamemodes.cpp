@@ -184,7 +184,12 @@ void OpenControlMenu(Scene * scene, Overlays * overlays)
 	game_mode = CONTROLS;
 }
 
-
+void ResumeGame(sf::RenderWindow &window)
+{
+	RemoveAllObjects();
+	game_mode = PLAYING;
+	LockMouse(window);
+}
 
 
 void OpenPauseMenu(Scene * scene, Overlays * overlays)
@@ -699,28 +704,18 @@ sf::Vector2i getResolution(int i)
 Scene *scene_ptr;
 Overlays *overlays_ptr;
 Renderer *renderer_ptr;
-sf::Shader *shader_ptr;
 sf::RenderWindow *window;
-sf::RenderTexture *renderTexture;
-sf::RenderTexture *screenshotTexture;
 sf::Texture *main_txt;
 sf::Texture *screenshot_txt;
-sf::RectangleShape *rectmain;
-sf::RectangleShape *rectscr;
 
-void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, sf::RenderTexture *render, sf::RenderTexture *screenshot, sf::Texture *main, sf::Texture *screensht, sf::RectangleShape *rmain, sf::RectangleShape *rscr, sf::Shader *shader)
+void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, sf::Texture *main, sf::Texture *screensht)
 {
 	window = w;
 	scene_ptr = scene;
 	overlays_ptr = overlays;
 	renderer_ptr = rd;
-	renderTexture = render;
-	screenshotTexture = screenshot;
-	shader_ptr = shader;
 	main_txt = main;
 	screenshot_txt = screensht;
-	rectmain = rmain;
-	rectscr = rscr;
 }
 
 
@@ -729,49 +724,32 @@ void TakeScreenshot()
 	sf::Vector2i rendering_resolution = getResolution(SETTINGS.stg.rendering_resolution);
 	sf::Vector2i screenshot_resolution = getResolution(SETTINGS.stg.screenshot_resolution);
 	
-	scene_ptr->SetResolution(*shader_ptr, screenshot_resolution.x, screenshot_resolution.y);
+	scene_ptr->SetResolution(screenshot_resolution.x, screenshot_resolution.y);
 	renderer_ptr->ReInitialize(screenshot_resolution.x, screenshot_resolution.y);
 
-	scene_ptr->Write(*shader_ptr);
 	scene_ptr->WriteRenderer(*renderer_ptr);
-
-	shader_ptr->setUniform("render_texture", *screenshot_txt);
 	renderer_ptr->SetOutputTexture(*screenshot_txt);
 	
-	//Setup full-screen shader
-	sf::RenderStates states = sf::RenderStates::Default;
-	states.shader = shader_ptr;
-
-	window->setActive(false);
-	screenshotTexture->setActive(true);
-
 	renderer_ptr->camera.SetMotionBlur(0);
 	renderer_ptr->Render();
 
-	screenshotTexture->draw(*rectscr, states);
-	screenshotTexture->display();
-	screenshotTexture->getTexture().copyToImage().saveToFile((std::string)"screenshots/screenshot" + (std::string)num2str(time(NULL)) + ".jpg");
+	screenshot_txt->copyToImage().saveToFile((std::string)"screenshots/screenshot" + (std::string)num2str(time(NULL)) + ".jpg");
 
-	screenshotTexture->setActive(false);
-	window->setActive(true);
-
-	scene_ptr->SetResolution(*shader_ptr, rendering_resolution.x, rendering_resolution.y);
+	scene_ptr->SetResolution(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->ReInitialize(rendering_resolution.x, rendering_resolution.y);
-	scene_ptr->Write(*shader_ptr);
-
+	renderer_ptr->SetOutputTexture(*main_txt);
 	overlays_ptr->sound_screenshot.play();
 }
 
 void InitializeRendering(std::string config)
 {
-
 	sf::Vector2i rendering_resolution = getResolution(SETTINGS.stg.rendering_resolution);
 	sf::Vector2i screenshot_resolution = getResolution(SETTINGS.stg.screenshot_resolution);
 
 	renderer_ptr->variables["MRRM_scale"] = SETTINGS.stg.MRRM_scale;
 	renderer_ptr->variables["shadow_scale"] = SETTINGS.stg.shadow_resolution;
 	renderer_ptr->variables["bloom_scale"] = SETTINGS.stg.bloom_resolution;
-	scene_ptr->SetResolution(*shader_ptr, rendering_resolution.x, rendering_resolution.y);
+	scene_ptr->SetResolution(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->Initialize(rendering_resolution.x, rendering_resolution.y, renderer_ptr->GetConfigFolder() + "/" + config);
 	
 	renderer_ptr->camera.bloomintensity = SETTINGS.stg.bloom_intensity;
@@ -788,27 +766,9 @@ void InitializeRendering(std::string config)
 	scene_ptr->gamma_material = SETTINGS.stg.gamma_material;
 	scene_ptr->gamma_sky = SETTINGS.stg.gamma_sky;
 
-	//GL settings
-	sf::ContextSettings settings;
-	settings.majorVersion = 4;
-	settings.minorVersion = 3;
-
-	renderTexture->clear();
-	renderTexture->create(rendering_resolution.x, rendering_resolution.y, settings);
 	main_txt->create(rendering_resolution.x, rendering_resolution.y);
-	renderTexture->setSmooth(false);
 	renderer_ptr->SetOutputTexture(*main_txt);
-
-	screenshotTexture->clear();
-	screenshotTexture->create(screenshot_resolution.x, screenshot_resolution.y, settings);
 	screenshot_txt->create(screenshot_resolution.x, screenshot_resolution.y);
-	screenshotTexture->setSmooth(false);
-
-	const sf::Glsl::Vec2 window_res((float)rendering_resolution.x, (float)rendering_resolution.y);
-	const sf::Glsl::Vec2 sres_res((float)screenshot_resolution.x, (float)screenshot_resolution.y);
-	//Create screen rectangle
-	rectmain->setSize(window_res);
-	rectscr->setSize(sres_res);
 }
 
 int music_id = 0;

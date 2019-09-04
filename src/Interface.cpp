@@ -111,6 +111,15 @@ int z_val(int id)
 	return std::distance(z_value.begin(), it);
 }
 
+bool NoObjects()
+{
+	if (global_objects.size() != 0)
+	{
+		return false;
+	}
+	return true;
+}
+
 void RemoveGlobalObject(int id)
 {
 	if (global_objects.count(id) != 0)

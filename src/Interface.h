@@ -175,6 +175,7 @@ public:
 void UpdateAspectRatio(float width, float heigth);
 int AddGlobalObject(Object & a);
 Object& get_glob_obj(int id);
+bool NoObjects();
 void RemoveGlobalObject(int id);
 void RemoveAllObjects();
 void Add2DeleteQueue(int id);

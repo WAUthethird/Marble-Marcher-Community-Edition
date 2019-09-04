@@ -213,7 +213,7 @@ vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, f
 		float NdotL = max(dot(N, L), 0.0);                
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
-	
+	/*
 	{ //light reflection, GI imitation
 		float roughness = max(PBR_ROUGHNESS,0.5);
 		vec3 L = normalize(-LIGHT_DIRECTION);
@@ -236,7 +236,7 @@ vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, f
 		// add to outgoing radiance Lo
 		float NdotL = max(dot(N, L), 0.0);                
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-	}
+	}*/
 
 	if(color.w>0.5) // if marble
 	{

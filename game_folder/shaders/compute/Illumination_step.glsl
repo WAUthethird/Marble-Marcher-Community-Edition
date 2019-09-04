@@ -18,15 +18,15 @@ shared vec4 de_sph[group_size][group_size];
 //find furhest point
 vec4 find_furthest(vec3 ray_pos, ivec2 pos, int step_scale)
 {
-	float best_dist = 0;
-	vec4 best_sph = vec4(0);
+	float best_dist = 1e5;
+	vec4 best_sph = vec4(ray_pos,1e5);
 	for(int i = -step_scale/2; i < step_scale/2; i++)
 	{
 		for(int j = -step_scale/2; j < step_scale/2; j++)
 		{
 			vec4 sph = imageLoad(DE_input, pos + ivec2(i,j));
 			float dist = length(sph.xyz - ray_pos);
-			if(dist > best_dist)
+			if(dist < best_dist && sph.w < max(2*fovray*dist, MIN_DIST))
 			{
 				best_dist = dist;
 				best_sph = sph;

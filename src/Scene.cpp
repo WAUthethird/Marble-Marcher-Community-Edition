@@ -159,12 +159,10 @@ void Scene::SetMode(CamMode mode) {
   cam_mode = mode;
 }
 
-void Scene::SetResolution(sf::Shader& shader, int x, int y)
+void Scene::SetResolution(int x, int y)
 {
 	ResX = x;
 	ResY = y;
-	const sf::Glsl::Vec2 window_res((float)ResX, (float)ResY);
-	shader.setUniform("iResolution", window_res);
 }
 
 void Scene::SetWindowResolution(int x, int y)
