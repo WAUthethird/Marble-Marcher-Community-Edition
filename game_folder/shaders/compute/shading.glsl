@@ -12,6 +12,9 @@ uniform float PBR_ROUGHNESS;
 uniform vec3 LIGHT_COLOR;
 uniform bool SHADOWS_ENABLED; 
 
+uniform float gamma_material;
+uniform float gamma_sky;
+uniform float gamma_camera;
 
 //better to use a sampler though
 vec4 interp(layout (rgba32f) image2D text, vec2 coord)
@@ -88,7 +91,7 @@ vec3 sky_color(in vec3 pos)
 	vec3 extinction = mix(exp(-exp(-((pos.y + fsun.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0, vec3(1.0 - exp(fsun.y)) * 0.2, -fsun.y * 0.2 + 0.5);
 	vec3 sky_col = brightnees* 3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
 	sky_col = 0.4*clamp(sky_col,0,10);
-	return sky_col*sky_col;
+	return pow(sky_col,vec3(1.f/gamma_sky)); 
 }
 
 vec3 ambient_sky_color(in vec3 pos)
@@ -143,7 +146,7 @@ vec3 refraction(vec3 rd, vec3 n, float p) {
 vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, float shadow) 
 {
 	vec3 albedo = color.xyz;
-	albedo *= albedo; //square it to make the fractals more colorfull 
+	albedo = pow(albedo,vec3(1.f/gamma_material)); //square it to make the fractals more colorfull 
 	
 	vec4 ambient_color = ambient_occlusion(pos, norm, dir);
 	
@@ -340,17 +343,17 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 				n = normalize(p2 - iMarblePos);
 				q = (dot(q, dir.xyz) * 2.0) * q - dir.xyz;
 				vec4 p_temp = vec4(p2 + n * (MIN_DIST * 10), 0);
-				vec4 r_temp = vec4(q, 0);
+				vec4 r_temp = vec4(q, dir.w);
 				
-				refr = render_ray(p_temp, r_temp, fov+10*fov*dir.w);
+				refr = render_ray(p_temp, r_temp, fov*1.5);
 
 				//Calculate reflection
 				n = normalize(cpos.xyz - iMarblePos);
 				q = dir.xyz - n*(2*dot(dir.xyz,n));
 				p_temp = vec4(cpos.xyz + n * (MIN_DIST * 10), 0);
-				r_temp = vec4(q, 0);
+				r_temp = vec4(q, dir.w);
 				
-				refl = render_ray(p_temp, r_temp, fov+10*fov*dir.w);
+				refl = render_ray(p_temp, r_temp, fov*1.5);
 			}
 			
 			return lighting(color, vec4(cpos, pos.w), dir, norm, refl, refr, shadow); 
@@ -363,10 +366,10 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 	
 }
 
-vec3 HDRmapping(vec3 color, float exposure, float gamma)
+vec3 HDRmapping(vec3 color, float exposure)
 {
 	// Exposure tone mapping
     vec3 mapped = vec3(1.0) - exp(-color * exposure);
     // Gamma correction 
-    return pow(mapped, vec3(1.0 / gamma));
+    return pow(mapped, vec3(1.0 / gamma_camera));
 }

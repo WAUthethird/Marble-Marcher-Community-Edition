@@ -866,6 +866,10 @@ void Scene::WriteShader(ComputeShader& shader)
 	shader.setUniform("REFL_REFR_ENABLED", Refl_Refr_Enabled);
 	shader.setUniform("MARBLE_MODE", MarbleType);
 
+	shader.setUniform("gamma_material", gamma_material);
+	shader.setUniform("gamma_sky", gamma_sky);
+	shader.setUniform("gamma_camera", gamma_camera);
+
 	shader.setUniform("time", time);
 }
 

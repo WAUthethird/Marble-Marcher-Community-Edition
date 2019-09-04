@@ -117,8 +117,18 @@ std::wstring Localization::operator[](std::string str)
 	{
 		return utf8_to_wstring(str);
 	}
-		
 }
+
+std::string Localization::str(std::string str)
+{
+	return tostring(this->operator[](str));
+}
+
+const char* Localization::cstr(std::string str)
+{
+	return tostring(this->operator[](str)).c_str();
+}
+
 
 sf::Font & Localization::operator()(std::string str)
 {

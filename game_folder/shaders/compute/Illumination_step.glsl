@@ -1,5 +1,4 @@
 #version 430
-//4*4 ray bundle
 #define group_size 8
 #define block_size 64
 
@@ -53,8 +52,17 @@ void main() {
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
-	
-	vec4 sph = find_furthest(pos.xyz, prev_pos, int(1/step_scale.x));
+		
+	vec4 sph;
+ 	if(step_scale.x < 1)
+	{
+		sph = find_furthest(pos.xyz, prev_pos, int(1/step_scale.x));
+	}
+	else
+	{
+		sph = imageLoad(DE_input, prev_pos);
+	}
+		
 		
 	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
 	
