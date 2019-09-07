@@ -5,8 +5,9 @@
 
 layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D illumination; //shadows
-layout(rgba32f, binding = 1) uniform image2D DE_input; 
-layout(rgba32f, binding = 2) uniform image2D color_HDR; //calculate final color
+layout(rgba32f, binding = 1) uniform image2D color_output; 
+layout(rgba32f, binding = 2) uniform image2D DE_input; 
+layout(rgba32f, binding = 3) uniform image2D color_HDR; //calculate final color
 
 
 //make all the local distance estimator spheres shared
@@ -42,5 +43,6 @@ void main() {
 	{
 		color = prev_color*Camera.mblur + (1-Camera.mblur)*color; //blur
 		imageStore(color_HDR, global_pos, vec4(color.xyz, 1));	 
+		imageStore(color_output, global_pos, vec4(color.xyz, 1));	 
 	}
 }

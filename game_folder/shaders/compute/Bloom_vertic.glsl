@@ -56,14 +56,14 @@ void main() {
 	barrier();
 	
 	float width = Camera.bloomradius * (img_size.x/640);
-	float k1 = 0.1;
+	float k1 = 0.2;
 	float k2 = 1;
 	float a1 = 0.4;
 	float a2 = 1;
 	
 	vec3 conv1 = vec3(0), conv2 = vec3(0);
 	int center = local_indx.y+group_size/2;
-	for(int i = max(center-int(width*8),0); i < min(center+int(width*8),buffer_size); i++)
+	for(int i = max(center-int(width*5),0); i < min(center+int(width*5),buffer_size); i++)
 	{
 		float coord = float(center-i)/width;
 		conv1 += exp(-k1*pow(coord,2))*color_buffer_hoz1[i];
