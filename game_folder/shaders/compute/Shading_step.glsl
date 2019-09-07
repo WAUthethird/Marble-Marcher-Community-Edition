@@ -19,7 +19,7 @@ void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);
 	vec2 img_size = vec2(imageSize(color_HDR));
-	vec2 res_ratio = vec2(imageSize(illumination))/img_size;
+	float res_ratio = imageSize(illumination).x/img_size.x;
 	vec4 sph = imageLoad(DE_input, global_pos);
 	
 	
@@ -28,15 +28,15 @@ void main() {
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
 	
-	vec4 illum = interp(illumination, vec2(global_pos)*res_ratio);
-	
 	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
 	
+	vec4 illum = bilinear_surface(illumination, td, 2*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
+	//vec4 illum = interp(illumination, vec2(global_pos)*res_ratio);
 	pos = sph;
 	dir.w += td; 
 	
 	vec3 color = shading(pos, dir, fovray, illum.x);
-	
+	//color  = vec3(illum.x);
 	vec3 prev_color = imageLoad(color_HDR, global_pos).xyz;
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))
 	{

@@ -19,13 +19,42 @@ uniform float gamma_camera;
 //better to use a sampler though
 vec4 interp(layout (rgba32f) image2D text, vec2 coord)
 {
-	ivec2 ci = ivec2(coord);
+	ivec2 ci = ivec2(coord)+ivec2(0,0);
 	vec2 d = coord - floor(coord);
-	return imageLoad(text, ci)*(1-d.x)*(1-d.y) +
+	//d = vec2(0,0);
+	//a fix for gamma ruining the interpolation
+	return (imageLoad(text, ci)*(1-d.x)*(1-d.y) +
 		   imageLoad(text, ci+ivec2(1,0))*d.x*(1-d.y) +
 		   imageLoad(text, ci+ivec2(0,1))*(1-d.x)*d.y +
-		   imageLoad(text, ci+ivec2(1))*d.x*d.y;
+		   imageLoad(text, ci+ivec2(1,1))*d.x*d.y);
 }
+
+//2d interpolation that is aware of the 3d positions of our points
+vec4 bilinear_surface(layout (rgba32f) image2D text, float td, float sz, vec2 coord)
+{
+	ivec2 ci = ivec2(coord);
+	vec2 d = coord - floor(coord);
+	
+	vec4 A1 = imageLoad(text, ci);
+	vec4 A2 = imageLoad(text, ci+ivec2(1,0));
+	vec4 A3 = imageLoad(text, ci+ivec2(0,1));
+	vec4 A4 = imageLoad(text, ci+ivec2(1,1));
+	
+	float td1 = A1.w;
+	float td2 = A2.w;
+	float td3 = A3.w;
+	float td4 = A4.w;
+	
+	float w1 = (1-d.x)*(1-d.y)/(sz*sz+(td-td1)*(td-td1));
+	float w2 = (d.x)*(1-d.y)/(sz*sz+(td-td2)*(td-td2));
+	float w3 = (1-d.x)*(d.y)/(sz*sz+(td-td3)*(td-td3));
+	float w4 = (d.x)*(d.y)/(sz*sz+(td-td4)*(td-td4));
+	
+	//a fix for gamma ruining the interpolation
+	return pow((pow(A1,vec4(1.f/gamma_camera))*w1 + pow(A2,vec4(1.f/gamma_camera))*w2 + pow(A3,vec4(1.f/gamma_camera))*w3 + pow(A4,vec4(1.f/gamma_camera))*w4)/(w1+w2+w3+w4),vec4(gamma_camera));
+
+}
+
 
 ///PBR functions 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
@@ -134,7 +163,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	}
 	
 	occlusion_angle /= integral; // average weighted by importance
-	return vec4(ambient_color,1)*(0.5-cos(3.14159265*occlusion_angle)*0.5);
+	return vec4(ambient_color,1)*(0.5-0*cos(3.14159265*occlusion_angle)*0.5);
 }
 
 
