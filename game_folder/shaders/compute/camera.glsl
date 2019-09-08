@@ -36,7 +36,7 @@ ivec2 getGpos(int index)
 uniform glcamera Camera;
 float fovray;
 
-#define cross_eye false
+#define cross_eye 1
 #define eye_separation -0.35
 
 ray get_ray(vec2 screen_pos)

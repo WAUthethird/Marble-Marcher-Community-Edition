@@ -31,7 +31,7 @@ void main() {
 	
 	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
 	
-	vec4 illum = bilinear_surface(illumination, td, 2*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
+	vec4 illum = bilinear_surface(illumination, td, 3*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
 	//vec4 illum = interp(illumination, vec2(global_pos)*res_ratio);
 	pos = sph;
 	dir.w += td; 

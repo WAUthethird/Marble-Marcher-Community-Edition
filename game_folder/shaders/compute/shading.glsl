@@ -1,7 +1,7 @@
 #include<ray_marching.glsl>
 
 #define PI 3.14159265
-#define AMBIENT_MARCHES 7
+#define AMBIENT_MARCHES 3
 #define AMBIENT_COLOR 2*vec4(1,1,1,1)
 #define LIGHT_ANGLE 0.08
 
@@ -163,7 +163,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	}
 	
 	occlusion_angle /= integral; // average weighted by importance
-	return vec4(ambient_color,1)*(0.5-0*cos(3.14159265*occlusion_angle)*0.5);
+	return vec4(ambient_color,1)*(0.5-cos(3.14159265*occlusion_angle)*0.5);
 }
 
 
