@@ -208,26 +208,6 @@ private:
 };
 
 
-class Text: public Object
-{
-public:
-	sf::Text text;
-
-	void Draw(sf::RenderWindow *window, InputState& state);
-
-	template<class T>
-	Text(T str, sf::Font &f, float size, sf::Color col);
-	Text(sf::Text t);
-
-	Text(Text& A);
-	Text(Text&& A);
-
-	void operator=(Text& A);
-	void operator=(Text&& A);
-
-	virtual Object* GetCopy();
-};
-
 
 class MenuBox : public Box
 {
@@ -311,6 +291,28 @@ inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main
 	CreateCallbacks();
 }
 
+
+class Text : public Object
+{
+public:
+	sf::Text text;
+
+	void Draw(sf::RenderWindow *window, InputState& state);
+
+	template<class T>
+	Text(T str, sf::Font &f, float size, sf::Color col);
+	Text(sf::Text t);
+
+	Text(Text& A);
+	Text(Text&& A);
+
+	void operator=(Text& A);
+	void operator=(Text&& A);
+
+	virtual Object* GetCopy();
+};
+
+
 template<class T>
 inline Text::Text(T str, sf::Font & f, float size, sf::Color col)
 {
@@ -321,4 +323,51 @@ inline Text::Text(T str, sf::Font & f, float size, sf::Color col)
 	SetBorderColor(sf::Color::Black);
 	SetBorderWidth(2);
 	clone_states();
+}
+
+
+//a button
+class Button: public Box
+{
+public:
+	template<class T>
+	Button(T text, float w, float h, std::function<void(sf::RenderWindow * window, InputState & state)> fun, sf::Color color_hover = default_hover_main_color, sf::Color color_main = default_main_color);
+
+	Button(Button& A);
+	Button(Button&& A);
+
+	void operator=(Button& A);
+	void operator=(Button&& A);
+
+	virtual Object* GetCopy();
+
+	~Button();
+};
+
+class Image : public Box
+{
+public:
+	Image(sf::Texture image, float w, float h, sf::Color color_hover);
+	Image(std::string image, float w = 0, float h = 0, sf::Color color_hover = sf::Color::White);
+
+	Image(Image& A);
+	Image(Image&& A);
+
+	void operator=(Image& A);
+	void operator=(Image&& A);
+
+	virtual Object* GetCopy();
+
+	~Image();
+};
+
+template<class T>
+inline Button::Button(T text, float w, float h, std::function<void(sf::RenderWindow*window, InputState&state)> fun, sf::Color color_hover, sf::Color color_main)
+{
+	Text button_text(text, LOCAL("default"), h*0.8f, sf::Color::White);
+	button_text.SetBorderColor(sf::Color::Black);
+	defaultstate.color_main = color_main;
+	hoverstate.color_main = color_hover;
+	SetCallbackFunction(fun, true);
+	this->AddObject(&button_text, Object::Allign::CENTER);
 }

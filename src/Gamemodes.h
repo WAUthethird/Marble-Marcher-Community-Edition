@@ -17,7 +17,8 @@ enum GameMode {
 	LEVELS,
 	LEVEL_EDITOR,
 	CREDITS,
-	MIDPOINT
+	MIDPOINT,
+	ABOUT
 };
 
 
@@ -36,6 +37,8 @@ extern float target_fps;
 extern GameMode game_mode;
 
 void OpenMainMenu(Scene * scene, Overlays * overlays);
+
+void OpenCredits(Scene * scene, Overlays * overlays);
 
 void OpenEditor(Scene * scene, Overlays * overlays, int level);
 void PlayLevel(Scene * scene, sf::RenderWindow * window, int level);

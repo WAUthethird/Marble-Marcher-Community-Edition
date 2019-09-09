@@ -814,7 +814,7 @@ void Window::CreateCallbacks()
 	this->objects[0].get()->SetCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
 		parent->Move(state.mouse_speed);
-	});
+	}, false);
 }
 
 void Window::operator=(Window & A)
@@ -1021,4 +1021,101 @@ void MenuBox::operator=(MenuBox && A)
 Object * MenuBox::GetCopy()
 {
 	return static_cast<Object*>(new MenuBox(*this));
+}
+
+Button::Button(Button & A)
+{
+	*this = A;
+}
+
+Button::Button(Button && A)
+{
+	*this = A;
+}
+
+void Button::operator=(Button & A)
+{
+	Box::operator=(A);
+}
+
+void Button::operator=(Button && A)
+{
+	Box::operator=(A);
+}
+
+Object * Button::GetCopy()
+{
+	return static_cast<Object*>(new Button(*this));
+}
+
+Button::~Button()
+{
+}
+
+Image::Image(sf::Texture image, float w, float h, sf::Color color_hover)
+{
+	if (w == 0)
+		defaultstate.size.x = image.getSize().x;
+	else
+		defaultstate.size.x = w;
+
+	if (h == 0)
+		defaultstate.size.y = image.getSize().y;
+	else
+		defaultstate.size.y = h;
+	
+	defaultstate.color_main = sf::Color::White;
+	hoverstate.color_main = color_hover;
+
+	this->SetBackground(image);
+}
+
+Image::Image(std::string image_path, float w, float h, sf::Color color_hover)
+{
+	sf::Texture image;
+	image.loadFromFile(image_path);
+
+	if (w == 0)
+		defaultstate.size.x = image.getSize().x;
+	else
+		defaultstate.size.x = w;
+
+	if (h == 0)
+		defaultstate.size.y = image.getSize().y;
+	else
+		defaultstate.size.y = h;
+
+	defaultstate.color_main = sf::Color::White;
+	hoverstate.color_main = color_hover;
+
+	this->SetBackground(image);
+}
+
+Image::Image(Image & A)
+{
+	*this = A;
+}
+
+Image::Image(Image && A)
+{
+	*this = A;
+}
+
+void Image::operator=(Image & A)
+{
+	Box::operator=(A);
+}
+
+void Image::operator=(Image && A)
+{
+	Box::operator=(A);
+}
+
+Object * Image::GetCopy()
+{
+	return static_cast<Object*>(new Image(*this));
+}
+
+Image::~Image()
+{
 }

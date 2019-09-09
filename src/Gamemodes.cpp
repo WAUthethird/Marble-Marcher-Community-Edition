@@ -105,13 +105,14 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	cntrlbtn.AddObject(&button3, Object::Allign::CENTER);
 	mainmenu.AddObject(&cntrlbtn, Object::Allign::LEFT);
 
-	//Controls
+	//Credits
 	Box aboutbtn(600, 50);
 	Text button5(LOCAL["Credits"], LOCAL("default"), 40, sf::Color::White);
 	button5.SetBorderColor(sf::Color::Black);
 	aboutbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	aboutbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
+		OpenCredits(scene, overlays);
 		overlays->sound_click.play();
 	}, true);
 	aboutbtn.AddObject(&button5, Object::Allign::CENTER);
@@ -151,6 +152,34 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	
 
 	AddGlobalObject(mainmenu);
+}
+
+
+void OpenCredits(Scene * scene, Overlays * overlays)
+{
+	RemoveAllObjects();
+	game_mode = ABOUT;
+
+	scene->SetCurrentMusic(scene->levels.GetMusic("menu.ogg"));
+	scene->SetExposure(1.0f);
+	scene->SetMode(Scene::INTRO);
+
+	sf::Vector2f wsize = default_size;
+	sf::Vector2f vsize = default_view.getSize();
+	MenuBox creditslist(wsize.x*0.95f, vsize.y*0.95f, (vsize.x - wsize.x*0.95f) / 2, vsize.y*0.025f);
+
+	creditslist.SetBackgroundColor(sf::Color(30,30,30,200));
+	//make it static
+	creditslist.static_object = true;
+
+	//TITLE
+	Text ttl(LOCAL["Credits"], LOCAL("default"), 60, sf::Color::White);
+	ttl.SetBorderColor(sf::Color::Black);
+	ttl.SetBorderWidth(4);
+	creditslist.AddObject(&ttl, Object::Allign::CENTER);
+
+
+	AddGlobalObject(creditslist);
 }
 
 void OpenEditor(Scene * scene, Overlays * overlays, int level)

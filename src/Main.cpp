@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
 
 	
 		//Main game update
-		if (game_mode == MAIN_MENU) {
+		if (game_mode == MAIN_MENU || game_mode == ABOUT) {
 			scene.UpdateCamera();
 		}
 		else if (game_mode == CONTROLS) {
