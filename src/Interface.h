@@ -56,6 +56,7 @@ ColorFloat ToColorF(sf::Color a);
 struct InputState
 {
 	bool keys[sf::Keyboard::KeyCount] = { false };
+	bool key_press[sf::Keyboard::KeyCount] = { false };
 	bool mouse[3] = { false };
 	bool mouse_press[3] = { false };
 	float wheel = 0.f;

@@ -151,6 +151,11 @@ int main(int argc, char *argv[]) {
 		{
 			bool handled = overlays.TwManageEvent(&event);
 
+			for (int i = 0; i < sf::Keyboard::KeyCount; i++)
+			{
+				io_state.key_press[i] = false;
+			}
+
 			if (event.type == sf::Event::Closed) 
 			{
 				window.close();
@@ -184,6 +189,7 @@ int main(int argc, char *argv[]) {
 					const sf::Keyboard::Key keycode = event.key.code;
 					all_keys[keycode] = true;
 					io_state.keys[keycode] = true;
+					io_state.key_press[keycode] = true;  
 					if (event.key.code < 0 || event.key.code >= sf::Keyboard::KeyCount) { continue; }
 					if (game_mode == CREDITS)
 					{
@@ -546,7 +552,7 @@ int main(int argc, char *argv[]) {
 				lag_ms += std::max(-time_diff_ms, 0.0f);
 			}
 		}
-	
+		
 	}
 
 	RemoveAllObjects();

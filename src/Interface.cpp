@@ -803,7 +803,7 @@ void Window::CreateCallbacks()
 	//delete callback
 	this->SetDefaultFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
-		if (state.keys[sf::Keyboard::Escape] == true)
+		if (state.key_press[sf::Keyboard::Escape] == true)
 		{
 			Add2DeleteQueue(parent->id);
 			parent->action_time = action_dt;
