@@ -364,9 +364,10 @@ public:
 template<class T>
 inline Button::Button(T text, float w, float h, std::function<void(sf::RenderWindow*window, InputState&state)> fun, sf::Color color_hover, sf::Color color_main)
 {
+	SetSize(w, h);
+	SetBackgroundColor(color_main);
 	Text button_text(text, LOCAL("default"), h*0.8f, sf::Color::White);
 	button_text.SetBorderColor(sf::Color::Black);
-	defaultstate.color_main = color_main;
 	hoverstate.color_main = color_hover;
 	SetCallbackFunction(fun, true);
 	this->AddObject(&button_text, Object::Allign::CENTER);

@@ -178,6 +178,15 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 	ttl.SetBorderWidth(4);
 	creditslist.AddObject(&ttl, Object::Allign::CENTER);
 
+	Button back(LOCAL["Back2Main"], 600, 50, 
+		[scene, overlays](sf::RenderWindow * window, InputState & state)
+		{
+		 	OpenMainMenu(scene, overlays);
+			overlays->sound_click.play();
+		},
+		sf::Color(200, 40, 0, 255), sf::Color(128, 128, 128, 128));
+	creditslist.AddObject(&back, Object::Allign::LEFT);
+
 
 	AddGlobalObject(creditslist);
 }
@@ -435,16 +444,14 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 	Text lvl(LOCAL["Levels"], LOCAL("default"), 60, sf::Color::White);
 	levels.AddObject(&lvl, Object::Allign::CENTER);
 	levels.AddObject(&lvlmargin, Object::Allign::CENTER);
-	Box Bk2Menu(600, 50);
-	Bk2Menu.SetBackgroundColor(sf::Color(128, 128, 128, 128));
-	Text button(LOCAL["Back2Main"], LOCAL("default"), 40, sf::Color::White);
-	Bk2Menu.hoverstate.color_main = sf::Color(200, 40, 0, 255);
-	Bk2Menu.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
-	{
-		OpenMainMenu(scene, overlays);
-		overlays->sound_click.play();
-	});
-	Bk2Menu.AddObject(&button, Object::Allign::CENTER);
+
+	Button Bk2Menu(LOCAL["Back2Main"], 600, 50,
+		[scene, overlays](sf::RenderWindow * window, InputState & state)
+		{
+			OpenMainMenu(scene, overlays);
+			overlays->sound_click.play();
+		},
+		sf::Color(200, 40, 0, 255), sf::Color(128, 128, 128, 128));
 	levels.AddObject(&Bk2Menu, Object::Allign::LEFT);
 
 	Box Newlvl(600, 50);

@@ -987,7 +987,7 @@ void MenuBox::CreateCallbacks()
 		if (state.keys[sf::Keyboard::Up])
 		{
 			parent->Cursor(-1);
-			A = 1;
+			A = 1;	
 		}
 
 		if (state.keys[sf::Keyboard::Down])
@@ -1003,6 +1003,18 @@ void MenuBox::CreateCallbacks()
 		}
 
 		if (A) parent->action_time = action_dt;
+
+		A = false;
+
+		if (state.key_press[sf::Keyboard::Up])
+		{
+			parent->action_time = action_dt / 4;
+		}
+
+		if (state.key_press[sf::Keyboard::Down])
+		{
+			parent->action_time = action_dt / 4;
+		}
 	});
 }
 
