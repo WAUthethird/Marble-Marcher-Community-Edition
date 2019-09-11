@@ -109,10 +109,10 @@ vec3 sky_color(in vec3 pos)
 {
 	// Atmosphere Scattering
 	vec3 fsun = LIGHT_DIRECTION;
-	float brightnees = exp(min(5*pos.y,0));
+	float brightnees = exp(-sqrt(pow(min(5*(pos.y-0.1),0),2)+0.1));
 	if(pos.y < 0)
 	{
-		pos.y = 0; 
+		pos.y = 0;
 		pos.xyz = normalize(pos.xyz);
 	}
     float mu = dot(normalize(pos), normalize(fsun));
@@ -143,7 +143,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	float occlusion_angle = 0;
 	float integral = 0;
 	float i_coef = 0;
-	
+	vec3 direction = normalize(norm.xyz);
 	vec3 ambient_color = ambient_sky_color(norm.xyz);
 	
 	//march in the direction of the normal
@@ -151,8 +151,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
 		//moving in a zig-zag
-		vec3 direction = normalize(norm.xyz + 0.8*((mod(shifter,3.f)-1)*dir1 +  (mod(shifter+1,3.f)-1)*dir2));
-		shifter += 1;
+		
 		pos.xyz += pos.w*direction;
 		pos.w = DE(pos.xyz);
 		
