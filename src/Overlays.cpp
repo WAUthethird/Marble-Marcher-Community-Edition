@@ -22,9 +22,7 @@ static const float PI = 3.14159265359f;
 static const int num_level_pages = 1 + (num_levels - 1) / Overlays::LEVELS_PER_PAGE;
 Settings game_settings;
 
-Overlays::Overlays(sf::Font* _font, sf::Font* _font_mono, Scene* scene) :
-  font(_font),
-  font_mono(_font_mono),
+Overlays::Overlays(Scene* scene) :
   draw_scale(1.0f),
   level_page(0),
   top_level(true),
@@ -50,6 +48,7 @@ Overlays::Overlays(sf::Font* _font, sf::Font* _font_mono, Scene* scene) :
 
   ReloadLevelMenu(scene);
 }
+
 
 void Overlays::ReloadLevelMenu(Scene* scene)
 {
