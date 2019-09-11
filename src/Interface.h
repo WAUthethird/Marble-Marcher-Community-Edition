@@ -52,7 +52,6 @@ ColorFloat operator*(ColorFloat a, float b);
 sf::Color ToColor(ColorFloat a);
 ColorFloat ToColorF(sf::Color a);
 
-
 struct InputState
 {
 	bool keys[sf::Keyboard::KeyCount] = { false };
@@ -70,6 +69,7 @@ struct InputState
 	InputState(bool keys[sf::Keyboard::KeyCount], bool mouse[3], sf::Vector2f mouse_pos, sf::Vector2f mouse_speed);
 };
 
+typedef std::function<void(sf::RenderWindow * window, InputState & state)> call_func;
 
 //the object parameters
 struct State
@@ -122,7 +122,14 @@ public:
 	void SetDefaultFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
 	void SetCallbackFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun, bool limit_repeat = true);
 	void SetHoverFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
+	
+	void SetMainDefaultFunction(call_func fun);
+	void SetMainCallbackFunction(call_func fun, bool limit_repeat = true);
+	void SetMainHoverFunction(call_func fun);
 
+	void ClearDefaultFunctions();
+	void ClearCallbackFunctions();
+	void ClearHoverFunctions();
 
 	bool RunCallback(sf::RenderWindow * window, InputState& state);
 	void clone_states();
@@ -156,7 +163,8 @@ public:
 
 	sf::View used_view;
 	
-	std::function<void(sf::RenderWindow * window, InputState & state)> callback, hoverfn, defaultfn;
+	//multiple callbacks
+	std::vector<std::function<void(sf::RenderWindow * window, InputState & state)>> callback, hoverfn, defaultfn;
 
 	//objects inside this object
 	std::vector<std::unique_ptr<Object>> objects;
@@ -300,7 +308,7 @@ public:
 	void Draw(sf::RenderWindow *window, InputState& state);
 
 	template<class T>
-	Text(T str, sf::Font &f, float size, sf::Color col);
+	Text(T str, sf::Font &f, float size, sf::Color col = sf::Color::White);
 	Text(sf::Text t);
 
 	Text(Text& A);

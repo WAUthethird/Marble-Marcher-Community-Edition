@@ -13,7 +13,7 @@ int global_focus = 0;
 sf::Color default_main_color = sf::Color(64, 64, 64, 128);
 sf::Color default_hover_main_color = sf::Color(200, 128, 128, 128);
 sf::Color default_active_main_color = sf::Color(255, 128, 128, 255);
-float default_margin =0;
+float default_margin =2;
 sf::Vector2f default_size = sf::Vector2f(1920, 1080);
 sf::View default_view = sf::View(sf::FloatRect(0, 0, default_size.x, default_size.y));
 
@@ -307,25 +307,70 @@ void Object::Move(sf::Vector2f dx)
 
 void Object::SetDefaultFunction(std::function<void(sf::RenderWindow * window, InputState&state)> fun)
 {
-	defaultfn = fun;
+	defaultfn.push_back(fun);
 }
 
 void Object::SetCallbackFunction(std::function<void(sf::RenderWindow*window, InputState&state)> fun, bool limit_repeat)
 {
-	callback = fun;
+	callback.push_back(fun);
 	limiter = limit_repeat;
 }
 
 void Object::SetHoverFunction(std::function<void(sf::RenderWindow * window, InputState&state)> fun)
 {
-	hoverfn = fun;
+	hoverfn.push_back(fun);
+}
+
+void Object::SetMainDefaultFunction(call_func fun)
+{
+	if (defaultfn.size() == 0)
+		defaultfn.push_back(fun);
+	else
+		defaultfn[0] = fun;
+}
+
+void Object::SetMainCallbackFunction(call_func fun, bool limit_repeat)
+{
+	if (callback.size() == 0)
+		callback.push_back(fun);
+	else
+		callback[0] = fun;
+	limiter = limit_repeat;
+}
+
+
+void Object::SetMainHoverFunction(call_func fun)
+{
+	if (hoverfn.size() == 0)
+		hoverfn.push_back(fun);
+	else
+		hoverfn[0] = fun;
+}
+
+void Object::ClearDefaultFunctions()
+{
+	defaultfn.clear();
+}
+
+void Object::ClearCallbackFunctions()
+{
+	callback.clear();
+}
+
+void Object::ClearHoverFunctions()
+{
+	hoverfn.clear();
 }
 
 bool Object::RunCallback(sf::RenderWindow * window, InputState & state)
 {
-	if (callback != NULL)
+	if (callback.size() != 0)
 	{
-		callback(window, state); //run callback with state info
+		//run through all of the callbacks
+		for (auto &this_callback : callback)
+		{
+			this_callback(window, state); //run callback with state info
+		}
 		return true;
 	}
 	else
@@ -366,7 +411,7 @@ void Object::Update(sf::RenderWindow * window, InputState& state)
 		{
 			active[id] = true; //set as active
 			cursor = id;
-			if (defaultfn != NULL)
+			if (defaultfn.size() != 0)
 				focused = id; // save this object as the last focused if it has a default callback
 
 			if (global_exists(id))
@@ -411,8 +456,10 @@ void Object::UpdateAction(sf::RenderWindow * window, InputState & state)
 	{
 		if(!(state.mouse[0] || state.mouse[2])) // if hover
 		{
-			if (hoverfn != NULL)
-				hoverfn(window, state); //run callback with state info
+			for (auto &this_callback : hoverfn)
+			{
+				this_callback(window, state); //run callback with state info
+			}
 			curmode = ONHOVER;
 		}
 	}
@@ -424,9 +471,9 @@ void Object::UpdateAction(sf::RenderWindow * window, InputState & state)
 
 	if (active[id])
 	{
-		if (callback != NULL)
+		for (auto &this_callback : callback)
 		{
-			callback(window, state); //run callback with state info
+			this_callback(window, state); //run callback with state info
 		}
 		curmode = ACTIVE;
 	}
@@ -435,8 +482,10 @@ void Object::UpdateAction(sf::RenderWindow * window, InputState & state)
 	{
 		if (focused == id) //if this object is the one that is currently in focus
 		{
-			if (defaultfn != NULL) //the function existance check may seem unnecessery, but it is
-				defaultfn(window, state); //run callback with state info
+			for (auto &this_callback : defaultfn)
+			{
+				this_callback(window, state); //run callback with state info
+			}
 		}
 	}
 	else
@@ -494,6 +543,7 @@ void Object::operator=(Object && A)
 void Object::copy(Object & A)
 {
 	curstate = A.curstate;
+	curstate.margin = A.defaultstate.margin;
 	activestate = A.activestate;
 	hoverstate = A.hoverstate;
 	defaultstate = A.defaultstate;
@@ -502,9 +552,10 @@ void Object::copy(Object & A)
 	limiter = A.limiter;
 	used_view = A.used_view;
 	obj_allign = A.obj_allign;
-	callback = A.callback;
-	hoverfn = A.hoverfn;
-	defaultfn = A.hoverfn;
+
+	for (auto &a : A.callback) callback.push_back(a);
+	for (auto &a : A.hoverfn) hoverfn.push_back(a);
+	for (auto &a : A.defaultfn) defaultfn.push_back(a);
 
 	id = all_obj_id;
 	all_obj_id++;
@@ -546,7 +597,7 @@ void Object::AddObject(Object * something, Allign a)
 {
 	something->obj_allign = a;
 	objects.push_back(std::unique_ptr<Object>(something->GetCopy()));
-	this->SetInsideSize(defaultstate.inside_size + something->defaultstate.size.y);
+	this->SetInsideSize(defaultstate.inside_size + something->defaultstate.size.y + something->defaultstate.margin);
 }
 
 void Box::SetBackground(const sf::Texture & texture)
@@ -795,13 +846,13 @@ Window::Window(Window && A)
 void Window::CreateCallbacks()
 {
 	//use lambda funtion
-	this->objects[0].get()->objects[1].get()->SetCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	this->objects[0].get()->objects[1].get()->SetMainCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
 		Add2DeleteQueue(parent->id);
 	});
 
 	//delete callback
-	this->SetDefaultFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	this->SetMainDefaultFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
 		if (state.key_press[sf::Keyboard::Escape] == true)
 		{
@@ -811,7 +862,7 @@ void Window::CreateCallbacks()
 	});
 
 	//drag callback
-	this->objects[0].get()->SetCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	this->objects[0].get()->SetMainCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
 		parent->Move(state.mouse_speed);
 	}, false);
@@ -865,7 +916,7 @@ void MenuBox::AddObject(Object * something, Allign a)
 	}
 	else
 	{
-		this->objects[0].get()->SetWidth(this->defaultstate.size.x - 30);
+		this->objects[0].get()->SetWidth(this->defaultstate.size.x - 40);
 		this->objects[1].get()->SetWidth(30);
 		this->objects[1].get()->objects[0].get()->SetWidth(26);
 		this->objects[1].get()->objects[0].get()->SetHeigth(new_h);
@@ -932,7 +983,7 @@ MenuBox::MenuBox(float dx, float dy, float x, float y, sf::Color color_main): cu
 
 	Box Inside(0, 0, dx - 30, dy, sf::Color(100, 100, 100, 128)),
 		Scroll(0, 0, 30, dy, sf::Color(150, 150, 150, 128)),
-		Scroll_Slide(0, 0, 26, 60, sf::Color(255, 150, 0, 128));
+		Scroll_Slide(0, 0, 28, 60, sf::Color(255, 150, 0, 128));
 
 	Scroll_Slide.hoverstate.color_main = sf::Color(255, 50, 0, 128);
 	Scroll_Slide.activestate.color_main = sf::Color(255, 100, 100, 255);
@@ -959,7 +1010,7 @@ MenuBox::MenuBox(MenuBox && A): cursor_id(0)
 void MenuBox::CreateCallbacks()
 {
 	//use lambda funtion
-	this->objects[1].get()->objects[0].get()->SetCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	this->objects[1].get()->objects[0].get()->SetMainCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
 		float inside_size = parent->objects[0].get()->defaultstate.inside_size;
 		float height_1 = parent->objects[1].get()->defaultstate.size.y - 2 * parent->objects[1].get()->defaultstate.margin;
@@ -970,7 +1021,7 @@ void MenuBox::CreateCallbacks()
 		parent->ScrollBy(state.mouse_speed.y*rel_coef);
 	}, false);
 
-	this->SetHoverFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	this->SetMainHoverFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
 		//wheel scroll 
 		if (state.wheel != 0.f)
@@ -980,7 +1031,7 @@ void MenuBox::CreateCallbacks()
 		}
 	});
 
-	this->SetDefaultFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	this->SetMainDefaultFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
 		bool A = false;
 
@@ -1066,17 +1117,9 @@ Button::~Button()
 
 Image::Image(sf::Texture image, float w, float h, sf::Color color_hover)
 {
-	if (w == 0)
-		defaultstate.size.x = image.getSize().x;
-	else
-		defaultstate.size.x = w;
+	SetSize((w == 0) ? image.getSize().x : w, (h == 0) ? image.getSize().y : h);
 
-	if (h == 0)
-		defaultstate.size.y = image.getSize().y;
-	else
-		defaultstate.size.y = h;
-	
-	defaultstate.color_main = sf::Color::White;
+	SetBackgroundColor(sf::Color::White);
 	hoverstate.color_main = color_hover;
 
 	this->SetBackground(image);
@@ -1087,17 +1130,8 @@ Image::Image(std::string image_path, float w, float h, sf::Color color_hover)
 	sf::Texture image;
 	image.loadFromFile(image_path);
 
-	if (w == 0)
-		defaultstate.size.x = image.getSize().x;
-	else
-		defaultstate.size.x = w;
-
-	if (h == 0)
-		defaultstate.size.y = image.getSize().y;
-	else
-		defaultstate.size.y = h;
-
-	defaultstate.color_main = sf::Color::White;
+	SetSize((w == 0) ? image.getSize().x : w, (h == 0) ? image.getSize().y : h);
+	SetBackgroundColor(sf::Color::White);
 	hoverstate.color_main = color_hover;
 
 	this->SetBackground(image);

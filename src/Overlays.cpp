@@ -67,33 +67,11 @@ Overlays::Texts Overlays::GetOption(Texts from, Texts to) {
 }
 
 void Overlays::UpdateMenu(float mouse_x, float mouse_y) {
-  //Update text boxes
-  //MakeText(LOCAL["Marble_Marcher"], 60, 20, 72, sf::Color::White, all_text[TITLE]);
- /* MakeText(LOCAL["Play"], 80, 230, 60, sf::Color::White, all_text[PLAY]);
-  MakeText(LOCAL["Levels"], 80, 300, 60, sf::Color::White, all_text[LEVELS]);
-  MakeText(LOCAL["Controls"], 80, 370, 60, sf::Color::White, all_text[CONTROLS]);
-  MakeText(LOCAL["Screen_Saver"], 80, 440, 60, sf::Color::White, all_text[SCREEN_SAVER]);
-  MakeText(LOCAL["Exit"], 80, 510, 60, sf::Color::White, all_text[EXIT]);
-  */
-  //MakeText(LOCAL["About"], 16, 652, 32, sf::Color::White, all_text[CREDITS], true);
- // all_text[TITLE].setLineSpacing(0.76f);
-  //all_text[CREDITS].setLineSpacing(0.9f);
-
-  //Check if mouse intersects anything
- // UpdateHover(PLAY, EXIT, mouse_x, mouse_y);
+  
 }
 
 void Overlays::UpdateControls(float mouse_x, float mouse_y) {
-  //Update text boxes
-  MakeText(LOCAL["DetailControls"], 40, 200, 46, sf::Color::White, all_text[CONTROLS_L]);
-  MakeText(LOCAL["Back"], 60, 550, 40, sf::Color::White, all_text[BACK]);
 
-  //A little extra vertical spacing
-  all_text[CONTROLS_L].setLineSpacing(1.1f);
-  all_text[CONTROLS_R].setLineSpacing(1.1f);
-
-  //Check if mouse intersects anything
-  UpdateHover(BACK, BACK, mouse_x, mouse_y);
 }
 
 void Overlays::UpdateLevels(float mouse_x, float mouse_y) {
@@ -106,46 +84,15 @@ void Overlays::UpdateLevelMenu(float mouse_x, float mouse_y, float scroll)
 }
 
 void Overlays::UpdatePaused(float mouse_x, float mouse_y) {
-  //Update text boxes
-  MakeText(LOCAL["Paused"], 540, 288, 54, sf::Color::White, all_text[PAUSED]);
-  MakeText(LOCAL["Continue"], 370, 356, 40, sf::Color::White, all_text[CONTINUE]);
-  MakeText(LOCAL["Restart"], 620, 356, 40, sf::Color::White, all_text[RESTART]);
-  MakeText(LOCAL["Quit"], 845, 356, 40, sf::Color::White, all_text[QUIT]);
 
-  //Update music setting
-  std::wstring music_txt = LOCAL["Music"] + L": " + std::wstring(game_settings.mute ? LOCAL["On"] : LOCAL["Off"]);
-  MakeText(music_txt, 410, 500, 40, sf::Color::White, all_text[MUSIC]);
-
-  //Update mouse sensitivity setting
-  std::wstring mouse_txt = LOCAL["Mouse_sensitivity"] + L": ";
-  if (game_settings.mouse_sensitivity == 1) 
-  {
-    mouse_txt += LOCAL["Medium"];
-  } 
-  else if (game_settings.mouse_sensitivity == 2) 
-  {
-	mouse_txt += LOCAL["Low"];
-  }	
-  else
-  {
-	mouse_txt += LOCAL["High"];
-  }
-  MakeText(mouse_txt, 410, 550, 40, sf::Color::White, all_text[MOUSE]);
-
-  //Check if mouse intersects anything
-  UpdateHover(CONTINUE, MOUSE, mouse_x, mouse_y);
 }
 
 void Overlays::DrawMenu(sf::RenderWindow& window) {
-  for (int i = TITLE; i <= CREDITS; ++i) {
-    window.draw(all_text[i]);
-  }
+  
 }
 
 void Overlays::DrawControls(sf::RenderWindow& window) {
-  for (int i = CONTROLS_L; i <= BACK; ++i) {
-    window.draw(all_text[i]);
-  }
+ 
 }
 
 void Overlays::DrawTimer(sf::RenderWindow& window, int t, bool is_high_score) {

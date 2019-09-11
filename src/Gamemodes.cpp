@@ -1,5 +1,4 @@
 #include "Gamemodes.h"
-#include "Gamemodes.h"
 
 
 
@@ -168,6 +167,15 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 	sf::Vector2f vsize = default_view.getSize();
 	MenuBox creditslist(wsize.x*0.95f, vsize.y*0.95f, (vsize.x - wsize.x*0.95f) / 2, vsize.y*0.025f);
 
+	//add a default callback
+	creditslist.SetDefaultFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
+	{
+		if (state.keys[sf::Keyboard::Escape])
+		{
+			OpenMainMenu(scene, overlays);
+		}
+	});
+
 	creditslist.SetBackgroundColor(sf::Color(30,30,30,200));
 	//make it static
 	creditslist.static_object = true;
@@ -186,6 +194,32 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 		},
 		sf::Color(200, 40, 0, 255), sf::Color(128, 128, 128, 128));
 	creditslist.AddObject(&back, Object::Allign::LEFT);
+
+	//Credits list
+	
+	Box credits_entry_1(wsize.x*0.95f - 60, 120);
+	credits_entry_1.SetBackgroundColor(sf::Color(128, 128, 128, 128));
+	credits_entry_1.AddObject(&Image("images/credits/codeparade.jpg", 116, 116), Object::Allign::LEFT);
+	credits_entry_1.AddObject(&Text(LOCAL["Codeparade"],LOCAL("default"),50), Object::Allign::LEFT);
+	creditslist.AddObject(&credits_entry_1, Object::Allign::LEFT);
+
+	Box credits_entry_2(wsize.x*0.95f - 60, 120);
+	credits_entry_2.SetBackgroundColor(sf::Color(128, 128, 128, 128));
+	credits_entry_2.AddObject(&Image("images/credits/michaelmoroz.jpg", 116, 116), Object::Allign::LEFT);
+	credits_entry_2.AddObject(&Text(LOCAL["Michael Moroz"], LOCAL("default"), 50), Object::Allign::LEFT);
+	creditslist.AddObject(&credits_entry_2, Object::Allign::LEFT);
+
+	Box credits_entry_3(wsize.x*0.95f - 60, 120);
+	credits_entry_3.SetBackgroundColor(sf::Color(128, 128, 128, 128));
+	credits_entry_3.AddObject(&Image("images/credits/wauthethird.png", 116, 116), Object::Allign::LEFT);
+	credits_entry_3.AddObject(&Text(LOCAL["WAUthethird"], LOCAL("default"), 50), Object::Allign::LEFT);
+	creditslist.AddObject(&credits_entry_3, Object::Allign::LEFT);
+
+	Box credits_entry_4(wsize.x*0.95f - 60, 120);
+	credits_entry_4.SetBackgroundColor(sf::Color(128, 128, 128, 128));
+	credits_entry_4.AddObject(&Image("images/credits/Bryce.png", 116, 116), Object::Allign::LEFT);
+	credits_entry_4.AddObject(&Text(LOCAL["Bryce AS202313"], LOCAL("default"), 50), Object::Allign::LEFT);
+	creditslist.AddObject(&credits_entry_4, Object::Allign::LEFT);
 
 
 	AddGlobalObject(creditslist);
@@ -220,6 +254,53 @@ void OpenControlMenu(Scene * scene, Overlays * overlays)
 {
 	RemoveAllObjects();
 	game_mode = CONTROLS;
+
+	scene->SetCurrentMusic(scene->levels.GetMusic("menu.ogg"));
+	scene->SetExposure(1.0f);
+	scene->SetMode(Scene::INTRO);
+
+	sf::Vector2f wsize = default_size;
+	sf::Vector2f vsize = default_view.getSize();
+	MenuBox controls(wsize.x*0.95f, vsize.y*0.95f, (vsize.x - wsize.x*0.95f) / 2, vsize.y*0.025f);
+
+	//add a default callback
+	controls.SetDefaultFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
+	{
+		if (state.keys[sf::Keyboard::Escape])
+		{
+			OpenMainMenu(scene, overlays);
+		}
+	});
+
+	controls.SetBackgroundColor(sf::Color(30, 30, 30, 200));
+	//make it static
+	controls.static_object = true;
+
+	//TITLE
+	Text ttl(LOCAL["Controls"], LOCAL("default"), 60, sf::Color::White);
+	ttl.SetBorderColor(sf::Color::Black);
+	ttl.SetBorderWidth(4);
+	controls.AddObject(&ttl, Object::Allign::CENTER);
+
+	controls.AddObject(&Button(LOCAL["Back2Main"], 600, 50,
+		[scene, overlays](sf::RenderWindow * window, InputState & state)
+		{
+			OpenMainMenu(scene, overlays);
+			overlays->sound_click.play();
+		},
+		sf::Color(200, 40, 0, 255), sf::Color(128, 128, 128, 128)), Object::Allign::LEFT);
+
+	controls.AddObject(&Box(800, 0), Object::Allign::CENTER);
+
+
+	Text cntrl(LOCAL["DetailControls"], LOCAL("default"), 50, sf::Color::White);
+	cntrl.SetBorderColor(sf::Color::Black);
+	cntrl.SetBorderWidth(4);
+	controls.AddObject(&cntrl, Object::Allign::LEFT);
+
+	
+
+	AddGlobalObject(controls);
 }
 
 void ResumeGame(sf::RenderWindow &window)
@@ -236,7 +317,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	scene->SetExposure(1.0f);
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
-	MenuBox pausemenu(625, 630, wsize.x*0.025, wsize.y*0.025f);
+	MenuBox pausemenu(625, 640, wsize.x*0.025, wsize.y*0.025f);
 	pausemenu.SetBackgroundColor(sf::Color(32, 32, 32, 200));
 	
 	//make the menu static
@@ -480,12 +561,13 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 		lvlbtton.SetBackgroundColor(sf::Color(128, 128, 128, 128));
 		lvlbtton.hoverstate.border_thickness = 3;
 
-		Box lvltext(500, 65);
+		Box lvltext(500, 63);
 		lvltext.SetBackgroundColor(sf::Color::Transparent);
+		lvltext.SetMargin(0);
 		Box lvltitle(500, 40);
 		lvltitle.SetBackgroundColor(sf::Color::Transparent);
-		Text lvlname(utf8_to_wstring(names[ids[i]]), LOCAL("default"), 35, sf::Color::White);
-		Text lvldescr(utf8_to_wstring(desc[ids[i]]), LOCAL("default"), 18, sf::Color::White);
+		Text lvlname(utf8_to_wstring(names[ids[i]]), LOCAL("default"), 30, sf::Color::White);
+		Text lvldescr(utf8_to_wstring(desc[ids[i]]), LOCAL("default"), 15, sf::Color::White);
 		lvlname.hoverstate.color_main = sf::Color(255, 0, 0, 255);
 		lvlname.SetCallbackFunction([scene, overlays, selected = ids[i]](sf::RenderWindow * window, InputState & state)
 		{
@@ -534,7 +616,7 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 
 		Box buttons(120, 60);
 		buttons.SetBackgroundColor(sf::Color::Transparent);
-		Box bedit(60, 60);
+		Box bedit(56, 56);
 		bedit.defaultstate.color_main = sf::Color(255, 255, 255, 255);
 		bedit.hoverstate.color_main = sf::Color(0, 255, 0, 255);
 		bedit.SetBackground(edittxt);
@@ -544,7 +626,7 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 			overlays->sound_click.play();
 		}, true);
 
-		Box bremove(60, 60);
+		Box bremove(56, 56);
 		bremove.defaultstate.color_main = sf::Color(255, 255, 255, 255);
 		bremove.hoverstate.color_main = sf::Color(255, 0, 0, 255);
 		bremove.SetBackground(removetxt);

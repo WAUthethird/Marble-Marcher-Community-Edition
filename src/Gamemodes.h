@@ -18,7 +18,8 @@ enum GameMode {
 	LEVEL_EDITOR,
 	CREDITS,
 	MIDPOINT,
-	ABOUT
+	ABOUT,
+	MENU
 };
 
 
