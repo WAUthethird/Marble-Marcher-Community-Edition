@@ -13,9 +13,6 @@ add_library(MarbleMarcherSources
   Scores.cpp
   Scores.h
 
-  SelectRes.cpp
-  SelectRes.h
-
   Interface.h
   Interface.cpp
   

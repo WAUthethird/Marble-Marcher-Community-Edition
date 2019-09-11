@@ -18,7 +18,6 @@
 #include <Gamemodes.h>
 #include "Level.h"
 #include "Res.h"
-#include "SelectRes.h"
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
@@ -81,7 +80,7 @@ int main(int argc, char *argv[]) {
 	//Create the fractal scene
 	Scene scene(level_music);
 	//Create the old menus
-	Overlays overlays(&LOCAL("default"), &LOCAL("mono"), &scene);
+	Overlays overlays(&scene);
 	sf::Clock clock;
 	float smooth_fps = target_fps;
 	float lag_ms = 0.0f;
@@ -135,6 +134,7 @@ int main(int argc, char *argv[]) {
 	{
 		OpenMainMenu(&scene, &overlays);
 	}
+
 
 	//Main loop
 	while (window.isOpen())
