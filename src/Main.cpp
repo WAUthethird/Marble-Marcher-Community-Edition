@@ -69,7 +69,9 @@ int main(int argc, char *argv[]) {
 
 	bool first_start = SETTINGS.Load(settings_bin);
 
-	LOCAL.LoadLocalsFromFolder(local_folder);
+	//all of the fonts
+	Fonts fonts;
+	LOCAL.LoadLocalsFromFolder(local_folder, &fonts);
 	
 	//all declarations
 	sf::RenderWindow window;
@@ -543,10 +545,8 @@ int main(int argc, char *argv[]) {
 				lag_ms += std::max(-time_diff_ms, 0.0f);
 			}
 		}
-
-		//window.close();
 	}
-	LOCAL.del();
+
 	RemoveAllObjects();
 	scene.StopMusic();
 	scene.levels.SaveScoresToFile();

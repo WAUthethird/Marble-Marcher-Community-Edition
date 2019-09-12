@@ -6,16 +6,17 @@ Localization::Localization()
 {
 }
 
-void Localization::LoadLocalsFromFolder(std::string folder)
+void Localization::LoadLocalsFromFolder(std::string folder, Fonts *fonts)
 {
+	fonts_ptr = fonts;
 	std::vector<fs::path> files = GetFilesInFolder(folder, ".loc");
 	for (int i = 0; i < files.size(); i++)
 	{
 		LoadLocalFromFile(files[i]);
 	}
 
-	default_font.reset(new sf::Font());
-	if (!default_font.get()->loadFromFile("assets/Inconsolata-Bold.ttf")) 
+
+	if (!fonts_ptr->default_font.loadFromFile("assets/Inconsolata-Bold.ttf"))
 	{
 		ERROR_MSG("Unable to load default font");
 	}
@@ -99,7 +100,7 @@ void Localization::LoadLocalFromFile(fs::path path)
 	local_file.close();
 
 	locales[lang] = local;
-	fonts[lang] = fontmap;
+	fonts_ptr->fonts[lang] = fontmap;
 	languages.push_back(lang);
 }
 
@@ -113,6 +114,7 @@ std::vector<std::string> Localization::GetLanguages()
 	return languages;
 }
 
+//unicode string 
 std::wstring Localization::operator[](std::string str)
 {
 	if (locales[cur_language].count(str) != 0)
@@ -135,17 +137,12 @@ const char* Localization::cstr(std::string str)
 	return tostring(this->operator[](str)).c_str();
 }
 
-
+//the font operator, a font for each language
 sf::Font & Localization::operator()(std::string str)
 {
-	if (fonts[cur_language].count(str) != 0)
-		return fonts[cur_language][str];
+	if (fonts_ptr->fonts[cur_language].count(str) != 0)
+		return fonts_ptr->fonts[cur_language][str];
 	else
-		return *default_font.get();
+		return fonts_ptr->default_font;
 }
 
-void Localization::del()
-{
- 	default_font.~unique_ptr();
-	fonts.~map();
-}

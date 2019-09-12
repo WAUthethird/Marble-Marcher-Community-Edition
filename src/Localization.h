@@ -13,12 +13,19 @@
 
 namespace fs = std::filesystem;
 
+struct Fonts
+{
+	//language fonts
+	sf::Font default_font;
+	std::map<std::string, std::map<std::string, sf::Font>> fonts;
+};
+
 class Localization
 {
 public:
 	Localization();
 
-	void LoadLocalsFromFolder(std::string folder);
+	void LoadLocalsFromFolder(std::string folder, Fonts * fonts);
 	void LoadLocalFromFile(fs::path path);
 	void SetLanguage(std::string lang);
 	std::vector<std::string> GetLanguages();
@@ -28,14 +35,11 @@ public:
 	const char * cstr(std::string str);
 	sf::Font& operator()(std::string str);
 
-	void del();
 private:
 	std::string cur_language;
 	std::vector<std::string> languages;
 	std::map<std::string, std::map<std::string, std::wstring>> locales;
-	std::map<std::string, std::map<std::string, sf::Font>> fonts;
-
-	std::unique_ptr<sf::Font> default_font;
+	Fonts *fonts_ptr;
 };
 
 extern Localization LOCAL;
