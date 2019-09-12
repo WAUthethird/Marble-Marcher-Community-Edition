@@ -28,11 +28,14 @@ public:
 	const char * cstr(std::string str);
 	sf::Font& operator()(std::string str);
 
+	void del();
 private:
 	std::string cur_language;
 	std::vector<std::string> languages;
 	std::map<std::string, std::map<std::string, std::wstring>> locales;
 	std::map<std::string, std::map<std::string, sf::Font>> fonts;
+
+	std::unique_ptr<sf::Font> default_font;
 };
 
 extern Localization LOCAL;

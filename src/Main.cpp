@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 	bool first_start = SETTINGS.Load(settings_bin);
 
 	LOCAL.LoadLocalsFromFolder(local_folder);
-
+	
 	//all declarations
 	sf::RenderWindow window;
   
@@ -126,6 +126,7 @@ int main(int argc, char *argv[]) {
 	io_state.window_size = sf::Vector2f(window.getSize().x, window.getSize().y);
 	float prev_s = 0;
 
+	
 	if (first_start)
 	{
 		FirstStart(&overlays);
@@ -134,7 +135,6 @@ int main(int argc, char *argv[]) {
 	{
 		OpenMainMenu(&scene, &overlays);
 	}
-
 
 	//Main loop
 	while (window.isOpen())
@@ -384,6 +384,7 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}
+		
 
 		//Check if the game was beat
 		if (scene.GetMode() == Scene::FINAL && game_mode != CREDITS) {
@@ -400,20 +401,12 @@ int main(int argc, char *argv[]) {
 
 	
 		//Main game update
-		if (game_mode == MAIN_MENU || game_mode == ABOUT) {
+		if (game_mode == MAIN_MENU || game_mode == ABOUT || game_mode == LEVELS || game_mode == SCREEN_SAVER || game_mode == CONTROLS) 
+		{
 			scene.UpdateCamera();
 		}
-		else if (game_mode == CONTROLS) {
-			scene.UpdateCamera();
-			overlays.UpdateControls((float)mouse_pos.x, (float)mouse_pos.y);
-		}
-		else if (game_mode == LEVELS) {
-			scene.UpdateCamera();
-		}
-		else if (game_mode == SCREEN_SAVER) {
-			scene.UpdateCamera();
-		}
-		else if (game_mode == PLAYING || game_mode == CREDITS || game_mode == MIDPOINT || game_mode == LEVEL_EDITOR) {
+		else if (game_mode == PLAYING || game_mode == CREDITS || game_mode == MIDPOINT || game_mode == LEVEL_EDITOR)
+		{
 			//Collect keyboard input
 			const float force_lr =
 				(all_keys[sf::Keyboard::Left] || all_keys[sf::Keyboard::A] ? -1.0f : 0.0f) +
@@ -494,10 +487,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		//Draw text overlays to the window
-		if (game_mode == CONTROLS) {
-			overlays.DrawControls(window);
-		}
-		else if (game_mode == PLAYING) {
+		 if (game_mode == PLAYING) {
 			if (scene.GetMode() == Scene::ORBIT && scene.GetMarble().x() < 998.0f) {
 				overlays.DrawLevelDesc(window, scene.level_copy.txt);
 			}
@@ -524,12 +514,13 @@ int main(int argc, char *argv[]) {
 			overlays.DrawMidPoint(window, scene.IsFullRun(), scene.GetSumTime());
 		}
 
+		 
 		//new interface render stuff
 		io_state.dt = prev_s;
 		io_state.time += io_state.dt;
 		UpdateAllObjects(&window, io_state);
 		window.setView(default_window_view);
-
+		
 		if (!skip_frame) {
 			if (overlays.TWBAR_ENABLED)
 				scene.Synchronize();
@@ -552,16 +543,19 @@ int main(int argc, char *argv[]) {
 				lag_ms += std::max(-time_diff_ms, 0.0f);
 			}
 		}
-		
-	}
 
+		//window.close();
+	}
+	LOCAL.del();
 	RemoveAllObjects();
 	scene.StopMusic();
 	scene.levels.SaveScoresToFile();
 	TwTerminate();
 
+	/*
 	#ifdef _DEBUG
 	system("pause");
 	#endif
+	*/
 	return 0;
 }

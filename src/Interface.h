@@ -303,7 +303,7 @@ inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main
 class Text : public Object
 {
 public:
-	sf::Text text;
+	std::unique_ptr<sf::Text> text;
 
 	void Draw(sf::RenderWindow *window, InputState& state);
 
@@ -324,8 +324,7 @@ public:
 template<class T>
 inline Text::Text(T str, sf::Font & f, float size, sf::Color col)
 {
-	text.setString(str);
-	text.setFont(f);
+	text.reset(new sf::Text(str, f, size));
 	defaultstate.font_size = size;
 	defaultstate.color_main = col;
 	SetBorderColor(sf::Color::Black);

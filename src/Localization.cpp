@@ -13,6 +13,12 @@ void Localization::LoadLocalsFromFolder(std::string folder)
 	{
 		LoadLocalFromFile(files[i]);
 	}
+
+	default_font.reset(new sf::Font());
+	if (!default_font.get()->loadFromFile("assets/Inconsolata-Bold.ttf")) 
+	{
+		ERROR_MSG("Unable to load default font");
+	}
 }
 
 std::string tostring(std::wstring string_to_convert)
@@ -43,7 +49,6 @@ void Localization::LoadLocalFromFile(fs::path path)
 	std::string lang;
 
 	std::map<std::string, std::wstring> local;
-	std::map<std::string, sf::Font> fontmap;
 
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
@@ -75,6 +80,7 @@ void Localization::LoadLocalFromFile(fs::path path)
 	//last element
 	local[element_name] = element_text;
 
+	std::map<std::string, sf::Font> fontmap;
 	//Load the font
 	sf::Font font;
 	std::wstring assets = L"assets/";
@@ -135,5 +141,11 @@ sf::Font & Localization::operator()(std::string str)
 	if (fonts[cur_language].count(str) != 0)
 		return fonts[cur_language][str];
 	else
-		return sf::Font();
+		return *default_font.get();
+}
+
+void Localization::del()
+{
+ 	default_font.~unique_ptr();
+	fonts.~map();
 }

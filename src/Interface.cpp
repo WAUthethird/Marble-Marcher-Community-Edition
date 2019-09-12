@@ -161,7 +161,7 @@ void UpdateAllObjects(sf::RenderWindow * window, InputState& state)
 	}
 
 	del.clear();
-
+	
 	//render stuff in the following order
 	for (auto &z : z_value)
 	{
@@ -780,19 +780,21 @@ void ColorFloat::operator=(sf::Color a)
 
 void Text::Draw(sf::RenderWindow * window, InputState& state)
 {
-	text.setPosition(curstate.position);
-	text.setCharacterSize(curstate.font_size);
-	text.setFillColor(ToColor(curstate.color_main));
-	text.setOutlineThickness(curstate.border_thickness);
-	text.setOutlineColor(ToColor(curstate.color_border));
-
-	window->draw(text);
-	SetSize(text.getLocalBounds().width, text.getLocalBounds().height);
+	if (text.get() != nullptr)
+	{
+		text.get()->setPosition(curstate.position);
+		text.get()->setCharacterSize(curstate.font_size);
+		text.get()->setFillColor(ToColor(curstate.color_main));
+		text.get()->setOutlineThickness(curstate.border_thickness);
+		text.get()->setOutlineColor(ToColor(curstate.color_border));
+		window->draw(*text.get());
+		SetSize(text.get()->getLocalBounds().width, text.get()->getLocalBounds().height);
+	}
 }
 
 Text::Text(sf::Text t)
 {
-	text = t;
+	text.reset(new sf::Text(t));
 	defaultstate.font_size = t.getCharacterSize();
 	defaultstate.color_main = t.getFillColor();
 	clone_states();
@@ -812,8 +814,10 @@ Text::Text(Text && A)
 void Text::operator=(Text & A)
 {
 	copy(A);
-
-	text = A.text;
+	if (A.text.get() != nullptr)
+	{
+		text.reset(new sf::Text(*A.text.get()));
+	}
 }
 
 void Text::operator=(Text && A)
