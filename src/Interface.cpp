@@ -663,7 +663,8 @@ void Box::Draw(sf::RenderWindow * window, InputState& state)
 						break;
 					case CENTER:
 						obj.get()->SetPosition(curstate.position.x + defaultstate.size.x * 0.5f - obj_width * 0.5f, curstate.position.y + cur_shift_y);
-						cur_shift_y += std::max(obj_h, line_height) + curstate.margin;
+						line_height = std::max(obj_h, line_height);
+						cur_shift_y += line_height + curstate.margin;
 						line_height = 0;
 						cur_shift_x1 = curstate.margin;
 						cur_shift_x2 = curstate.margin;

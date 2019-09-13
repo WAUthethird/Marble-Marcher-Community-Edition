@@ -7,8 +7,6 @@
 
 uniform vec3 BACKGROUND_COLOR;
 uniform vec3 LIGHT_DIRECTION;
-uniform float PBR_METALLIC;
-uniform float PBR_ROUGHNESS;
 uniform vec3 LIGHT_COLOR;
 uniform bool SHADOWS_ENABLED; 
 
@@ -150,8 +148,6 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	#pragma unroll
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
-		//moving in a zig-zag
-		
 		pos.xyz += pos.w*direction;
 		pos.w = DE(pos.xyz);
 		
@@ -171,14 +167,14 @@ vec3 refraction(vec3 rd, vec3 n, float p) {
 	return p * (rd - dot_nd * n) + sqrt(1.0 - (p * p) * (1.0 - dot_nd * dot_nd)) * n;
 }
 
-vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, float shadow) 
+vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, float shadow) 
 {
 	vec3 albedo = color.xyz;
 	albedo = pow(albedo,vec3(1.f/gamma_material)); //square it to make the fractals more colorfull 
 	
 	vec4 ambient_color = ambient_occlusion(pos, norm, dir);
 	
-	float metallic = PBR_METALLIC;
+	float metallic = pbr.x;
 	vec3 F0 = vec3(0.04); 
 	F0 = mix(F0, albedo, metallic);
 	
@@ -188,7 +184,7 @@ vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, f
 	vec3 N = norm.xyz;
 	
 	{ //ambient occlusion contribution
-		float roughness = max(PBR_ROUGHNESS,0.5);
+		float roughness = max(pbr.y,0.5);
 		vec3 L = normalize(N);
 		vec3 H = normalize(V + L);
 		vec3 radiance = ambient_color.xyz;        
@@ -219,7 +215,7 @@ vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, f
 	vec3 sun_color = sky_color(LIGHT_DIRECTION);
 
 	{ //light contribution
-		float roughness = PBR_ROUGHNESS;
+		float roughness = pbr.y;
 		vec3 L = normalize(LIGHT_DIRECTION);
 		vec3 H = normalize(V + L);
 		vec3 radiance = sun_color*shadow*(0.8+0.2*ambient_color.w);        
@@ -283,7 +279,7 @@ vec3 lighting(vec4 color, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, f
 			vec3 kD = vec3(1.0) - kS;
 			Lo += kS*refl + kD*refr;
 		}
-		else
+		else if(MARBLE_MODE > 0)
 		{
 			//metal
 			vec3 F0 = vec3(0.6); 
@@ -321,8 +317,9 @@ vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, float shadow)
 			//cpos = cpos - DE(cpos)*norm.xyz;
 			//cpos = cpos - DE(cpos)*norm.xyz;
 			
-			vec4 color = COL(cpos);
-			return lighting(color, pos, dir, norm, vec3(0), vec3(0), shadow); 
+			vec4 color; vec2 pbr;
+			scene_material(cpos, color, pbr);
+			return lighting(color, pbr, pos, dir, norm, vec3(0), vec3(0), shadow); 
 		}
 	}
 	else
@@ -359,8 +356,8 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 		//	cpos = cpos - DE(cpos)*norm.xyz;
 		//	cpos = cpos - DE(cpos)*norm.xyz;
 		//	cpos = cpos - DE(cpos)*norm.xyz;
-			
-			vec4 color = COL(cpos);
+			vec4 color; vec2 pbr;
+			scene_material(cpos, color, pbr);
 			vec3 refl = vec3(0);
 			vec3 refr = vec3(0);
 			if(color.w>0.5) // if marble
@@ -373,7 +370,7 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 				vec4 p_temp = vec4(p2 + n * (MIN_DIST * 10), 0);
 				vec4 r_temp = vec4(q, dir.w);
 				
-				refr = render_ray(p_temp, r_temp, fov*1.5);
+				refr = render_ray(p_temp, r_temp, fov*4);
 
 				//Calculate reflection
 				n = normalize(cpos.xyz - iMarblePos);
@@ -381,10 +378,10 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 				p_temp = vec4(cpos.xyz + n * (MIN_DIST * 10), 0);
 				r_temp = vec4(q, dir.w);
 				
-				refl = render_ray(p_temp, r_temp, fov*1.5);
+				refl = render_ray(p_temp, r_temp, fov*4);
 			}
 			
-			return lighting(color, vec4(cpos, pos.w), dir, norm, refl, refr, shadow); 
+			return lighting(color, pbr, vec4(cpos, pos.w), dir, norm, refl, refr, shadow); 
 		}
 	}
 	else

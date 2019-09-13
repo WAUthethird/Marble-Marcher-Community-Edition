@@ -20,7 +20,6 @@
 
 static const float PI = 3.14159265359f;
 static const int num_level_pages = 1 + (num_levels - 1) / Overlays::LEVELS_PER_PAGE;
-Settings game_settings;
 
 Overlays::Overlays(Scene* scene) :
   draw_scale(1.0f),
