@@ -891,6 +891,8 @@ void InitializeRendering(std::string config)
 	renderer_ptr->camera.bloomtreshold = SETTINGS.stg.bloom_treshold;
 	renderer_ptr->camera.SetMotionBlur(SETTINGS.stg.motion_blur);
 	renderer_ptr->camera.SetFOV(SETTINGS.stg.FOV);
+	renderer_ptr->camera.cross_eye = SETTINGS.stg.cross_eye;
+	renderer_ptr->camera.eye_separation = SETTINGS.stg.eye_separation;
 	renderer_ptr->camera.SetExposure(SETTINGS.stg.exposure);
 
 	scene_ptr->Refl_Refr_Enabled = SETTINGS.stg.refl_refr;
@@ -1115,9 +1117,11 @@ void InitializeATBWindows(float* fps, float *target_fps)
 
 	TwAddVarRW(overlays_ptr->settings, "Rendering resolution", Resolutions, &SETTINGS.stg.rendering_resolution, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, "group='Rendering settings' help='You need to restart the game for changes to take effect'");
+	TwAddVarRW(overlays_ptr->settings, "Cross-eye 3D", TW_TYPE_BOOLCPP, &SETTINGS.stg.cross_eye, "group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "3D eye separation", TW_TYPE_FLOAT, &SETTINGS.stg.eye_separation, "min=-2 step=0.05 max=2 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Shader configuration", Configurations, &SETTINGS.stg.shader_config, "group='Rendering settings'");
-	TwAddVarRW(overlays_ptr->settings, "MRRM scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Multi Resolution Ray Marching scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings' help='Don't touch this'");
 	TwAddVarRW(overlays_ptr->settings, "Shadow downscaling", TW_TYPE_INT32, &SETTINGS.stg.shadow_resolution, "min=1 max=8 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom downscaling", TW_TYPE_INT32, &SETTINGS.stg.bloom_resolution, "min=1 max=8 group='Rendering settings'");
 
@@ -1139,9 +1143,10 @@ void InitializeATBWindows(float* fps, float *target_fps)
 
 	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &SETTINGS.stg.language, "group='Gameplay settings'");
 	TwEnumVal marble_type[] = { { 0, "Glass"  },
-								{ 1,  "Metal" } };
+								{ 1,  "Metal" },
+								{ 2,  "Ceramic" } };
 
-	TwType Marble_type = TwDefineEnum("Marble type", marble_type, 2);
+	TwType Marble_type = TwDefineEnum("Marble type", marble_type, 3);
 	TwAddVarRW(overlays_ptr->settings, "Marble type", Marble_type, &SETTINGS.stg.marble_type, "group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Play next level", TW_TYPE_BOOLCPP, &SETTINGS.stg.play_next, "group='Gameplay settings' help='Will play next level of a level pack if enabled'");
 	TwAddVarRW(overlays_ptr->settings, "Mouse sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Gameplay settings'");
@@ -1227,7 +1232,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwDefine(" GLOBAL fontsize=3 ");
 	TwDefine("LevelEditor visible=false size='420 350' color='0 80 230' alpha=210 label='Level editor' valueswidth=200");
 	TwDefine("FractalEditor visible=false size='420 350' color='0 120 200' alpha=210 label='Fractal editor' valueswidth=200");
-	TwDefine("Settings color='255 128 0' alpha=210 size='420 350' valueswidth=200");
+	TwDefine("Settings color='255 128 0' alpha=210 size='420 500' valueswidth=100");
 	TwDefine("First_launch visible=false color='0 0 0' alpha=255 size='500 200' valueswidth=300");
 	TwDefine("Statistics color='0 128 255' alpha=210 size='420 160' valueswidth=200");
 }

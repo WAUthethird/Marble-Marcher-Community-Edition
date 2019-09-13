@@ -23,8 +23,8 @@ typedef struct
 	float bloomintensity;
 	float bloomtreshold;
 	float bloomradius;
-	int stepN;
-	int step;
+	bool cross_eye;
+	float eye_separation;
 } gl_camera;
 
 class Camera
@@ -90,9 +90,12 @@ public:
 
 	//exposure, motion blur and speckle radius
 	float exposure, mblur, speckle, bloomintensity, bloomtreshold, bloomradius;
+	bool cross_eye;
+	float eye_separation;
+
 private:
 	CameraMode cur_mode;
-
+	
 	//camera position 
 	vec3 position;
 

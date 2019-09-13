@@ -22,8 +22,6 @@
 
 #include <AntTweakBar.h>
 
-extern Settings game_settings;
-
 class Overlays {
 public:
   enum Texts {

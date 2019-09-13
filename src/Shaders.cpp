@@ -151,6 +151,8 @@ void ComputeShader::setCamera(gl_camera cam)
 	setUniform("Camera.bloomtreshold", cam.bloomtreshold);
 	setUniform("Camera.bloomintensity", cam.bloomintensity);
 	setUniform("Camera.speckle", cam.speckle);
+	setUniform("Camera.cross_eye", cam.cross_eye);
+	setUniform("Camera.eye_separation", cam.eye_separation);
 }
 
 GLuint ComputeShader::getNativeHandle()

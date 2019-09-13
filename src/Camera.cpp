@@ -156,9 +156,9 @@ gl_camera Camera::GetGLdata()
 	cam.bloomradius = bloomradius;
 
 	//data for the renderer
-	cam.stepN = 0; 
-	cam.step = 0;
 	cam.resolution = resolution; //not a property of the camera, but of the renderer
+	cam.cross_eye = cross_eye;
+	cam.eye_separation = eye_separation;
 
 	return cam;
 }

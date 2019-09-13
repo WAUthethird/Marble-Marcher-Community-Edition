@@ -22,28 +22,6 @@
 #include <AntTweakBar.h>
 namespace fs = std::filesystem;
 
-class Settings {
-public:
-  Settings() :
-    mute(false),
-    mouse_sensitivity(0) {
-  }
-
-  void Load(const std::string& fname) {
-    std::ifstream fin(fname, std::ios::binary);
-    if (!fin) { return; }
-    fin.read((char*)this, sizeof(this));
-  }
-  void Save(const std::string& fname) {
-    std::ofstream fout(fname, std::ios::binary);
-    if (!fout) { return; }
-    fout.write((char*)this, sizeof(this));
-  }
-
-  bool   mute;
-  int    mouse_sensitivity;
-};
-
 struct MainSettings
 {
 	int rendering_resolution;
@@ -82,12 +60,15 @@ struct MainSettings
 	float gamma_material;
 	float gamma_sky;
 	float gamma_camera;
+
+	bool cross_eye;
+	float eye_separation;
 };
 
 extern TwEnumVal resolutions[];
 
 static const MainSettings default_settings = { 6,
-	10, 5, 2, 3, 0, true, true, true, 0.05, 2.7, 3, 2.2, 90, 20, 20, 0.005, 0.2, false, 0.005, 0.45, 0, false, true, 0, true, 0.5, 0.6, 2.2};
+	10, 5, 2, 3, 0, true, true, true, 0.05, 2.7, 4, 2.2, 90, 20, 20, 0.005, 0.2, false, 0.005, 0.45, 0, false, true, 0, true, 0.7, 0.6, 2.2, false, -0.35};
 
 
 class AllSettings

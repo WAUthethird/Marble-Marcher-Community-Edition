@@ -96,7 +96,7 @@ Scene::Scene(sf::Music* level_music) :
     LIGHT_DIRECTION(Eigen::Vector3f(-0.36, 0.8, 0.48)),
 	PBR_METALLIC(0.5),
 	PBR_ROUGHNESS(0.4),
-	camera_size(0.035),
+	camera_size(0.075),
 	cur_ed_mode(DEFAULT),
 	level_editor(false),
 	gravity(0.005f),
