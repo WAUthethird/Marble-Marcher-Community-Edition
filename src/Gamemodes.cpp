@@ -200,25 +200,41 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 	Box credits_entry_1(wsize.x*0.95f - 60, 120);
 	credits_entry_1.SetBackgroundColor(sf::Color(128, 128, 128, 128));
 	credits_entry_1.AddObject(&Image("images/credits/codeparade.jpg", 116, 116), Object::Allign::LEFT);
-	credits_entry_1.AddObject(&Text(LOCAL["Codeparade"],LOCAL("default"),50), Object::Allign::LEFT);
+	Box credits_text_1(wsize.x*0.95f - 200, 116);
+	credits_text_1.AddObject(&Text(LOCAL["Codeparade"],LOCAL("default"),50), Object::Allign::LEFT);
+	credits_text_1.AddObject(&Box(8, 50), Object::Allign::CENTER);
+	credits_text_1.AddObject(&Text(LOCAL["Codeparade_descr"], LOCAL("default"), 30), Object::Allign::LEFT);
+	credits_entry_1.AddObject(&credits_text_1, Object::Allign::LEFT);
 	creditslist.AddObject(&credits_entry_1, Object::Allign::LEFT);
 
 	Box credits_entry_2(wsize.x*0.95f - 60, 120);
 	credits_entry_2.SetBackgroundColor(sf::Color(128, 128, 128, 128));
 	credits_entry_2.AddObject(&Image("images/credits/michaelmoroz.jpg", 116, 116), Object::Allign::LEFT);
-	credits_entry_2.AddObject(&Text(LOCAL["Michael Moroz"], LOCAL("default"), 50), Object::Allign::LEFT);
+	Box credits_text_2(wsize.x*0.95f - 200, 116);
+	credits_text_2.AddObject(&Text(LOCAL["Michael Moroz"], LOCAL("default"), 50), Object::Allign::LEFT);
+	credits_text_2.AddObject(&Box(8, 50), Object::Allign::CENTER);
+	credits_text_2.AddObject(&Text(LOCAL["Michael_descr"], LOCAL("default"), 30), Object::Allign::LEFT);
+	credits_entry_2.AddObject(&credits_text_2, Object::Allign::LEFT);
 	creditslist.AddObject(&credits_entry_2, Object::Allign::LEFT);
 
 	Box credits_entry_3(wsize.x*0.95f - 60, 120);
 	credits_entry_3.SetBackgroundColor(sf::Color(128, 128, 128, 128));
 	credits_entry_3.AddObject(&Image("images/credits/wauthethird.png", 116, 116), Object::Allign::LEFT);
-	credits_entry_3.AddObject(&Text(LOCAL["WAUthethird"], LOCAL("default"), 50), Object::Allign::LEFT);
+	Box credits_text_3(wsize.x*0.95f - 200, 116);
+	credits_text_3.AddObject(&Text(LOCAL["WAUthethird"], LOCAL("default"), 50), Object::Allign::LEFT);
+	credits_text_3.AddObject(&Box(8, 50), Object::Allign::CENTER);
+	credits_text_3.AddObject(&Text(LOCAL["WAU_descr"], LOCAL("default"), 30), Object::Allign::LEFT);
+	credits_entry_3.AddObject(&credits_text_3, Object::Allign::LEFT);
 	creditslist.AddObject(&credits_entry_3, Object::Allign::LEFT);
 
 	Box credits_entry_4(wsize.x*0.95f - 60, 120);
 	credits_entry_4.SetBackgroundColor(sf::Color(128, 128, 128, 128));
 	credits_entry_4.AddObject(&Image("images/credits/Bryce.png", 116, 116), Object::Allign::LEFT);
-	credits_entry_4.AddObject(&Text(LOCAL["Bryce AS202313"], LOCAL("default"), 50), Object::Allign::LEFT);
+	Box credits_text_4(wsize.x*0.95f - 200, 116);
+	credits_text_4.AddObject(&Text(LOCAL["Bryce AS202313"], LOCAL("default"), 50), Object::Allign::LEFT);
+	credits_text_4.AddObject(&Box(8, 50), Object::Allign::CENTER);
+	credits_text_4.AddObject(&Text(LOCAL["Bryce_descr"], LOCAL("default"), 30), Object::Allign::LEFT);
+	credits_entry_4.AddObject(&credits_text_4, Object::Allign::LEFT);
 	creditslist.AddObject(&credits_entry_4, Object::Allign::LEFT);
 
 

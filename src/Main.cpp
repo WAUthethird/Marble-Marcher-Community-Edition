@@ -551,11 +551,5 @@ int main(int argc, char *argv[]) {
 	scene.StopMusic();
 	scene.levels.SaveScoresToFile();
 	TwTerminate();
-
-	/*
-	#ifdef _DEBUG
-	system("pause");
-	#endif
-	*/
 	return 0;
 }

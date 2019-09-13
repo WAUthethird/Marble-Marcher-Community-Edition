@@ -186,3 +186,11 @@ Fractal Angle2
 Fractal Shift
 #Fractal_Color
 Fractal Color
+#Codeparade_descr
+The creator of the original game.
+#Michael_descr
+The main developer of Marble Marcher: Community Edition
+#WAU_descr
+Manages the main github repository of MMCE. Also ported MMCE to linux. 
+#Bryce_descr
+Ported MMCE to MacOS.
