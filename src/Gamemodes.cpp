@@ -196,47 +196,25 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 	creditslist.AddObject(&back, Object::Allign::LEFT);
 
 	//Credits list
-	
-	Box credits_entry_1(wsize.x*0.95f - 60, 120);
-	credits_entry_1.SetBackgroundColor(sf::Color(128, 128, 128, 128));
-	credits_entry_1.AddObject(&Image("images/credits/codeparade.jpg", 116, 116), Object::Allign::LEFT);
-	Box credits_text_1(wsize.x*0.95f - 200, 116);
-	credits_text_1.AddObject(&Text(LOCAL["Codeparade"],LOCAL("default"),50), Object::Allign::LEFT);
-	credits_text_1.AddObject(&Box(8, 50), Object::Allign::CENTER);
-	credits_text_1.AddObject(&Text(LOCAL["Codeparade_descr"], LOCAL("default"), 30), Object::Allign::LEFT);
-	credits_entry_1.AddObject(&credits_text_1, Object::Allign::LEFT);
-	creditslist.AddObject(&credits_entry_1, Object::Allign::LEFT);
+	std::vector<std::vector<std::string>> credits_list = {
+		{"images/credits/codeparade.jpg" , "Codeparade" , "Codeparade_descr"},
+		{"images/credits/michaelmoroz.jpg" , "Michael Moroz" , "Michael_descr"},
+		{"images/credits/wauthethird.png" , "WAUthethird" , "WAU_descr"},
+		{"images/credits/Bryce.png" , "Bryce AS202313" , "Bryce_descr"} 
+	};
 
-	Box credits_entry_2(wsize.x*0.95f - 60, 120);
-	credits_entry_2.SetBackgroundColor(sf::Color(128, 128, 128, 128));
-	credits_entry_2.AddObject(&Image("images/credits/michaelmoroz.jpg", 116, 116), Object::Allign::LEFT);
-	Box credits_text_2(wsize.x*0.95f - 200, 116);
-	credits_text_2.AddObject(&Text(LOCAL["Michael Moroz"], LOCAL("default"), 50), Object::Allign::LEFT);
-	credits_text_2.AddObject(&Box(8, 50), Object::Allign::CENTER);
-	credits_text_2.AddObject(&Text(LOCAL["Michael_descr"], LOCAL("default"), 30), Object::Allign::LEFT);
-	credits_entry_2.AddObject(&credits_text_2, Object::Allign::LEFT);
-	creditslist.AddObject(&credits_entry_2, Object::Allign::LEFT);
-
-	Box credits_entry_3(wsize.x*0.95f - 60, 120);
-	credits_entry_3.SetBackgroundColor(sf::Color(128, 128, 128, 128));
-	credits_entry_3.AddObject(&Image("images/credits/wauthethird.png", 116, 116), Object::Allign::LEFT);
-	Box credits_text_3(wsize.x*0.95f - 200, 116);
-	credits_text_3.AddObject(&Text(LOCAL["WAUthethird"], LOCAL("default"), 50), Object::Allign::LEFT);
-	credits_text_3.AddObject(&Box(8, 50), Object::Allign::CENTER);
-	credits_text_3.AddObject(&Text(LOCAL["WAU_descr"], LOCAL("default"), 30), Object::Allign::LEFT);
-	credits_entry_3.AddObject(&credits_text_3, Object::Allign::LEFT);
-	creditslist.AddObject(&credits_entry_3, Object::Allign::LEFT);
-
-	Box credits_entry_4(wsize.x*0.95f - 60, 120);
-	credits_entry_4.SetBackgroundColor(sf::Color(128, 128, 128, 128));
-	credits_entry_4.AddObject(&Image("images/credits/Bryce.png", 116, 116), Object::Allign::LEFT);
-	Box credits_text_4(wsize.x*0.95f - 200, 116);
-	credits_text_4.AddObject(&Text(LOCAL["Bryce AS202313"], LOCAL("default"), 50), Object::Allign::LEFT);
-	credits_text_4.AddObject(&Box(8, 50), Object::Allign::CENTER);
-	credits_text_4.AddObject(&Text(LOCAL["Bryce_descr"], LOCAL("default"), 30), Object::Allign::LEFT);
-	credits_entry_4.AddObject(&credits_text_4, Object::Allign::LEFT);
-	creditslist.AddObject(&credits_entry_4, Object::Allign::LEFT);
-
+	for (auto &str : credits_list)
+	{
+		Box credits_entry_1(wsize.x*0.95f - 60, 120);
+		credits_entry_1.SetBackgroundColor(sf::Color(128, 128, 128, 128));
+		credits_entry_1.AddObject(&Image(str[0], 116, 116), Object::Allign::LEFT);
+		Box credits_text_1(wsize.x*0.95f - 200, 116, sf::Color::Transparent);
+		credits_text_1.AddObject(&Text(LOCAL[str[1]], LOCAL("default"), 50), Object::Allign::LEFT);
+		credits_text_1.AddObject(&Box(0, 50), Object::Allign::CENTER);
+		credits_text_1.AddObject(&Text(LOCAL[str[2]], LOCAL("default"), 30), Object::Allign::LEFT);
+		credits_entry_1.AddObject(&credits_text_1, Object::Allign::LEFT);
+		creditslist.AddObject(&credits_entry_1, Object::Allign::LEFT);
+	}
 
 	AddGlobalObject(creditslist);
 }
@@ -889,6 +867,7 @@ void InitializeRendering(std::string config)
 	renderer_ptr->camera.bloomintensity = SETTINGS.stg.bloom_intensity;
 	renderer_ptr->camera.bloomradius = SETTINGS.stg.bloom_radius;
 	renderer_ptr->camera.bloomtreshold = SETTINGS.stg.bloom_treshold;
+	renderer_ptr->camera.auto_exposure_speed = SETTINGS.stg.auto_exposure_speed;
 	renderer_ptr->camera.SetMotionBlur(SETTINGS.stg.motion_blur);
 	renderer_ptr->camera.SetFOV(SETTINGS.stg.FOV);
 	renderer_ptr->camera.cross_eye = SETTINGS.stg.cross_eye;
@@ -1125,7 +1104,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Shadow downscaling", TW_TYPE_INT32, &SETTINGS.stg.shadow_resolution, "min=1 max=8 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom downscaling", TW_TYPE_INT32, &SETTINGS.stg.bloom_resolution, "min=1 max=8 group='Rendering settings'");
 
-	
+	TwAddVarRW(overlays_ptr->settings, "Auto-exposure speed", TW_TYPE_FLOAT, &SETTINGS.stg.auto_exposure_speed, "min=0 step=0.01 max=1 group='Graphics settings' help='The speed at which the camera adapts to the scene brightness' ");
 	TwAddVarRW(overlays_ptr->settings, "FOV", TW_TYPE_FLOAT, &SETTINGS.stg.FOV, "min=30 step=1 max=180 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "VSYNC", TW_TYPE_BOOLCPP, &SETTINGS.stg.VSYNC, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Shadows", TW_TYPE_BOOLCPP, &SETTINGS.stg.shadows, "group='Graphics settings'");

@@ -37,13 +37,16 @@ public:
 	void LoadExternalTextures(std::string texture_folder);
 
 	void Render();
+
+	float EvaluateAvgIllumination();
+
 	std::vector<ComputeShader> shader_pipeline;
 	Camera camera;
 	std::map<std::string, float> variables;
 
 private:
 	GLuint GenerateTexture(float w, float h);
-
+	float illumination;
 	std::string config_file;
 	std::string config_folder;
 	int width, height;

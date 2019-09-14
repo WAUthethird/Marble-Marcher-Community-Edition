@@ -247,6 +247,7 @@ void Renderer::Render()
 			glBindImageTexture(tex_id++, main_textures[j], 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 		}
 
+		//input textures
 		for (auto &extr_text : input_textures)
 		{
 			glBindImageTexture(tex_id++, extr_text.getNativeHandle(), 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
@@ -254,7 +255,27 @@ void Renderer::Render()
 		
 		shader_pipeline[i].setCamera(camera.GetGLdata());
 		shader_pipeline[i].Run(global_size[i]);
+
+		//unbind all of the textures
+		for (int k = 0; k < tex_id; k++)
+		{
+			glBindImageTexture(k, 0, 0, 0, 0, 0, 0);
+		}
 	}
+
+	camera.UpdateExposure(EvaluateAvgIllumination());
+}
+
+float Renderer::EvaluateAvgIllumination()
+{
+	float* avg = new float[4];
+	int mipmap_level = floor(log2(float(std::max(width, height))));
+	glBindTexture(GL_TEXTURE_2D, shader_textures[global_size.size()-1][0]);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glGetTexImage(GL_TEXTURE_2D, mipmap_level, GL_RGBA, GL_FLOAT, avg);
+	GLenum err = glGetError();
+	glBindTexture(GL_TEXTURE_2D, 0);
+	return sqrt(avg[0] * avg[0] + avg[1] * avg[1] + avg[2] * avg[2]);
 }
 
 GLuint Renderer::GenerateTexture(float w, float h)

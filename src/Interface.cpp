@@ -715,16 +715,15 @@ Box::Box(float x, float y, float dx, float dy, sf::Color color_main)
 	clone_states();
 }
 
-Box::Box(float dx, float dy)
+Box::Box(float dx, float dy, sf::Color color_main)
 {
 	defaultstate.position.x = 0;
 	defaultstate.position.y = 0;
 	defaultstate.size.x = dx;
 	defaultstate.size.y = dy;
-	defaultstate.color_main = ToColorF(default_main_color);
+	defaultstate.color_main = ToColorF(color_main);
 	clone_states();
 }
-
 
 Box::Box()
 {

@@ -197,7 +197,7 @@ public:
 	void Draw(sf::RenderWindow *window, InputState& state);
 
 	Box(float x, float y,  float dx, float dy,  sf::Color color_main = default_main_color);
-	Box(float dx, float dy);
+	Box(float dx, float dy, sf::Color color_main = default_main_color);
 	Box();
 
 	Box(Box& A);

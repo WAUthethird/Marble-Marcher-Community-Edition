@@ -100,6 +100,12 @@ void Camera::SetDirZ(vec3 dir)
 	dirz.z = dir.z;
 }
 
+#define target_brightness 0.7f
+void Camera::UpdateExposure(float illumination)
+{
+	exposure += auto_exposure_speed*(target_brightness - illumination)*exposure;
+}
+
 vec3 Camera::GetPosition()
 {
 	if (cur_mode == ThirdPerson)
