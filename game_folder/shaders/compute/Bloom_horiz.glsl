@@ -60,7 +60,7 @@ void main() {
 	
 	vec3 conv1 = vec3(0), conv2 = vec3(0);
 	int center = local_indx.x+group_size/2;
-	for(int i = max(center-int(width*5),0); i < min(center+int(width*5),buffer_size); i++)
+	for(int i = max(center-int(width*15),0); i < min(center+int(width*15),buffer_size); i++)
 	{
 		float coord = float(center-i)/width;
 		conv1 += exp(-k1*pow(coord,2))*color_buffer[i];

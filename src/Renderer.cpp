@@ -107,6 +107,9 @@ void Renderer::Initialize(int w, int h, std::string config_f)
 		}
 	}
 
+	illumination_texture = GenerateTexture(width, height);
+	weight_shader = ComputeShader(compute_folder + "/auto_exposure_weighting.glsl");
+
 	config.close();
 }
 
@@ -183,6 +186,8 @@ void Renderer::ReInitialize(int w, int h)
 			}
 		}
 	}
+
+	illumination_texture = GenerateTexture(width, height);
 
 	config.close();
 }
@@ -268,14 +273,25 @@ void Renderer::Render()
 
 float Renderer::EvaluateAvgIllumination()
 {
+	//precalculation
+	glBindImageTexture(0, shader_textures[global_size.size() - 1][0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+	glBindImageTexture(1, illumination_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+	weight_shader.Run(vec2(ceil(width/16.f), ceil(height / 16.f)));
+	for (int k = 0; k < 2; k++)
+	{
+		glBindImageTexture(k, 0, 0, 0, 0, 0, 0);
+	}
+
+
+	//get the average of the texture using mipmaps
 	float* avg = new float[4];
 	int mipmap_level = floor(log2(float(std::max(width, height))));
-	glBindTexture(GL_TEXTURE_2D, shader_textures[global_size.size()-1][0]);
+	glBindTexture(GL_TEXTURE_2D, illumination_texture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glGetTexImage(GL_TEXTURE_2D, mipmap_level, GL_RGBA, GL_FLOAT, avg);
 	GLenum err = glGetError();
 	glBindTexture(GL_TEXTURE_2D, 0);
-	return sqrt(avg[0] * avg[0] + avg[1] * avg[1] + avg[2] * avg[2]);
+	return avg[0] / avg[1];
 }
 
 GLuint Renderer::GenerateTexture(float w, float h)

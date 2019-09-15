@@ -56,4 +56,7 @@ private:
 	std::vector<GLuint> main_textures;
 	std::vector<std::vector<GLuint>> shader_textures;
 	std::vector<sf::Texture> input_textures;
+
+	GLuint illumination_texture;
+	ComputeShader weight_shader;
 };
