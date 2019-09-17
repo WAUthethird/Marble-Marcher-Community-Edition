@@ -52,9 +52,7 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 - Better layout
 - Anaglyph/stereoscopic mode
 - Screenshot mode (temporarily higher resolution and AA)
-- In-game level editor
 - Metal marble skin
-- Custom map support
 - Added auto-exposure, aka adaptive brightness
 - Improved bloom
 - Improved shadow upscaling
