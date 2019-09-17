@@ -36,7 +36,6 @@ struct MainSettings
 	bool fog;
 
 	float bloom_intensity;
-	float bloom_treshold;
 	float bloom_radius;
 	float gamma;
 	float FOV;
@@ -63,13 +62,14 @@ struct MainSettings
 
 	bool cross_eye;
 	float eye_separation;
-	float auto_exposure_speed;
+	float auto_exposure_speed; 
+	float auto_exposure_target;
 };
 
 extern TwEnumVal resolutions[];
 
 static const MainSettings default_settings = { 6,
-	10, 5, 2, 3, 0, true, true, true, 0.05, 2.7, 4, 2.2, 90, 20, 20, 0.005, 0.2, false, 0.005, 0.45, 0, false, true, 0, true, 0.7, 0.6, 2.2, false, -0.35, 0.08};
+	10, 5, 2, 3, 0, true, true, true, 0.06, 9, 2.2, 90, 20, 20, 0.005, 0.2, false, 0.005, 0.45, 0, false, true, 0, true, 0.7, 0.6, 2.2, false, -0.35, 0.2, 0.65};
 
 
 class AllSettings

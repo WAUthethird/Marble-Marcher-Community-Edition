@@ -257,6 +257,8 @@ void Renderer::Render()
 		{
 			glBindImageTexture(tex_id++, extr_text.getNativeHandle(), 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 		}
+
+		glBindImageTexture(tex_id++, illumination_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 		
 		shader_pipeline[i].setCamera(camera.GetGLdata());
 		shader_pipeline[i].Run(global_size[i]);
@@ -299,7 +301,7 @@ float Renderer::EvaluateAvgIllumination()
 	}
 
 	//get the average of the texture using mipmaps
-	float avg[16*4];
+	float avg[4];
 	int mipmap_level = floor(log2(float(std::max(width, height))));
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glGetTexImage(GL_TEXTURE_2D, mipmap_level, GL_RGBA, GL_FLOAT, avg);

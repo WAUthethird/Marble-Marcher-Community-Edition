@@ -229,7 +229,7 @@ void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr)
 	if (color_m.w < color.w) 
 	{ 
 		color = color_m; 
-		if(MARBLE_MODE == 1)
+		if(MARBLE_MODE <= 1)
 		{
 			pbr = vec2(1,0.2);
 		}

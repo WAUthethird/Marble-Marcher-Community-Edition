@@ -21,7 +21,6 @@ struct glcamera
 	float speckle;
 	float size;
 	float bloomintensity;
-	float bloomtreshold;
 	float bloomradius;
 	bool cross_eye;
 	float eye_separation;
@@ -51,7 +50,7 @@ ray get_ray(vec2 screen_pos)
 	
 	vec2 shift = Camera.FOV*(2.f*screen_pos - 1.f)*vec2(Camera.aspect_ratio, -1.f);
 	ray cray;
-	cray.pos = Camera.position + (Camera.cross_eye?(Camera.dirx*Camera.size*delta):(Camera.size*(Camera.dirx*(shift.x) + Camera.diry*shift.y)));
+	cray.pos = Camera.position + (Camera.cross_eye?(Camera.dirx*delta):(Camera.size*(Camera.dirx*(shift.x) + Camera.diry*shift.y)));
 	cray.dir = normalize(Camera.dirx*shift.x + Camera.diry*shift.y + Camera.dirz);
 	float aspect_ratio_ratio = Camera.aspect_ratio/(Camera.resolution.x/Camera.resolution.y);
 	fovray = 1.41*Camera.FOV*max(1.f/aspect_ratio_ratio, aspect_ratio_ratio)/Camera.resolution.x; //pixel FOV

@@ -148,7 +148,6 @@ void ComputeShader::setCamera(gl_camera cam)
 	setUniform("Camera.resolution", cam.resolution);
 	setUniform("Camera.size", cam.size);
 	setUniform("Camera.bloomradius", cam.bloomradius);
-	setUniform("Camera.bloomtreshold", cam.bloomtreshold);
 	setUniform("Camera.bloomintensity", cam.bloomintensity);
 	setUniform("Camera.speckle", cam.speckle);
 	setUniform("Camera.cross_eye", cam.cross_eye);

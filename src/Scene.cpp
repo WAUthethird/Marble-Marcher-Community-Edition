@@ -798,6 +798,7 @@ void Scene::WriteRenderer(Renderer & rd)
 	rd.camera.SetDirY(diry);
 	rd.camera.SetDirZ(dirz);
 	rd.camera.SetCameraSize(camera_size*level_copy.marble_rad / 0.035f);
+	rd.camera.eye_separation = SETTINGS.stg.eye_separation*level_copy.marble_rad / 0.035f;
 
 	//write all the uniform values to the rendering pipeline
 	for (auto &shader : rd.shader_pipeline)
@@ -845,7 +846,6 @@ void Scene::WriteShader(ComputeShader& shader)
 	shader.setUniform("LIGHT_COLOR", vec3(level_copy.light_col[0], level_copy.light_col[1], level_copy.light_col[2]));
 
 	shader.setUniform("iMarbleRad", level_copy.marble_rad);
-
 	shader.setUniform("iFlagScale", level_copy.planet ? -level_copy.marble_rad : level_copy.marble_rad);
 
 	shader.setUniform("iFracScale", frac_params_smooth[0]);
@@ -854,12 +854,8 @@ void Scene::WriteShader(ComputeShader& shader)
 	shader.setUniform("iFracShift", vec3(frac_params_smooth[3], frac_params_smooth[4], frac_params_smooth[5]));
 	shader.setUniform("iFracCol", vec3(frac_params_smooth[6], frac_params_smooth[7], frac_params_smooth[8]));
 
-	shader.setUniform("iExposure", exposure);
-
-
 	shader.setUniform("SHADOWS_ENABLED", Shadows_Enabled);
 	shader.setUniform("FOG_ENABLED", Fog_Enabled);
-	shader.setUniform("CAMERA_SIZE", camera_size*level_copy.marble_rad / 0.035f);
 	shader.setUniform("FRACTAL_ITER", level_copy.FractalIter);
 	shader.setUniform("REFL_REFR_ENABLED", Refl_Refr_Enabled);
 	shader.setUniform("MARBLE_MODE", MarbleType);

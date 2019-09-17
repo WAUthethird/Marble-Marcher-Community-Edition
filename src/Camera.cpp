@@ -100,10 +100,9 @@ void Camera::SetDirZ(vec3 dir)
 	dirz.z = dir.z;
 }
 
-#define target_brightness 0.85f
 void Camera::UpdateExposure(float illumination)
 {
-	exposure += auto_exposure_speed*(target_brightness - illumination)*exposure;
+	exposure += auto_exposure_speed*(auto_exposure_target - illumination)*exposure;
 }
 
 vec3 Camera::GetPosition()
@@ -158,7 +157,6 @@ gl_camera Camera::GetGLdata()
 	cam.speckle = speckle;
 	cam.size = size;
 	cam.bloomintensity = bloomintensity;
-	cam.bloomtreshold = bloomtreshold;
 	cam.bloomradius = bloomradius;
 
 	//data for the renderer
