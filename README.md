@@ -74,26 +74,26 @@ For more changes, please see the [release notes](https://github.com/WAUthethird/
 Though Marble Marcher CE is a largely finished game, there are still several improvements we'd like to implement. Here are our proposed changes:
 
 - ### Fixes
-  - make sure game runs at the same speed everywhere
-  - mouse/camera speed is too fast while skipping cutscenes
-  - figure out why so many people get `Failed to compile vertex shader`
+  - Make sure game runs at the same speed everywhere
+  - Mouse/camera speed is too fast while skipping cutscenes
+  - Figure out why so many people get `Failed to compile vertex shader`
 - ### User Experience Improvements
-  - pre-built versions for the common operating systems and make them available as GitHub releases (in progress)
-  - make the fractal recoloring from cheats persistent
-  - more efficient anti-aliasing modes
-  - toggle to always activate fast cutscenes
-  - better autosplitter integration
+  - Pre-built versions for the common operating systems and make them available as GitHub releases (in progress)
+  - Make the fractal recoloring from cheats persistent
+  - More efficient anti-aliasing modes
+  - Toggle to always activate fast cutscenes
+  - Better autosplitter integration
 - ### New Features
-  - cheat: no drag
-  - native controller support (+deadzone)
-  - custom marble designs
-  - add a script to build for all platforms at once
-  - have MarbleMarcher added to package managers
+  - Cheat: no drag
+  - Native controller support (+deadzone)
+  - Custom marble designs
+  - Add a script to build for all platforms at once
+  - Have MarbleMarcher added to package managers
 - ### Currently WIP
-  - recording/replay functionality
-  - debug info screen
-  - cheat: unlock all levels
-  - add creation of macOS `.dmg` for easy distribution.
+  - Recording/replay functionality
+  - Debug info screen
+  - Cheat: unlock all levels
+  - Add creation of macOS `.dmg` for easy distribution.
 
 ## System Dependencies
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
