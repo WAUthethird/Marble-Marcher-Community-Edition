@@ -339,7 +339,7 @@ vec3 render_ray(in vec4 pos, in vec4 dir, float fov)
 
 vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 {
-	if(pos.w < max(16*fovray*dir.w, MIN_DIST))
+	if(pos.w < max(2*fovray*dir.w, MIN_DIST))
 	{
 		//calculate the normal
 		float error = 0.5*fov*dir.w;
