@@ -70,7 +70,7 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 - Level Editor and custom level support
 ![Editor](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/development/doc/EDITOR.PNG)
 ![Levels](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/development/doc/LEVELS.PNG)
-For more changes, please see the [release notes.](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/releases)
+For more changes, please see the [release notes](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/releases).
 
 ## Proposed Changes
 Though Marble Marcher CE is a largely finished game, there are still several improvements we'd like to implement. Here are our proposed changes:
