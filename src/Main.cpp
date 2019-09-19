@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
 							if (joystick_finger < 0)
 							{
 								joystick_finger = event.touch.finger;
-								joystick.setRadius(200);
+								joystick.setRadius(120);
 								joystick.setPosition(event.touch.x - joystick.getRadius(), event.touch.y - joystick.getRadius());
 							}
 						}
@@ -552,7 +552,7 @@ int main(int argc, char *argv[]) {
 			{
 				mouse_delta = touch_xy[view_finger] - touch_pxy[view_finger];
 			}
-			else if (overlays.TWBAR_ENABLED)
+			else if (overlays.TWBAR_ENABLED && !TOUCH_MODE)
 			{
 				window.setMouseCursorVisible(true);
 				if (mouse_clicked)
