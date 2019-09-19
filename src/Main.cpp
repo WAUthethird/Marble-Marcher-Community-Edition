@@ -138,19 +138,22 @@ int main(int argc, char *argv[]) {
 		OpenMainMenu(&scene, &overlays);
 	}
 
-	sf::Vector2i touch_xy[2];
-	sf::Vector2i touch_dxy[2];
-	bool touched[2];
+	#define n_touch 5
+	sf::Vector2i touch_xy[n_touch];
+	sf::Vector2i touch_pxy[n_touch];
+	bool touched[n_touch] = { false };
 
-	sf::CircleShape touch_circle[2];
+	sf::CircleShape touch_circle[n_touch], joystick;
 
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < n_touch; i++)
 	{
-		touch_circle[i].setRadius(50);
-		touch_circle[i].setOutlineColor(sf::Color::Red);
-		touch_circle[i].setOutlineThickness(5);
+		touch_circle[i].setRadius(0);
+		touch_circle[i].setFillColor(sf::Color(128, 128, 128, 200));
 	}
-	
+	joystick.setRadius(0);
+	joystick.setFillColor(sf::Color(128, 128, 128, 128));
+	int joystick_finger = -1;
+	int view_finger = -1;
 
 	//Main loop
 	while (window.isOpen())
@@ -163,6 +166,13 @@ int main(int argc, char *argv[]) {
 		io_state.wheel = mouse_wheel;
 		io_state.mouse_press[2] = false;
 		io_state.mouse_press[0] = false;
+
+		for (int i = 0; i < n_touch; i++)
+		{
+			//previous touch state
+			touch_pxy[i] = touch_xy[i];
+		}
+
 		while (window.pollEvent(event)) 
 		{
 			bool handled = overlays.TwManageEvent(&event);
@@ -200,11 +210,53 @@ int main(int argc, char *argv[]) {
 			// If event has not been handled by AntTweakBar, process it
 			if (!handled)
 			{
-				if (event.type == sf::Event::TouchBegan)
+				if (TOUCH_MODE)
 				{
-				
+					if (event.type == sf::Event::TouchBegan)
+					{
+						touched[event.touch.finger] = true;
+						touch_pxy[event.touch.finger] = sf::Vector2i(event.touch.x, event.touch.y);
+						if (event.touch.finger < n_touch)
+						{
+							touch_circle[event.touch.finger].setRadius(60);
+						}
+						//the joystick half of the screen
+						if(event.touch.x < window.getSize().x/2)
+						{ 
+							if (joystick_finger < 0)
+							{
+								joystick_finger = event.touch.finger;
+								joystick.setRadius(200);
+								joystick.setPosition(event.touch.x - joystick.getRadius(), event.touch.y - joystick.getRadius());
+							}
+						}
+						else //the view half of the screen
+						{
+							if (view_finger < 0)
+							{
+								view_finger = event.touch.finger;
+							}
+						}
+					}
+					if (event.type == sf::Event::TouchEnded)
+					{
+						touched[event.touch.finger] = false;
+						if (event.touch.finger < n_touch)
+						{
+							touch_circle[event.touch.finger].setRadius(0);
+						}
+						if (joystick_finger == event.touch.finger)
+						{
+							joystick_finger = -1;
+							joystick.setRadius(0);
+						}
+						if (view_finger == event.touch.finger)
+						{
+							view_finger = -1;
+						}
+					}
 				}
-				else if (event.type == sf::Event::KeyPressed) 
+				if (event.type == sf::Event::KeyPressed) 
 				{
 					const sf::Keyboard::Key keycode = event.key.code;
 					all_keys[keycode] = true;
@@ -404,6 +456,37 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}
+		int touches = 0;
+		for (int i = 0; i < n_touch; i++)
+		{
+			if (touched[i])
+			{
+				touches++;
+				//touch state
+				touch_xy[i] = sf::Touch::getPosition(i, window);
+				touch_circle[i].setPosition(touch_xy[i].x - touch_circle[i].getRadius(), touch_xy[i].y - touch_circle[i].getRadius());
+			}
+		}
+
+		if (touches == 3)
+		{
+			if (game_mode == PLAYING)
+			{
+				PauseGame(window, &overlays, &scene);
+			}
+			else if (game_mode == LEVEL_EDITOR)
+			{
+				//if no interface objects created
+				if (NoObjects())
+				{
+					ConfirmEditorExit(&scene, &overlays);
+				}
+				else if (get_glob_obj(focused).action_time < 0.f)//remove confirm window
+				{
+					RemoveGlobalObject(focused);
+				}
+			}
+		}
 		
 
 		//Check if the game was beat
@@ -418,16 +501,6 @@ int main(int argc, char *argv[]) {
 			scene.SetExposure(0.5f);
 			credits_music.play();
 		}
-
-		//touch test
-		for (int i = 0; i < 2; i++)
-		{
-			if (sf::Touch::isDown(i))
-			{
-				sf::Vector2i relativePos = sf::Touch::getPosition(i, window);
-				touch_circle[i].setPosition(relativePos.x - touch_circle[i].getRadius(), relativePos.y - touch_circle[i].getRadius());
-			}
-		}
 		
 	
 		//Main game update
@@ -437,17 +510,32 @@ int main(int argc, char *argv[]) {
 		}
 		else if (game_mode == PLAYING || game_mode == CREDITS || game_mode == MIDPOINT || game_mode == LEVEL_EDITOR)
 		{
-			//Collect keyboard input
-			const float force_lr =
-				(all_keys[sf::Keyboard::Left] || all_keys[sf::Keyboard::A] ? -1.0f : 0.0f) +
-				(all_keys[sf::Keyboard::Right] || all_keys[sf::Keyboard::D] ? 1.0f : 0.0f);
-			const float force_ud =
-				(all_keys[sf::Keyboard::Down] || all_keys[sf::Keyboard::S] ? -1.0f : 0.0f) +
-				(all_keys[sf::Keyboard::Up] || all_keys[sf::Keyboard::W] ? 1.0f : 0.0f);
+			if (TOUCH_MODE)
+			{
+				sf::Vector2i djoy = sf::Vector2i(0,0);
+				float force_x=0, force_y=0;
+				if (joystick_finger >= 0)
+				{
+					djoy = touch_xy[joystick_finger] - (sf::Vector2i(joystick.getPosition()) + sf::Vector2i(joystick.getRadius(), joystick.getRadius()));
+					force_x = float(djoy.x) / float(joystick.getRadius());
+					force_y = -float(djoy.y) / float(joystick.getRadius());
+				}
+			
+				scene.UpdateMarble(force_x, force_y);
+			}
+			else
+			{
+				//Collect keyboard input
+				const float force_lr =
+					(all_keys[sf::Keyboard::Left] || all_keys[sf::Keyboard::A] ? -1.0f : 0.0f) +
+					(all_keys[sf::Keyboard::Right] || all_keys[sf::Keyboard::D] ? 1.0f : 0.0f);
+				const float force_ud =
+					(all_keys[sf::Keyboard::Down] || all_keys[sf::Keyboard::S] ? -1.0f : 0.0f) +
+					(all_keys[sf::Keyboard::Up] || all_keys[sf::Keyboard::W] ? 1.0f : 0.0f);
 
-			//Apply forces to marble and camera
-			scene.UpdateMarble(force_lr, force_ud);
-
+				//Apply forces to marble and camera
+				scene.UpdateMarble(force_lr, force_ud);
+			}
 
 			scene.free_camera_speed *= 1 + mouse_wheel * 0.05;
 
@@ -459,8 +547,12 @@ int main(int argc, char *argv[]) {
 
 			sf::Vector2i mouse_delta = sf::Vector2i(0, 0);
 			float ms = SETTINGS.stg.mouse_sensitivity;
-			//Collect mouse input
-			if (overlays.TWBAR_ENABLED)
+			//Collect mouse/touch input
+			if (view_finger >= 0 && TOUCH_MODE)
+			{
+				mouse_delta = touch_xy[view_finger] - touch_pxy[view_finger];
+			}
+			else if (overlays.TWBAR_ENABLED)
 			{
 				window.setMouseCursorVisible(true);
 				if (mouse_clicked)
@@ -468,7 +560,7 @@ int main(int argc, char *argv[]) {
 					mouse_delta = mouse_pos - mouse_prev_pos;
 				}
 			}
-			else
+			else if(!TOUCH_MODE)
 			{
 				window.setMouseCursorVisible(false);
 				mouse_delta = mouse_pos - sf::Vector2i(window.getSize().x*0.5, window.getSize().y*0.5);
@@ -558,10 +650,14 @@ int main(int argc, char *argv[]) {
 
 			if (TOUCH_MODE)
 			{
-				for (int i = 0; i < 2; i++)
+				for (int i = 0; i < n_touch; i++)
 				{
 					window.draw(touch_circle[i]);
 				}
+				if (game_mode == PLAYING || game_mode == CREDITS || game_mode == MIDPOINT || game_mode == LEVEL_EDITOR)
+				{
+					window.draw(joystick);
+		    	}
 			}
 
 			window.display();
