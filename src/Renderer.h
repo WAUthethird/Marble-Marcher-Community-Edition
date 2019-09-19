@@ -13,7 +13,7 @@ class Wobject
 
 class WorldModel
 {
-
+	//TODO in v1.5
 };
 
 std::vector<fs::path> GetFilesInFolder(std::string folder, std::string filetype);

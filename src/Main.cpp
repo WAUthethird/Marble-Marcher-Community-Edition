@@ -43,7 +43,7 @@
 
 //Graphics settings
 static bool VSYNC = true;
-
+bool TOUCH_MODE = true;
 
 #if defined(_WIN32)
 int WinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR lpCmdLine, int nCmdShow) {
@@ -138,6 +138,20 @@ int main(int argc, char *argv[]) {
 		OpenMainMenu(&scene, &overlays);
 	}
 
+	sf::Vector2i touch_xy[2];
+	sf::Vector2i touch_dxy[2];
+	bool touched[2];
+
+	sf::CircleShape touch_circle[2];
+
+	for (int i = 0; i < 2; i++)
+	{
+		touch_circle[i].setRadius(50);
+		touch_circle[i].setOutlineColor(sf::Color::Red);
+		touch_circle[i].setOutlineThickness(5);
+	}
+	
+
 	//Main loop
 	while (window.isOpen())
 	{
@@ -186,7 +200,11 @@ int main(int argc, char *argv[]) {
 			// If event has not been handled by AntTweakBar, process it
 			if (!handled)
 			{
-				if (event.type == sf::Event::KeyPressed) 
+				if (event.type == sf::Event::TouchBegan)
+				{
+				
+				}
+				else if (event.type == sf::Event::KeyPressed) 
 				{
 					const sf::Keyboard::Key keycode = event.key.code;
 					all_keys[keycode] = true;
@@ -401,6 +419,16 @@ int main(int argc, char *argv[]) {
 			credits_music.play();
 		}
 
+		//touch test
+		for (int i = 0; i < 2; i++)
+		{
+			if (sf::Touch::isDown(i))
+			{
+				sf::Vector2i relativePos = sf::Touch::getPosition(i, window);
+				touch_circle[i].setPosition(relativePos.x - touch_circle[i].getRadius(), relativePos.y - touch_circle[i].getRadius());
+			}
+		}
+		
 	
 		//Main game update
 		if (game_mode == MAIN_MENU || game_mode == ABOUT || game_mode == LEVELS || game_mode == SCREEN_SAVER || game_mode == CONTROLS) 
@@ -527,6 +555,14 @@ int main(int argc, char *argv[]) {
 			if (overlays.TWBAR_ENABLED)
 				scene.Synchronize();
 			overlays.DrawAntTweakBar();
+
+			if (TOUCH_MODE)
+			{
+				for (int i = 0; i < 2; i++)
+				{
+					window.draw(touch_circle[i]);
+				}
+			}
 
 			window.display();
 
