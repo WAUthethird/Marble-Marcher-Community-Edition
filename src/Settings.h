@@ -64,12 +64,13 @@ struct MainSettings
 	float eye_separation;
 	float auto_exposure_speed; 
 	float auto_exposure_target;
+	bool touch_mode;
 };
 
 extern TwEnumVal resolutions[];
 
 static const MainSettings default_settings = { 6,
-	10, 5, 2, 3, 0, true, true, true, 0.06, 9, 2.2, 70, 20, 20, 0.005, 0.2, false, 0.005, 0.45, 0, false, true, 0, true, 0.7, 0.6, 2.2, false, -0.02, 0.2, 0.55};
+	10, 5, 2, 3, 0, true, true, true, 0.06, 9, 2.2, 70, 20, 20, 0.005, 0.2, false, 0.005, 0.45, 0, false, true, 0, true, 0.7, 0.6, 2.2, false, -0.02, 0.2, 0.55, false};
 
 
 class AllSettings

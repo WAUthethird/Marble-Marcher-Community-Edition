@@ -43,7 +43,7 @@
 
 //Graphics settings
 static bool VSYNC = true;
-bool TOUCH_MODE = true;
+bool TOUCH_MODE = false;
 
 #if defined(_WIN32)
 int WinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR lpCmdLine, int nCmdShow) {
@@ -166,6 +166,7 @@ int main(int argc, char *argv[]) {
 		io_state.wheel = mouse_wheel;
 		io_state.mouse_press[2] = false;
 		io_state.mouse_press[0] = false;
+		TOUCH_MODE = SETTINGS.stg.touch_mode;
 
 		for (int i = 0; i < n_touch; i++)
 		{
@@ -413,7 +414,7 @@ int main(int argc, char *argv[]) {
 							}
 						}
 					}
-					else if (event.mouseButton.button == sf::Mouse::Right)
+					else if (event.mouseButton.button == sf::Mouse::Right && !TOUCH_MODE)
 					{
 						io_state.mouse[2] = true; 
 						io_state.mouse_press[2] = true;

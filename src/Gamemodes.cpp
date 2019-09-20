@@ -1103,6 +1103,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Multi Resolution Ray Marching scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings' help='Don't touch this'");
 	TwAddVarRW(overlays_ptr->settings, "Shadow downscaling", TW_TYPE_INT32, &SETTINGS.stg.shadow_resolution, "min=1 max=8 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom downscaling", TW_TYPE_INT32, &SETTINGS.stg.bloom_resolution, "min=1 max=8 group='Rendering settings'");
+	TwAddButton(overlays_ptr->settings, "Apply1", ApplySettings, NULL, "group='Rendering settings' label='Apply settings'  ");
 
 	TwAddVarRW(overlays_ptr->settings, "Auto-exposure speed", TW_TYPE_FLOAT, &SETTINGS.stg.auto_exposure_speed, "min=0 step=0.01 max=1 group='Graphics settings' help='The speed at which the camera adapts to the scene brightness' ");
 	TwAddVarRW(overlays_ptr->settings, "Auto-exposure target brightness", TW_TYPE_FLOAT, &SETTINGS.stg.auto_exposure_target, "min=0 step=0.01 max=1 group='Graphics settings'");
@@ -1118,6 +1119,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Material gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_material, "min=0 max=4 step=0.1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Sky gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_sky, "min=0 max=4 step=0.1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_camera, "min=0 max=4 step=0.1 group='Graphics settings'");
+	TwAddButton(overlays_ptr->settings, "Apply2", ApplySettings, NULL, "group='Graphics settings' label='Apply settings'  ");
 
 	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &SETTINGS.stg.language, "group='Gameplay settings'");
 	TwEnumVal marble_type[] = { { 0,  "Glass"  },
@@ -1134,8 +1136,8 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=144 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera size", TW_TYPE_FLOAT, &scene_ptr->camera_size, "min=0 max=10 step=0.001 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera speed(Free mode)", TW_TYPE_FLOAT, &scene_ptr->free_camera_speed, "min=0 max=100 step=0.001 group='Gameplay settings'");
-
-	TwAddButton(overlays_ptr->settings, "Apply", ApplySettings, NULL, " label='Apply settings'  ");
+	TwAddVarRW(overlays_ptr->settings, "Windows touch controls", TW_TYPE_BOOLCPP, &SETTINGS.stg.touch_mode, "group='Gameplay settings' help='Use a touchscreen'");
+	TwAddButton(overlays_ptr->settings, "Apply3", ApplySettings, NULL, "group='Gameplay settings' label='Apply settings'  ");
 
 
 	int barPos1[2] = { 16, 250 };
