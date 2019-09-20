@@ -6,6 +6,7 @@
 sf::Vector2i mouse_pos, mouse_prev_pos;
 InputState io_state;
 
+bool fullscreen_current = false;
 bool all_keys[sf::Keyboard::KeyCount] = { 0 };
 bool mouse_clicked = false;
 bool show_cheats = false;
@@ -952,8 +953,11 @@ void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const s
 
 void TW_CALL ApplySettings(void *data)
 {
-	if (!window->isOpen() || SETTINGS.first_start)
+	//if window is not yet created or when the fullscreen setting is changed
+	if (!window->isOpen() || SETTINGS.stg.fullscreen != fullscreen_current)
 	{
+		fullscreen_current = SETTINGS.stg.fullscreen;
+
 		sf::VideoMode screen_size;
 		sf::Uint32 window_style;
 		bool fullscreen = SETTINGS.stg.fullscreen;
@@ -971,7 +975,7 @@ void TW_CALL ApplySettings(void *data)
 		settings.majorVersion = 4;
 		settings.minorVersion = 3;
 
-		window->create(screen_size, "Marble Marcher Community Edition", window_style, settings);
+		window->create(screen_size, "Marble Marcher: Community Edition", window_style, settings);
 		window->setVerticalSyncEnabled(SETTINGS.stg.VSYNC);
 		window->setKeyRepeatEnabled(false);
 		
