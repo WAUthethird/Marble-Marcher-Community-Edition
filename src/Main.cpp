@@ -257,7 +257,22 @@ int main(int argc, char *argv[]) {
 						}
 					}
 				}
-				if (event.type == sf::Event::KeyPressed) 
+
+				if (event.type == sf::Event::JoystickButtonPressed)
+				{
+					ApplyButton(event.joystickButton.button, 2);
+					gamepad_state.buttons[event.joystickButton.button] = true;
+				}
+				else if (event.type == sf::Event::JoystickButtonReleased)
+				{
+					gamepad_state.buttons[event.joystickButton.button] = false;
+				}
+				else if (event.type == sf::Event::JoystickMoved)
+				{
+					ApplyButton(event.joystickButton.button, 1);
+					gamepad_state.axis_value[event.joystickMove.axis] = event.joystickMove.position;
+				}
+				else if (event.type == sf::Event::KeyPressed)
 				{
 					const sf::Keyboard::Key keycode = event.key.code;
 					all_keys[keycode] = true;
@@ -511,33 +526,34 @@ int main(int argc, char *argv[]) {
 		}
 		else if (game_mode == PLAYING || game_mode == CREDITS || game_mode == MIDPOINT || game_mode == LEVEL_EDITOR)
 		{
+			float force_x = 0, force_y = 0;
 			if (TOUCH_MODE)
 			{
 				sf::Vector2i djoy = sf::Vector2i(0,0);
-				float force_x=0, force_y=0;
+			
 				if (joystick_finger >= 0)
 				{
 					djoy = touch_xy[joystick_finger] - (sf::Vector2i(joystick.getPosition()) + sf::Vector2i(joystick.getRadius(), joystick.getRadius()));
 					force_x = float(djoy.x) / float(joystick.getRadius());
 					force_y = -float(djoy.y) / float(joystick.getRadius());
 				}
-			
-				scene.UpdateMarble(force_x, force_y);
 			}
 			else
 			{
 				//Collect keyboard input
-				const float force_lr =
-					(all_keys[sf::Keyboard::Left] || all_keys[sf::Keyboard::A] ? -1.0f : 0.0f) +
-					(all_keys[sf::Keyboard::Right] || all_keys[sf::Keyboard::D] ? 1.0f : 0.0f);
-				const float force_ud =
-					(all_keys[sf::Keyboard::Down] || all_keys[sf::Keyboard::S] ? -1.0f : 0.0f) +
-					(all_keys[sf::Keyboard::Up] || all_keys[sf::Keyboard::W] ? 1.0f : 0.0f);
+				float force_y =
+					(all_keys[SETTINGS.stg.control_mapping[DOWN]] ? -1.0f : 0.0f) +
+					(all_keys[SETTINGS.stg.control_mapping[UP]] ? 1.0f : 0.0f);
+				float force_x =
+					(all_keys[SETTINGS.stg.control_mapping[LEFT]] ? -1.0f : 0.0f) +
+					(all_keys[SETTINGS.stg.control_mapping[RIGHT]] ? 1.0f : 0.0f);
 
-				//Apply forces to marble and camera
-				scene.UpdateMarble(force_lr, force_ud);
+				
 			}
 
+			force_y -= gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_Y]];
+			force_x += gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_X]];
+			scene.UpdateMarble(force_x, force_y);
 			scene.free_camera_speed *= 1 + mouse_wheel * 0.05;
 
 			//make ATB impossible to use while playing
@@ -568,8 +584,10 @@ int main(int argc, char *argv[]) {
 				sf::Mouse::setPosition(sf::Vector2i(window.getSize().x*0.5, window.getSize().y*0.5), window);
 			}
 
-			const float cam_lr = float(-mouse_delta.x) * ms;
-			const float cam_ud = float(-mouse_delta.y) * ms;
+			float cam_lr = float(-mouse_delta.x) * ms;
+			float cam_ud = float(-mouse_delta.y) * ms;
+			cam_ud -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y]];
+			cam_lr -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X]];
 			const float cam_z = mouse_wheel * SETTINGS.stg.wheel_sensitivity;
 
 			scene.UpdateCamera(cam_lr, cam_ud, cam_z, mouse_clicked);

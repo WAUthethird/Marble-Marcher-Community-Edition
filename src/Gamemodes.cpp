@@ -5,6 +5,7 @@
 //Global variables
 sf::Vector2i mouse_pos, mouse_prev_pos;
 InputState io_state;
+GamepadState gamepad_state;
 
 bool fullscreen_current = false;
 bool all_keys[sf::Keyboard::KeyCount] = { 0 };
@@ -1028,6 +1029,41 @@ void TW_CALL InitialOK(void *data)
 	OpenMainMenu(scene_ptr, overlays_ptr);
 }
 
+int CUR_SET_BUTTON = -1;
+std::string status_text = "Nothing";
+
+void TW_CALL SetButton(void *data)
+{
+	status_text = "Waiting for a keypress";
+	CUR_SET_BUTTON = *static_cast<int*>(data);
+}
+
+void ApplyButton(int NUM, int MODE)
+{
+	if (CUR_SET_BUTTON >= 0)
+	{
+		if (CUR_SET_BUTTON < JOYSTICK_MOVE_AXIS_X && MODE == 0)//if keyboard
+		{
+			//TODO
+			CUR_SET_BUTTON = -1;
+			status_text = "Nothing";
+		}
+		else if (CUR_SET_BUTTON >= JOYSTICK_MOVE_AXIS_X && CUR_SET_BUTTON <= JOYSTICK_VIEW_AXIS_Y && MODE == 1)//if gamepad axis
+		{
+			SETTINGS.stg.control_mapping[CUR_SET_BUTTON] = NUM;
+			CUR_SET_BUTTON = -1;
+			status_text = "Nothing";
+		}
+		else if (MODE == 2)//if gamepad buttons
+		{
+			SETTINGS.stg.control_mapping[CUR_SET_BUTTON] = NUM;
+			CUR_SET_BUTTON = -1;
+			status_text = "Nothing";
+		}
+	}
+}
+
+KEYS key[num_of_keys] = { JOYSTICK_MOVE_AXIS_X, JOYSTICK_MOVE_AXIS_Y, JOYSTICK_VIEW_AXIS_X, JOYSTICK_VIEW_AXIS_Y };
 
 void InitializeATBWindows(float* fps, float *target_fps)
 {
@@ -1133,17 +1169,24 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwType Marble_type = TwDefineEnum("Marble type", marble_type, 3);
 	TwAddVarRW(overlays_ptr->settings, "Marble type", Marble_type, &SETTINGS.stg.marble_type, "group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Play next level", TW_TYPE_BOOLCPP, &SETTINGS.stg.play_next, "group='Gameplay settings' help='Will play next level of a level pack if enabled'");
-	TwAddVarRW(overlays_ptr->settings, "Mouse sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Gameplay settings'");
-	TwAddVarRW(overlays_ptr->settings, "Wheel sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.wheel_sensitivity, "min=0.01 max=0.5 step=0.01 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Music volume", TW_TYPE_FLOAT, &SETTINGS.stg.music_volume, "min=0 max=100 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "FX volume", TW_TYPE_FLOAT, &SETTINGS.stg.fx_volume, "min=0 max=100 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=144 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera size", TW_TYPE_FLOAT, &scene_ptr->camera_size, "min=0 max=10 step=0.001 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera speed(Free mode)", TW_TYPE_FLOAT, &scene_ptr->free_camera_speed, "min=0 max=100 step=0.001 group='Gameplay settings'");
-	TwAddVarRW(overlays_ptr->settings, "Windows touch controls", TW_TYPE_BOOLCPP, &SETTINGS.stg.touch_mode, "group='Gameplay settings' help='Use a touchscreen'");
+
 	TwAddButton(overlays_ptr->settings, "Apply3", ApplySettings, NULL, "group='Gameplay settings' label='Apply settings'  ");
 
+	TwAddVarRW(overlays_ptr->settings, "Mouse sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Control settings'");
+	TwAddVarRW(overlays_ptr->settings, "Wheel sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.wheel_sensitivity, "min=0.01 max=0.5 step=0.01 group='Control settings'");
+	TwAddVarRW(overlays_ptr->settings, "Windows touch controls(experimental)", TW_TYPE_BOOLCPP, &SETTINGS.stg.touch_mode, "group='Control settings' help='Use a touchscreen'");
+	TwAddVarRO(overlays_ptr->settings, "Status", TW_TYPE_STDSTRING, &status_text, " label='STATUS' group='Control settings' ");
 
+	TwAddButton(overlays_ptr->settings, "AXIS_X_M", SetButton, &key[0], "group='Control settings' label='Joystick - choose X movement axis'  ");
+	TwAddButton(overlays_ptr->settings, "AXIS_Y_M", SetButton, &key[1], "group='Control settings' label='Joystick - choose Y movement axis'   ");
+	TwAddButton(overlays_ptr->settings, "AXIS_X_V", SetButton, &key[2], "group='Control settings' label='Joystick - choose X view axis' ");
+	TwAddButton(overlays_ptr->settings, "AXIS_Y_V", SetButton, &key[3], "group='Control settings' label='Joystick - choose Y view axis'  ");
+	TwAddButton(overlays_ptr->settings, "Apply4", ApplySettings, NULL, "group='Control settings' label='Apply settings'  ");
 	int barPos1[2] = { 16, 250 };
 
 	TwSetParam(overlays_ptr->settings, NULL, "position", TW_PARAM_INT32, 2, &barPos1);

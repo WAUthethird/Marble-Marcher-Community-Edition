@@ -23,7 +23,11 @@ enum GameMode {
 };
 
 
-
+struct GamepadState
+{
+	float axis_value[sf::Joystick::AxisCount] = { 0.f };
+	bool  buttons[sf::Joystick::ButtonCount] = { false };
+};
 
 //Global variables
 extern sf::Vector2i mouse_pos, mouse_prev_pos;
@@ -31,6 +35,7 @@ extern bool all_keys[sf::Keyboard::KeyCount];
 extern bool mouse_clicked;
 extern bool show_cheats;
 extern InputState io_state;
+extern GamepadState gamepad_state;
 
 //Constants
 extern float target_fps;
@@ -71,6 +76,8 @@ void SetPointers(sf::RenderWindow * w, Scene * scene, Overlays * overlays, Rende
 void TakeScreenshot();
 
 void TW_CALL ApplySettings(void * data);
+
+void ApplyButton(int NUM, int MODE);
 
 void InitializeATBWindows(float * fps, float * target_fps);
 
