@@ -1,8 +1,10 @@
 #include "Gamemodes.h"
 
 
-
 //Global variables
+bool recording = false;
+bool replay = false;
+
 sf::Vector2i mouse_pos, mouse_prev_pos;
 InputState io_state;
 GamepadState gamepad_state;
@@ -736,6 +738,33 @@ void ConfirmEditorExit(Scene* scene, Overlays* overlays)
 	});
 }
 
+
+void DisplayError(std::string error_text)
+{
+	sf::Vector2f wsize = default_size;
+	Window error_window(wsize.x*0.4f, wsize.y*0.4f, 400, 215, sf::Color(100, 0, 0, 128), LOCAL["Error"], LOCAL("default"));
+	
+	error_window.Add(&Text(error_text, LOCAL("default"), 30, sf::Color::Red), Object::Allign::CENTER);
+
+	Scene* scene = scene_ptr;
+	Overlays* overlays = overlays_ptr;
+
+	error_window.Add(&Button(LOCAL["Ok"], 240, 40,
+		[scene, overlays](sf::RenderWindow * window, InputState & state)
+		{
+			overlays->sound_click.play();
+		},
+		sf::Color(200, 40, 0, 255), sf::Color(128, 128, 128, 128)), Object::Allign::RIGHT);
+
+	int id = AddGlobalObject(error_window);
+
+	get_glob_obj(id).objects[1].get()->objects[0].get()->objects[1].get()->SetCallbackFunction(
+	[scene, overlays, id](sf::RenderWindow * window, InputState & state)
+	{
+		Add2DeleteQueue(id);
+	});
+}
+
 void LockMouse(sf::RenderWindow& window) {
 	window.setMouseCursorVisible(false);
 	const sf::Vector2u size = window.getSize();
@@ -1042,6 +1071,86 @@ void TW_CALL SetButton(void *data)
 	CUR_SET_BUTTON = *static_cast<int*>(data);
 }
 
+std::fstream input_recording;
+
+void TW_CALL StartRecording(void* data)
+{
+	if (!replay)
+	{
+		recording = !recording;
+	}
+	
+	if (recording)
+	{
+		input_recording.open("input_record.bin", std::ios::out | std::ios::binary | std::ios::trunc);
+		if (!input_recording.is_open())
+		{
+			recording = false;
+			DisplayError("Error opening record file");
+		}
+	}
+	else
+	{
+		input_recording.close();
+	}
+}
+
+void TW_CALL StartReplay(void* data)
+{
+	if (!recording)
+	{
+		replay = !replay;
+	}
+	
+	if (replay)
+	{
+		input_recording.open("input_record.bin", std::ios::in | std::ios::binary);
+		if (!input_recording.is_open())
+		{
+			replay = false;
+			DisplayError("Error opening record file");
+		}
+		else
+		{
+			input_recording.seekg(0, input_recording.beg);
+		}
+	}
+	else
+	{
+		input_recording.close();
+	}
+}
+
+void SaveRecord(float mx, float my, float vx, float vy, float cz)
+{
+	if (recording)
+	{
+		InputRecord rec;
+		rec.move_x = mx;
+		rec.move_y = my;
+		rec.view_x = vx;
+		rec.view_y = vy;
+		rec.cam_z = cz;
+
+		input_recording.write((char*)&rec, sizeof(InputRecord));
+	}
+}
+
+InputRecord GetRecord()
+{
+	InputRecord rec;
+	if (replay && input_recording)
+	{
+		input_recording.read((char*)&rec, sizeof(InputRecord));
+	}
+	else
+	{
+		replay = false;
+		input_recording.close();
+	}
+	return rec;
+}
+
 void ApplyButton(int NUM, int MODE)
 {
 	if (CUR_SET_BUTTON >= 0)
@@ -1068,6 +1177,10 @@ void ApplyButton(int NUM, int MODE)
 }
 
 KEYS key[num_of_keys] = { JOYSTICK_MOVE_AXIS_X, JOYSTICK_MOVE_AXIS_Y, JOYSTICK_VIEW_AXIS_X, JOYSTICK_VIEW_AXIS_Y };
+
+#if(DEBUG_MODE)
+	TwBar *debug;
+#endif
 
 void InitializeATBWindows(float* fps, float *target_fps)
 {
@@ -1258,6 +1371,13 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->flaunch, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "");
 	TwAddVarRW(overlays_ptr->flaunch, "Language", Languages, &SETTINGS.stg.language, "");
 	TwAddButton(overlays_ptr->flaunch, "OK", InitialOK, NULL, " label='OK'  ");
+
+	#if(DEBUG_MODE)
+		debug = TwNewBar("Debug_bar");
+		TwAddButton(debug, "Record", StartRecording, NULL, " label='Record game input'  ");
+		TwAddButton(debug, "Playback", StartReplay, NULL, " label='Play recording'  ");
+		TwAddVarRW(debug, "Slow", TW_TYPE_BOOLCPP, &SETTINGS.stg.speed_regulation, " label='Speed regulation'");
+	#endif
 
 	TwDefine(" GLOBAL fontsize=3 ");
 	TwDefine("LevelEditor visible=false size='420 350' color='0 80 230' alpha=210 label='Level editor' valueswidth=200");

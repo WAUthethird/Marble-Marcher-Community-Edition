@@ -7,6 +7,8 @@
 
 #include <AntTweakBar.h>
 
+#define DEBUG_MODE 1
+
 enum GameMode {
 	FIRST_START,
 	MAIN_MENU,
@@ -29,7 +31,18 @@ struct GamepadState
 	bool  buttons[sf::Joystick::ButtonCount] = { false };
 };
 
+struct InputRecord
+{
+	float move_x, move_y;
+	float view_x, view_y;
+	float cam_z;
+};
+
+
 //Global variables
+extern bool recording;
+extern bool replay;
+
 extern sf::Vector2i mouse_pos, mouse_prev_pos;
 extern bool all_keys[sf::Keyboard::KeyCount];
 extern bool mouse_clicked;
@@ -65,6 +78,7 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays);
 void ConfirmLevelDeletion(int lvl, Scene* scene, Overlays* overlays);
 
 void ConfirmEditorExit(Scene * scene, Overlays * overlays);
+void DisplayError(std::string error_text);
 void LockMouse(sf::RenderWindow& window);
 void UnlockMouse(sf::RenderWindow& window);
 void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene);
@@ -76,6 +90,10 @@ void SetPointers(sf::RenderWindow * w, Scene * scene, Overlays * overlays, Rende
 void TakeScreenshot();
 
 void TW_CALL ApplySettings(void * data);
+
+void SaveRecord(float mx, float my, float vx, float vy, float cz);
+
+InputRecord GetRecord();
 
 void ApplyButton(int NUM, int MODE);
 

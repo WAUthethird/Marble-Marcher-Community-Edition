@@ -15,6 +15,8 @@
 * along with this program.If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+
 #include <Gamemodes.h>
 #include "Level.h"
 #include "Res.h"
@@ -30,10 +32,6 @@
 #include <thread>
 #include <mutex>
 
-
-
-
-
 #ifdef _WIN32
 #include <Windows.h>
 #define ERROR_MSG(x) MessageBox(nullptr, TEXT(x), TEXT("ERROR"), MB_OK);
@@ -44,6 +42,7 @@
 //Graphics settings
 static bool VSYNC = true;
 bool TOUCH_MODE = false;
+
 
 #if defined(_WIN32)
 int WinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR lpCmdLine, int nCmdShow) {
@@ -137,6 +136,8 @@ int main(int argc, char *argv[]) {
 	{
 		OpenMainMenu(&scene, &overlays);
 	}
+
+	DisplayError("Empty error");
 
 	#define n_touch 5
 	sf::Vector2i touch_xy[n_touch];
@@ -549,6 +550,14 @@ int main(int argc, char *argv[]) {
 			//Collect gamepad input
 			force_y -= gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_Y]];
 			force_x += gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_X]];
+			 
+			InputRecord record = GetRecord();
+
+			if (replay)
+			{
+				force_x = record.move_x;
+				force_y = record.move_y;
+			}
 			scene.UpdateMarble(force_x, force_y);
 			scene.free_camera_speed *= 1 + mouse_wheel * 0.05;
 
@@ -584,13 +593,29 @@ int main(int argc, char *argv[]) {
 			float cam_ud = float(-mouse_delta.y) * ms;
 			cam_ud -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y]];
 			cam_lr -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X]];
-			const float cam_z = mouse_wheel * SETTINGS.stg.wheel_sensitivity;
+			
+			if (replay)
+			{
+				force_x = record.move_x;
+				force_y = record.move_y;
+			}
+			
+			float cam_z = mouse_wheel * SETTINGS.stg.wheel_sensitivity;
+
+			if (replay)
+			{
+				cam_lr = record.view_x;
+				cam_ud = record.view_y;
+				cam_z = record.cam_z;
+			}
 
 			scene.UpdateCamera(cam_lr, cam_ud, cam_z, mouse_clicked);
+
+			SaveRecord(force_x, force_y, cam_lr, cam_ud, cam_z);
 		}
 
 		bool skip_frame = false;
-		if (lag_ms >= 1000.0f / target_fps) {
+		if ((lag_ms >= 1000.0f / target_fps) && SETTINGS.stg.speed_regulation) {
 			//If there is too much lag, just do another frame of physics and skip the draw
 			lag_ms -= 1000.0f / target_fps;
 			skip_frame = true;
