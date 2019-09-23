@@ -18,6 +18,23 @@ float target_fps = 60.0f;
 
 GameMode game_mode = MAIN_MENU;
 
+Scene *scene_ptr;
+Overlays *overlays_ptr;
+Renderer *renderer_ptr;
+sf::RenderWindow *window;
+sf::Texture *main_txt;
+sf::Texture *screenshot_txt;
+
+void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, sf::Texture *main, sf::Texture *screensht)
+{
+	window = w;
+	scene_ptr = scene;
+	overlays_ptr = overlays;
+	renderer_ptr = rd;
+	main_txt = main;
+	screenshot_txt = screensht;
+}
+
 void OpenMainMenu(Scene * scene, Overlays * overlays)
 {
 	RemoveAllObjects();
@@ -743,13 +760,17 @@ int DirExists(const char *path) {
 
 void FirstStart(Overlays* overlays)
 {
-	TwDefine("First_launch visible=true color='0 0 0' alpha=255 size='500 200' valueswidth=300 position='500 500'");
+	TwDefine("First_launch visible=true label='First Launch'");
 	TwDefine("Statistics visible=false");
 	TwDefine("Settings visible=false");
 	game_mode = FIRST_START;
 	overlays->TWBAR_ENABLED = true;
 
 	RemoveAllObjects();
+
+	sf::VideoMode fs_size = sf::VideoMode::getDesktopMode();
+	int barPos[2] = { (fs_size.width - 600)/2 , (fs_size.height - 100.f - 200) / 2 };
+	TwSetParam(overlays_ptr->flaunch, NULL, "position", TW_PARAM_INT32, 2, barPos); 
 
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
@@ -813,23 +834,6 @@ sf::Vector2i getResolution(int i)
 	case 13:
 		return sf::Vector2i(10240, 4320);
 	}
-}
-
-Scene *scene_ptr;
-Overlays *overlays_ptr;
-Renderer *renderer_ptr;
-sf::RenderWindow *window;
-sf::Texture *main_txt;
-sf::Texture *screenshot_txt;
-
-void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, sf::Texture *main, sf::Texture *screensht)
-{
-	window = w;
-	scene_ptr = scene;
-	overlays_ptr = overlays;
-	renderer_ptr = rd;
-	main_txt = main;
-	screenshot_txt = screensht;
 }
 
 
@@ -1254,7 +1258,6 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->flaunch, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "");
 	TwAddVarRW(overlays_ptr->flaunch, "Language", Languages, &SETTINGS.stg.language, "");
 	TwAddButton(overlays_ptr->flaunch, "OK", InitialOK, NULL, " label='OK'  ");
-	TwSetParam(overlays_ptr->flaunch, NULL, "position", TW_PARAM_INT32, 2, &barPos1);
 
 	TwDefine(" GLOBAL fontsize=3 ");
 	TwDefine("LevelEditor visible=false size='420 350' color='0 80 230' alpha=210 label='Level editor' valueswidth=200");

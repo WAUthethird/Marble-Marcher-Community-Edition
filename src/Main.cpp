@@ -530,7 +530,7 @@ int main(int argc, char *argv[]) {
 			if (TOUCH_MODE)
 			{
 				sf::Vector2i djoy = sf::Vector2i(0,0);
-			
+				//Collect touch joystick input
 				if (joystick_finger >= 0)
 				{
 					djoy = touch_xy[joystick_finger] - (sf::Vector2i(joystick.getPosition()) + sf::Vector2i(joystick.getRadius(), joystick.getRadius()));
@@ -541,16 +541,12 @@ int main(int argc, char *argv[]) {
 			else
 			{
 				//Collect keyboard input
-				float force_y =
-					(all_keys[SETTINGS.stg.control_mapping[DOWN]] ? -1.0f : 0.0f) +
-					(all_keys[SETTINGS.stg.control_mapping[UP]] ? 1.0f : 0.0f);
-				float force_x =
-					(all_keys[SETTINGS.stg.control_mapping[LEFT]] ? -1.0f : 0.0f) +
-					(all_keys[SETTINGS.stg.control_mapping[RIGHT]] ? 1.0f : 0.0f);
-
-				
+				force_y = (all_keys[SETTINGS.stg.control_mapping[DOWN]] ? -1.0f : 0.0f) +
+					      (all_keys[SETTINGS.stg.control_mapping[UP]] ? 1.0f : 0.0f);
+				force_x = (all_keys[SETTINGS.stg.control_mapping[LEFT]] ? -1.0f : 0.0f) +
+						  (all_keys[SETTINGS.stg.control_mapping[RIGHT]] ? 1.0f : 0.0f);
 			}
-
+			//Collect gamepad input
 			force_y -= gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_Y]];
 			force_x += gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_X]];
 			scene.UpdateMarble(force_x, force_y);
