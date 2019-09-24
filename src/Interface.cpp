@@ -274,6 +274,7 @@ void Object::SetMargin(float x)
 
 void Object::SetInsideSize(float x)
 {
+	curstate.inside_size = x;
 	defaultstate.inside_size = x;
 	activestate.inside_size = x;
 	hoverstate.inside_size = x;
@@ -608,6 +609,11 @@ void Box::SetBackground(const sf::Texture & texture)
 
 void Box::Draw(sf::RenderWindow * window, InputState& state)
 {
+	if (auto_size)
+	{
+		SetSize(this->defaultstate.size.x, this->defaultstate.inside_size + this->defaultstate.margin);
+	}
+
 	//update the box itself
 	if (   !(ToColor(defaultstate.color_main) == sf::Color::Transparent && curmode == DEFAULT)
 		&& !(ToColor(hoverstate.color_main) == sf::Color::Transparent && curmode == ONHOVER)
@@ -631,80 +637,81 @@ void Box::Draw(sf::RenderWindow * window, InputState& state)
 	sf::FloatRect local_viewport = sf::FloatRect(curstate.position.x / view_size.x, curstate.position.y / view_size.y, curstate.size.x / view_size.x, curstate.size.y / view_size.y);
 	sf::FloatRect this_viewport = overlap(global_viewport, local_viewport);
 	boxView.setViewport(this_viewport);
+	
+	float line_height = 0;
+	float cur_shift_x1 = curstate.margin, cur_shift_x2 = curstate.margin;
+	float cur_shift_y = curstate.margin + curstate.scroll;
 
-	if (this_viewport.width > 0.f && this_viewport.height > 0.f)
+	//update all the stuff inside the box
+	for (auto &obj : objects)
 	{
-		float line_height = 0;
-		float cur_shift_x1 = curstate.margin, cur_shift_x2 = curstate.margin;
-		float cur_shift_y = curstate.margin + curstate.scroll;
-
-		//update all the stuff inside the box
-		for (auto &obj : objects)
+		Allign A = obj.get()->obj_allign;
+		bool not_placed = true;
+		int tries = 0;
+		int obj_id = obj.get()->id;
+		float obj_h = obj.get()->curstate.size.y;
+		while (not_placed && tries < 2) //try to place the object somewhere
 		{
-			Allign A = obj.get()->obj_allign;
-			bool not_placed = true;
-			int tries = 0;
-			int obj_id = obj.get()->id;
-			float obj_h = obj.get()->curstate.size.y;
-			while (not_placed && tries < 2) //try to place the object somewhere
-			{
-				float space_left = defaultstate.size.x - cur_shift_x1 - cur_shift_x2;
-				float obj_width = obj.get()->curstate.size.x;
+			float space_left = defaultstate.size.x - cur_shift_x1 - cur_shift_x2;
+			float obj_width = obj.get()->curstate.size.x;
 
-				if (space_left >= obj_width || space_left >= defaultstate.size.x - 2 * curstate.margin)
+			if (space_left >= obj_width || space_left >= defaultstate.size.x - 2 * curstate.margin)
+			{
+				not_placed = false;
+				switch (A)
 				{
-					not_placed = false;
-					switch (A)
-					{
-					case LEFT:
-						obj.get()->SetPosition(curstate.position.x + cur_shift_x1, curstate.position.y + cur_shift_y);
-						cur_shift_x1 += obj_width + curstate.margin;
-						line_height = std::max(obj_h, line_height);
-						break;
-					case CENTER:
-						obj.get()->SetPosition(curstate.position.x + defaultstate.size.x * 0.5f - obj_width * 0.5f, curstate.position.y + cur_shift_y);
-						line_height = std::max(obj_h, line_height);
-						cur_shift_y += line_height + curstate.margin;
-						line_height = 0;
-						cur_shift_x1 = curstate.margin;
-						cur_shift_x2 = curstate.margin;
-						break;
-					case RIGHT:
-						obj.get()->SetPosition(curstate.position.x + defaultstate.size.x - obj_width - cur_shift_x2, curstate.position.y + cur_shift_y);
-						cur_shift_x2 += obj_width + curstate.margin;
-						line_height = std::max(obj_h, line_height);
-						break;
-					}
-				}
-				else
-				{
+				case LEFT:
+					obj.get()->SetPosition(curstate.position.x + cur_shift_x1, curstate.position.y + cur_shift_y);
+					cur_shift_x1 += obj_width + curstate.margin;
+					line_height = std::max(obj_h, line_height);
+					break;
+				case CENTER:
+					obj.get()->SetPosition(curstate.position.x + defaultstate.size.x * 0.5f - obj_width * 0.5f, curstate.position.y + cur_shift_y);
+					line_height = std::max(obj_h, line_height);
 					cur_shift_y += line_height + curstate.margin;
 					line_height = 0;
 					cur_shift_x1 = curstate.margin;
 					cur_shift_x2 = curstate.margin;
-					tries++;
+					break;
+				case RIGHT:
+					obj.get()->SetPosition(curstate.position.x + defaultstate.size.x - obj_width - cur_shift_x2, curstate.position.y + cur_shift_y);
+					cur_shift_x2 += obj_width + curstate.margin;
+					line_height = std::max(obj_h, line_height);
+					break;
 				}
-
 			}
-			if (tries >= 2)
+			else
 			{
-				//ERROR_MSG("Object does not fit in the box.");
-			}
-			sf::FloatRect obj_box(obj.get()->curstate.position, obj.get()->curstate.size);
-			sf::FloatRect seen_part = overlap(obj_box, this_view);
-			//if the object is seen in the view, then update it
-			if (seen_part.width > 0.f && seen_part.height > 0.f)
-			{
-				obj.get()->used_view = boxView;
-				obj.get()->Update(window, state);
+				cur_shift_y += line_height + curstate.margin;
+				line_height = 0;
+				cur_shift_x1 = curstate.margin;
+				cur_shift_x2 = curstate.margin;
+				tries++;
 			}
 
 		}
-		this->SetInsideSize(cur_shift_y - curstate.scroll - curstate.margin);
+		if (tries >= 2)
+		{
+			//ERROR_MSG("Object does not fit in the box.");
+		}
+		sf::FloatRect obj_box(obj.get()->curstate.position, obj.get()->curstate.size);
+		sf::FloatRect seen_part = overlap(obj_box, this_view);
+		//if the object is seen in the view, then update it
+		if (seen_part.width > 0.f && seen_part.height > 0.f)
+		{
+			obj.get()->used_view = boxView;
+			obj.get()->Update(window, state);
+		}
+
 	}
+
+	cur_shift_y += line_height + curstate.margin;
+
+	this->SetInsideSize(cur_shift_y - curstate.scroll - curstate.margin);
+
 }
 
-Box::Box(float x, float y, float dx, float dy, sf::Color color_main)
+Box::Box(float x, float y, float dx, float dy, sf::Color color_main): auto_size(false)
 {
 	defaultstate.position.x = x;
 	defaultstate.position.y = y;
@@ -715,7 +722,7 @@ Box::Box(float x, float y, float dx, float dy, sf::Color color_main)
 	clone_states();
 }
 
-Box::Box(float dx, float dy, sf::Color color_main)
+Box::Box(float dx, float dy, sf::Color color_main) : auto_size(false)
 {
 	defaultstate.position.x = 0;
 	defaultstate.position.y = 0;
@@ -725,10 +732,8 @@ Box::Box(float dx, float dy, sf::Color color_main)
 	clone_states();
 }
 
-Box::Box()
-{
-
-}
+Box::Box() : auto_size(false)
+{ }
 
 Box::Box(Box & A)
 {
@@ -740,10 +745,16 @@ Box::Box(Box && A)
 	*this = A;
 }
 
+void Box::SetAutoSize(bool b)
+{
+	auto_size = b;
+}
+
 void Box::operator=(Box & A)
 {
 	copy(A);
 
+	auto_size = A.auto_size;
 	rect = A.rect;
 	boxView = A.boxView;
 	SetBackground(A.image);
@@ -753,6 +764,7 @@ void Box::operator=(Box && A)
 {
 	copy(A);
 
+	std::swap(auto_size, A.auto_size);
 	std::swap(image, A.image);
 	std::swap(rect, A.rect);
 	std::swap(boxView, A.boxView);
@@ -911,12 +923,13 @@ void MenuBox::AddObject(Object * something, Allign a)
 	float height = this->objects[0].get()->defaultstate.size.y;
 	float height_1 = height - 2 * this->objects[1].get()->defaultstate.margin;
 	float new_h = std::min(height_1 * (height / inside_size), height_1);
-	if (new_h == height_1)
+	if (new_h == height_1 || auto_size)
 	{
 		//remove the slider
 		this->objects[1].get()->SetWidth(0);
 		this->objects[1].get()->objects[0].get()->SetWidth(0);
 		this->objects[0].get()->SetWidth(this->defaultstate.size.x);
+		this->objects[1].get()->SetHeigth(0);
 	}
 	else
 	{
@@ -976,8 +989,9 @@ void MenuBox::ScrollTo(float scroll)
 	ScrollBy(ds);
 }
 
-MenuBox::MenuBox(float dx, float dy, float x, float y, sf::Color color_main): cursor_id(0)
+MenuBox::MenuBox(float dx, float dy, bool auto_y, float x, float y, sf::Color color_main) : cursor_id(0)
 {
+	SetAutoSize(auto_y);
 	defaultstate.position.x = x;
 	defaultstate.position.y = y;
 	defaultstate.size.x = dx;
@@ -989,6 +1003,7 @@ MenuBox::MenuBox(float dx, float dy, float x, float y, sf::Color color_main): cu
 		Scroll(0, 0, 30, dy, sf::Color(150, 150, 150, 128)),
 		Scroll_Slide(0, 0, 28, 60, sf::Color(255, 150, 0, 128));
 
+	Inside.SetAutoSize(auto_y);
 	Scroll_Slide.hoverstate.color_main = sf::Color(255, 50, 0, 128);
 	Scroll_Slide.activestate.color_main = sf::Color(255, 100, 100, 255);
 	Inside.SetBackgroundColor(sf::Color::Transparent);

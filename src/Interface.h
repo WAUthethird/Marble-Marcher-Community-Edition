@@ -203,12 +203,18 @@ public:
 	Box(Box& A);
 	Box(Box&& A);
 
+	void SetAutoSize(bool b);
+
 	void operator=(Box& A);
 	void operator=(Box&& A);
 
 	virtual Object* GetCopy();
 
 	~Box();
+
+protected:
+	bool auto_size;
+
 private:
 	sf::Texture image;
 	sf::RectangleShape rect;
@@ -231,7 +237,7 @@ public:
 	void ScrollBy(float dx);
 	void ScrollTo(float scroll);
 
-	MenuBox(float dx, float dy, float x = 0, float y = 0, sf::Color color_main = sf::Color(0, 0, 0, 0));
+	MenuBox(float dx, float dy, bool auto_y = false, float x = 0, float y = 0, sf::Color color_main = sf::Color(0, 0, 0, 0));
 
 	MenuBox(MenuBox& A);
 	MenuBox(MenuBox&& A);
@@ -274,13 +280,16 @@ inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main
 	defaultstate.position.y = y;
 	defaultstate.size.x = dx;
 	defaultstate.size.y = dy;
+
+	this->SetAutoSize(true);
 	defaultstate.color_main = ToColorF(color_main);
 	clone_states();
+	SetMargin(0);
 
 	Box Bar(0, 0, dx, 30, sf::Color(0, 100, 200, 128)),
 		CloseBx(0, 0, 30, 30, sf::Color(255, 255, 255, 255));
 	Text Title(title, font, 25, sf::Color::White);
-
+	Bar.SetMargin(0);
 	CloseBx.hoverstate.color_main = sf::Color(255, 0, 0, 255);
 
 	sf::Image close; close.loadFromFile(close_png);
@@ -291,7 +300,8 @@ inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main
 	Bar.AddObject(&Title, Box::LEFT);
 	Bar.AddObject(&CloseBx, Box::RIGHT);
 
-	MenuBox Inside(dx, dy - 30);
+	MenuBox Inside(dx, dy - 30, true);
+
 
 	this->AddObject(&Bar, Box::CENTER);
 	this->AddObject(&Inside, Box::LEFT);

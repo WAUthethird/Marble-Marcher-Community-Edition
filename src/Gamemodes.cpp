@@ -48,7 +48,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	scene->SetMode(Scene::INTRO);
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
-	MenuBox mainmenu(1000, vsize.y*0.95f, wsize.x*0.025, wsize.y*0.025f);
+	MenuBox mainmenu(1000, vsize.y*0.95f, false, wsize.x*0.025, wsize.y*0.025f);
 	mainmenu.SetBackgroundColor(sf::Color::Transparent);
 	//make the menu static
 	mainmenu.static_object = true;
@@ -186,7 +186,7 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
-	MenuBox creditslist(wsize.x*0.95f, vsize.y*0.95f, (vsize.x - wsize.x*0.95f) / 2, vsize.y*0.025f);
+	MenuBox creditslist(wsize.x*0.95f, vsize.y*0.95f, false, (vsize.x - wsize.x*0.95f) / 2, vsize.y*0.025f);
 
 	//add a default callback
 	creditslist.SetDefaultFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
@@ -276,7 +276,7 @@ void OpenControlMenu(Scene * scene, Overlays * overlays)
 
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
-	MenuBox controls(wsize.x*0.95f, vsize.y*0.95f, (vsize.x - wsize.x*0.95f) / 2, vsize.y*0.025f);
+	MenuBox controls(wsize.x*0.95f, vsize.y*0.95f, false, (vsize.x - wsize.x*0.95f) / 2, vsize.y*0.025f);
 
 	//add a default callback
 	controls.SetDefaultFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
@@ -332,7 +332,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	scene->SetExposure(1.0f);
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
-	MenuBox pausemenu(625, 640, wsize.x*0.025, wsize.y*0.025f);
+	MenuBox pausemenu(625, 640, false, wsize.x*0.025, wsize.y*0.025f);
 	pausemenu.SetBackgroundColor(sf::Color(32, 32, 32, 200));
 	
 	//make the menu static
@@ -521,7 +521,7 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
-	MenuBox levels(wsize.x*0.95f, vsize.y*0.95f, (vsize.x - wsize.x*0.95f)/2, vsize.y*0.025f);
+	MenuBox levels(wsize.x*0.95f, vsize.y*0.95f, false, (vsize.x - wsize.x*0.95f)/2, vsize.y*0.025f);
 	levels.SetBackgroundColor(sf::Color(32,32,32,160));
 	//make the menu static
 	levels.static_object = true;
@@ -803,7 +803,7 @@ void FirstStart(Overlays* overlays)
 
 	sf::Vector2f wsize = default_size;
 	sf::Vector2f vsize = default_view.getSize();
-	MenuBox mainmenu(1000, vsize.y*0.95f, wsize.x*0.025, wsize.y*0.025f);
+	MenuBox mainmenu(1000, vsize.y*0.95f, false, wsize.x*0.025, wsize.y*0.025f);
 	mainmenu.SetBackgroundColor(sf::Color::Transparent);
 	//make the menu static
 	mainmenu.static_object = true;
@@ -862,6 +862,8 @@ sf::Vector2i getResolution(int i)
 		return sf::Vector2i(7680, 4320);
 	case 13:
 		return sf::Vector2i(10240, 4320);
+	case 14:
+		return sf::Vector2i(240, 140);
 	}
 }
 
@@ -1027,6 +1029,7 @@ void TW_CALL ApplySettings(void *data)
 		overlays_ptr->SetAntTweakBar(window->getSize().x, window->getSize().y);
 	}
 
+	window->setFramerateLimit(SETTINGS.stg.fps_limit);
 	std::vector<std::string> langs = LOCAL.GetLanguages();
 	LOCAL.SetLanguage(langs[SETTINGS.stg.language]);
 
@@ -1132,13 +1135,18 @@ void SaveRecord(float mx, float my, float vx, float vy, float cz)
 		rec.view_y = vy;
 		rec.cam_z = cz;
 
-		input_recording.write((char*)&rec, sizeof(InputRecord));
+		input_recording.write((char*)&rec, 4*5);
 	}
 }
 
 InputRecord GetRecord()
 {
 	InputRecord rec;
+	rec.move_x = 0;
+	rec.move_y = 0;
+	rec.view_x = 0;
+	rec.view_y = 0;
+	rec.cam_z = 0;
 	if (replay && input_recording)
 	{
 		input_recording.read((char*)&rec, sizeof(InputRecord));
@@ -1253,6 +1261,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 
 	TwAddVarRW(overlays_ptr->settings, "Rendering resolution", Resolutions, &SETTINGS.stg.rendering_resolution, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, "group='Rendering settings' help='You need to restart the game for changes to take effect'");
+	TwAddVarRW(overlays_ptr->settings, "Framerate limit", TW_TYPE_INT32, &SETTINGS.stg.fps_limit, "min=1 max=240 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Cross-eye 3D", TW_TYPE_BOOLCPP, &SETTINGS.stg.cross_eye, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "3D eye separation", TW_TYPE_FLOAT, &SETTINGS.stg.eye_separation, "min=-2 step=0.05 max=2 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "group='Rendering settings'");
@@ -1288,7 +1297,6 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Play next level", TW_TYPE_BOOLCPP, &SETTINGS.stg.play_next, "group='Gameplay settings' help='Will play next level of a level pack if enabled'");
 	TwAddVarRW(overlays_ptr->settings, "Music volume", TW_TYPE_FLOAT, &SETTINGS.stg.music_volume, "min=0 max=100 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "FX volume", TW_TYPE_FLOAT, &SETTINGS.stg.fx_volume, "min=0 max=100 step=1 group='Gameplay settings'");
-	TwAddVarRW(overlays_ptr->settings, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=144 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera size", TW_TYPE_FLOAT, &scene_ptr->camera_size, "min=0 max=10 step=0.001 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera speed(Free mode)", TW_TYPE_FLOAT, &scene_ptr->free_camera_speed, "min=0 max=100 step=0.001 group='Gameplay settings'");
 
@@ -1377,6 +1385,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 		TwAddButton(debug, "Record", StartRecording, NULL, " label='Record game input'  ");
 		TwAddButton(debug, "Playback", StartReplay, NULL, " label='Play recording'  ");
 		TwAddVarRW(debug, "Slow", TW_TYPE_BOOLCPP, &SETTINGS.stg.speed_regulation, " label='Speed regulation'");
+		TwAddVarRW(debug, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=240 step=1");
 	#endif
 
 	TwDefine(" GLOBAL fontsize=3 ");

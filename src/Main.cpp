@@ -40,7 +40,6 @@
 #endif
 
 //Graphics settings
-static bool VSYNC = true;
 bool TOUCH_MODE = false;
 
 
@@ -594,12 +593,6 @@ int main(int argc, char *argv[]) {
 			cam_ud -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y]];
 			cam_lr -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X]];
 			
-			if (replay)
-			{
-				force_x = record.move_x;
-				force_y = record.move_y;
-			}
-			
 			float cam_z = mouse_wheel * SETTINGS.stg.wheel_sensitivity;
 
 			if (replay)
@@ -622,8 +615,6 @@ int main(int argc, char *argv[]) {
 		}
 		else 
 		{
-			window.setVerticalSyncEnabled(VSYNC);
-
 			//Update the shader values
 			if (game_mode != FIRST_START)
 			{
