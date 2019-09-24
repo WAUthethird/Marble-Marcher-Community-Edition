@@ -393,9 +393,9 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	{
 		RemoveAllObjects();
 		game_mode = PLAYING;
+		LockMouse(*window);
 		scene->ResetLevel();
 		scene->SetExposure(1.0f);
-		LockMouse(*window);
 		overlays->sound_click.play();
 	}, true);
 	rstbtn.AddObject(&button2, Object::Allign::CENTER);
@@ -767,9 +767,7 @@ void DisplayError(std::string error_text)
 
 void LockMouse(sf::RenderWindow& window) {
 	window.setMouseCursorVisible(false);
-	const sf::Vector2u size = window.getSize();
-	mouse_pos = sf::Vector2i(size.x / 2, size.y / 2);
-	sf::Mouse::setPosition(mouse_pos);
+	sf::Mouse::setPosition(sf::Vector2i(window.getSize().x*0.5, window.getSize().y*0.5), window);
 }
 
 void UnlockMouse(sf::RenderWindow& window) {
@@ -1067,6 +1065,8 @@ void TW_CALL InitialOK(void *data)
 
 int CUR_SET_BUTTON = -1;
 std::string status_text = "Nothing";
+int cur_frame = 0;
+std::vector<InputRecord> recording_data;
 
 void TW_CALL SetButton(void *data)
 {
@@ -1083,17 +1083,23 @@ void TW_CALL StartRecording(void* data)
 		recording = !recording;
 	}
 	
-	if (recording)
+	if (!recording)
 	{
 		input_recording.open("input_record.bin", std::ios::out | std::ios::binary | std::ios::trunc);
+		
 		if (!input_recording.is_open())
 		{
-			recording = false;
 			DisplayError("Error opening record file");
 		}
-	}
-	else
-	{
+		else
+		{
+			for (auto &input : recording_data)
+			{
+				input_recording.write((char*)&input, sizeof(InputRecord));
+			}
+		}
+		recording_data.clear();
+		
 		input_recording.close();
 	}
 }
@@ -1108,6 +1114,7 @@ void TW_CALL StartReplay(void* data)
 	if (replay)
 	{
 		input_recording.open("input_record.bin", std::ios::in | std::ios::binary);
+
 		if (!input_recording.is_open())
 		{
 			replay = false;
@@ -1116,17 +1123,22 @@ void TW_CALL StartReplay(void* data)
 		else
 		{
 			input_recording.seekg(0, input_recording.beg);
+			InputRecord rec;
+			while (input_recording)
+			{
+				input_recording.read((char*)&rec, sizeof(InputRecord));
+				recording_data.push_back(rec);
+			}
+			cur_frame = 0;
 		}
-	}
-	else
-	{
+
 		input_recording.close();
 	}
 }
 
-void SaveRecord(float mx, float my, float vx, float vy, float cz)
+void SaveRecord(float mx, float my, float vx, float vy, float cz, bool mc)
 {
-	if (recording)
+	if (recording && !replay)
 	{
 		InputRecord rec;
 		rec.move_x = mx;
@@ -1134,29 +1146,26 @@ void SaveRecord(float mx, float my, float vx, float vy, float cz)
 		rec.view_x = vx;
 		rec.view_y = vy;
 		rec.cam_z = cz;
+		rec.mouse_clicked = mc;
 
-		input_recording.write((char*)&rec, 4*5);
+		recording_data.push_back(rec);
 	}
 }
 
 InputRecord GetRecord()
 {
-	InputRecord rec;
-	rec.move_x = 0;
-	rec.move_y = 0;
-	rec.view_x = 0;
-	rec.view_y = 0;
-	rec.cam_z = 0;
-	if (replay && input_recording)
+	if (replay)
 	{
-		input_recording.read((char*)&rec, sizeof(InputRecord));
+		if (cur_frame >= recording_data.size())
+		{
+			cur_frame = 0;
+			replay = false;
+			recording_data.clear();
+			return InputRecord();
+		}
+		return recording_data[cur_frame++];
 	}
-	else
-	{
-		replay = false;
-		input_recording.close();
-	}
-	return rec;
+	return InputRecord();
 }
 
 void ApplyButton(int NUM, int MODE)
@@ -1386,6 +1395,9 @@ void InitializeATBWindows(float* fps, float *target_fps)
 		TwAddButton(debug, "Playback", StartReplay, NULL, " label='Play recording'  ");
 		TwAddVarRW(debug, "Slow", TW_TYPE_BOOLCPP, &SETTINGS.stg.speed_regulation, " label='Speed regulation'");
 		TwAddVarRW(debug, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=240 step=1");
+		TwAddVarRO(debug, "Replay frame", TW_TYPE_INT32, &cur_frame, "");
+		TwAddVarRO(debug, "Replay mode", TW_TYPE_BOOLCPP, &replay, "");
+		TwAddVarRO(debug, "Recording mode", TW_TYPE_BOOLCPP, &recording, "");
 	#endif
 
 	TwDefine(" GLOBAL fontsize=3 ");

@@ -36,6 +36,7 @@ struct InputRecord
 	float move_x, move_y;
 	float view_x, view_y;
 	float cam_z;
+	bool mouse_clicked;
 };
 
 
@@ -91,7 +92,7 @@ void TakeScreenshot();
 
 void TW_CALL ApplySettings(void * data);
 
-void SaveRecord(float mx, float my, float vx, float vy, float cz);
+void SaveRecord(float mx, float my, float vx, float vy, float cz, bool mc);
 
 InputRecord GetRecord();
 

@@ -937,6 +937,7 @@ void MenuBox::AddObject(Object * something, Allign a)
 		this->objects[1].get()->SetWidth(30);
 		this->objects[1].get()->objects[0].get()->SetWidth(26);
 		this->objects[1].get()->objects[0].get()->SetHeigth(new_h);
+		this->objects[1].get()->SetHeigth(height);
 	}
 }
 
@@ -998,10 +999,10 @@ MenuBox::MenuBox(float dx, float dy, bool auto_y, float x, float y, sf::Color co
 	defaultstate.size.y = dy;
 	defaultstate.color_main = ToColorF(color_main);
 	clone_states();
-
-	Box Inside(0, 0, dx - 30, dy, sf::Color(100, 100, 100, 128)),
-		Scroll(0, 0, 30, dy, sf::Color(150, 150, 150, 128)),
-		Scroll_Slide(0, 0, 28, 60, sf::Color(255, 150, 0, 128));
+	float scroll_size = auto_y?0:30;
+	Box Inside(0, 0, dx - scroll_size, dy, sf::Color(100, 100, 100, 128)),
+		Scroll(0, 0, scroll_size, auto_y ? 0 : dy, sf::Color(150, 150, 150, 128)),
+		Scroll_Slide(0, 0, scroll_size-2, 60, sf::Color(255, 150, 0, 128));
 
 	Inside.SetAutoSize(auto_y);
 	Scroll_Slide.hoverstate.color_main = sf::Color(255, 50, 0, 128);

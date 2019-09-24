@@ -472,39 +472,42 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}
-		int touches = 0;
-		for (int i = 0; i < n_touch; i++)
-		{
-			if (touched[i])
-			{
-				touches++;
-				//touch state
-				touch_xy[i] = sf::Touch::getPosition(i, window);
-				touch_circle[i].setPosition(touch_xy[i].x - touch_circle[i].getRadius(), touch_xy[i].y - touch_circle[i].getRadius());
-			}
-		}
 
-		if (touches == 3)
+		if (TOUCH_MODE)
 		{
-			if (game_mode == PLAYING)
+			int touches = 0;
+			for (int i = 0; i < n_touch; i++)
 			{
-				PauseGame(window, &overlays, &scene);
-			}
-			else if (game_mode == LEVEL_EDITOR)
-			{
-				//if no interface objects created
-				if (NoObjects())
+				if (touched[i])
 				{
-					ConfirmEditorExit(&scene, &overlays);
-				}
-				else if (get_glob_obj(focused).action_time < 0.f)//remove confirm window
-				{
-					RemoveGlobalObject(focused);
+					touches++;
+					//touch state
+					touch_xy[i] = sf::Touch::getPosition(i, window);
+					touch_circle[i].setPosition(touch_xy[i].x - touch_circle[i].getRadius(), touch_xy[i].y - touch_circle[i].getRadius());
 				}
 			}
-		}
-		
 
+			if (touches == 3)
+			{
+				if (game_mode == PLAYING)
+				{
+					PauseGame(window, &overlays, &scene);
+				}
+				else if (game_mode == LEVEL_EDITOR)
+				{
+					//if no interface objects created
+					if (NoObjects())
+					{
+						ConfirmEditorExit(&scene, &overlays);
+					}
+					else if (get_glob_obj(focused).action_time < 0.f)//remove confirm window
+					{
+						RemoveGlobalObject(focused);
+					}
+				}
+			}
+		}
+	
 		//Check if the game was beat
 		if (scene.GetMode() == Scene::FINAL && game_mode != CREDITS) {
 			game_mode = CREDITS;
@@ -600,11 +603,12 @@ int main(int argc, char *argv[]) {
 				cam_lr = record.view_x;
 				cam_ud = record.view_y;
 				cam_z = record.cam_z;
+				mouse_clicked = record.mouse_clicked;
 			}
 
 			scene.UpdateCamera(cam_lr, cam_ud, cam_z, mouse_clicked);
 
-			SaveRecord(force_x, force_y, cam_lr, cam_ud, cam_z);
+			SaveRecord(force_x, force_y, cam_lr, cam_ud, cam_z, mouse_clicked);
 		}
 
 		bool skip_frame = false;
