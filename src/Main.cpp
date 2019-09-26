@@ -136,8 +136,6 @@ int main(int argc, char *argv[]) {
 		OpenMainMenu(&scene, &overlays);
 	}
 
-	DisplayError("Empty error");
-
 	#define n_touch 5
 	sf::Vector2i touch_xy[n_touch];
 	sf::Vector2i touch_pxy[n_touch];

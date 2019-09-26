@@ -153,6 +153,43 @@ void Add2DeleteQueue(int id)
 	}
 }
 
+std::string key_name(sf::Keyboard::Key & key)
+{
+	//yeah, I dont like this code either
+#define ITEM(x) case sf::Keyboard:: ## x : return #x;
+	switch (key)
+	{
+		ITEM(A); ITEM(B); ITEM(C);
+		ITEM(D); ITEM(E); ITEM(F); ITEM(G);
+		ITEM(H); ITEM(I); ITEM(J); ITEM(K);
+		ITEM(L); ITEM(M); ITEM(N); ITEM(O);
+		ITEM(P); ITEM(Q); ITEM(R); ITEM(S);
+		ITEM(T); ITEM(U); ITEM(V); ITEM(W);
+		ITEM(X); ITEM(Y); ITEM(Z); ITEM(Num0);
+		ITEM(Num1); ITEM(Num2); ITEM(Num3); ITEM(Num4);
+		ITEM(Num5); ITEM(Num6); ITEM(Num7); ITEM(Num8);
+		ITEM(Num9); ITEM(Escape); ITEM(LControl); ITEM(LShift);
+		ITEM(LAlt); ITEM(LSystem); ITEM(RControl); ITEM(RShift);
+		ITEM(RAlt); ITEM(RSystem); ITEM(Menu); ITEM(LBracket);
+		ITEM(RBracket); ITEM(Semicolon); ITEM(Comma); ITEM(Period);
+		ITEM(Quote); ITEM(Slash); ITEM(Backslash); ITEM(Tilde);
+		ITEM(Equal); ITEM(Hyphen); ITEM(Space); ITEM(Enter);
+		ITEM(Backspace); ITEM(Tab); ITEM(PageUp); ITEM(PageDown);
+		ITEM(End); ITEM(Home); ITEM(Insert); ITEM(Delete);
+		ITEM(Add); ITEM(Subtract); ITEM(Multiply); ITEM(Divide);
+		ITEM(Left); ITEM(Right); ITEM(Up); ITEM(Down);
+		ITEM(Numpad0); ITEM(Numpad1); ITEM(Numpad2); ITEM(Numpad3);
+		ITEM(Numpad4); ITEM(Numpad5); ITEM(Numpad6); ITEM(Numpad7);
+		ITEM(Numpad8); ITEM(Numpad9); ITEM(F1); ITEM(F2);
+		ITEM(F3); ITEM(F4); ITEM(F5); ITEM(F6);
+		ITEM(F7); ITEM(F8); ITEM(F9); ITEM(F10);
+		ITEM(F11); ITEM(F12); ITEM(F13); ITEM(F14);
+		ITEM(F15); ITEM(Pause);
+	default:
+		return "UNKNOWN";
+	}
+}
+
 void UpdateAllObjects(sf::RenderWindow * window, InputState& state)
 {
 	for (auto &id : del)
@@ -1184,4 +1221,97 @@ Object * Image::GetCopy()
 
 Image::~Image()
 {
+}
+
+KeyMapper::KeyMapper(KeyMapper & A)
+{
+	*this = A;
+}
+
+KeyMapper::KeyMapper(KeyMapper && A)
+{
+	*this = A;
+}
+
+void KeyMapper::operator=(KeyMapper & A)
+{
+	Box::operator=(A);
+	this_type = A.this_type;
+	key_ptr = A.key_ptr;
+	CreateCallbacks();
+}
+
+void KeyMapper::operator=(KeyMapper && A)
+{
+	Box::operator=(A);
+	std::swap(this_type, A.this_type);
+	std::swap(key_ptr, A.key_ptr);
+	CreateCallbacks();
+}
+
+void KeyMapper::CreateCallbacks()
+{
+	/*//use lambda funtion
+	this->objects[1].get()->objects[0].get()->SetMainCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	{
+		float inside_size = parent->objects[0].get()->defaultstate.inside_size;
+		float height_1 = parent->objects[1].get()->defaultstate.size.y - 2 * parent->objects[1].get()->defaultstate.margin;
+		float height_2 = parent->objects[1].get()->objects[0].get()->defaultstate.size.y;
+		float max_slide_scroll = height_1 - height_2;
+		//relative scroll coefficient
+		float rel_coef = (inside_size - height_1) / max_slide_scroll;
+		parent->ScrollBy(state.mouse_speed.y*rel_coef);
+	}, false);
+
+	this->SetMainHoverFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	{
+		//wheel scroll 
+		if (state.wheel != 0.f)
+		{
+			float ds = 20.f;
+			parent->ScrollBy(-state.wheel*ds);
+		}
+	});
+
+	this->SetMainDefaultFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	{
+		bool A = false;
+
+		if (state.keys[sf::Keyboard::Up])
+		{
+			parent->Cursor(-1);
+			A = 1;
+		}
+
+		if (state.keys[sf::Keyboard::Down])
+		{
+			parent->Cursor(1);
+			A = 1;
+		}
+
+		if (state.keys[sf::Keyboard::Enter])
+		{
+			//run the callback function of the chosen object
+			A = parent->objects[0].get()->objects[parent->cursor_id].get()->RunCallback(window, state);
+		}
+
+		if (A) parent->action_time = action_dt;
+
+		A = false;
+
+		if (state.key_press[sf::Keyboard::Up])
+		{
+			parent->action_time = action_dt / 4;
+		}
+
+		if (state.key_press[sf::Keyboard::Down])
+		{
+			parent->action_time = action_dt / 4;
+		}
+	});*/
+}
+
+Object * KeyMapper::GetCopy()
+{
+	return static_cast<Object*>(new KeyMapper(*this));
 }
