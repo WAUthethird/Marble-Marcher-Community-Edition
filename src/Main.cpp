@@ -41,7 +41,7 @@
 
 //Graphics settings
 bool TOUCH_MODE = false;
-
+bool DEBUG_BAR = false;
 
 #if defined(_WIN32)
 int WinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR lpCmdLine, int nCmdShow) {
@@ -274,6 +274,7 @@ int main(int argc, char *argv[]) {
 				{
 					const sf::Keyboard::Key keycode = event.key.code;
 					all_keys[keycode] = true;
+					io_state.isKeyPressed = true;
 					io_state.keys[keycode] = true;
 					io_state.key_press[keycode] = true;  
 					if (event.key.code < 0 || event.key.code >= sf::Keyboard::KeyCount) { continue; }
@@ -290,6 +291,11 @@ int main(int argc, char *argv[]) {
 						scene.SetExposure(1.0f);
 						credits_music.stop();
 						scene.StartNextLevel();
+					}
+					else if (keycode == sf::Keyboard::D && event.key.control)
+					{
+						DEBUG_BAR = !DEBUG_BAR;
+						TwDefine((std::string("Debug_bar visible=") + ((DEBUG_BAR) ? "true" : "false")).c_str());
 					}
 					else if (keycode == sf::Keyboard::Escape)
 					{
@@ -327,10 +333,16 @@ int main(int argc, char *argv[]) {
 							}
 						}
 					}
-					else if (keycode == sf::Keyboard::R) 
+					else if (keycode == SETTINGS.stg.control_mapping[RESTART])
 					{
 						if (game_mode == PLAYING) {
 							scene.ResetLevel();
+						}
+					}
+					else if (keycode == SETTINGS.stg.control_mapping[PAUSE])
+					{
+						if (game_mode == PLAYING) {
+							PauseGame(window, &overlays, &scene);
 						}
 					}
 					else if (keycode == sf::Keyboard::F1) 
@@ -340,7 +352,7 @@ int main(int argc, char *argv[]) {
 							scene.EnbaleCheats();
 						}
 					}
-					else if (keycode == sf::Keyboard::F5) 
+					else if (keycode == SETTINGS.stg.control_mapping[SCREENSHOT]) 
 					{ 
 						TakeScreenshot();
 					} 
@@ -593,6 +605,11 @@ int main(int argc, char *argv[]) {
 			float cam_ud = float(-mouse_delta.y) * ms;
 			cam_ud -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y]];
 			cam_lr -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X]];
+
+			cam_ud += 5*ms * ( (all_keys[SETTINGS.stg.control_mapping[VIEWUP]] ? -1.0f : 0.0f) +
+							(all_keys[SETTINGS.stg.control_mapping[VIEWDOWN]] ? 1.0f : 0.0f) );
+			cam_lr +=  5*ms * ((all_keys[SETTINGS.stg.control_mapping[VIEWRIGHT]] ? -1.0f : 0.0f) +
+								(all_keys[SETTINGS.stg.control_mapping[VIEWLEFT]] ? 1.0f : 0.0f));
 			
 			float cam_z = mouse_wheel * SETTINGS.stg.wheel_sensitivity;
 
@@ -674,6 +691,7 @@ int main(int argc, char *argv[]) {
 		io_state.dt = prev_s;
 		io_state.time += io_state.dt;
 		UpdateAllObjects(&window, io_state);
+		io_state.isKeyPressed = false;
 		window.setView(default_window_view);
 		
 		if (!skip_frame) {

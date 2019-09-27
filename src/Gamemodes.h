@@ -100,12 +100,6 @@ void ApplyButton(int NUM, int MODE);
 
 void InitializeATBWindows(float * fps, float * target_fps);
 
-template < typename T > std::string num2str(const T& n)
-{
-	std::ostringstream stm;
-	if (n < 10) stm << "0";
-	stm << n;
-	return stm.str();
-}
+
 
 

@@ -1238,6 +1238,8 @@ void KeyMapper::operator=(KeyMapper & A)
 	Box::operator=(A);
 	this_type = A.this_type;
 	key_ptr = A.key_ptr;
+	waiting = A.waiting;
+	wait_text = A.wait_text;
 	CreateCallbacks();
 }
 
@@ -1246,69 +1248,95 @@ void KeyMapper::operator=(KeyMapper && A)
 	Box::operator=(A);
 	std::swap(this_type, A.this_type);
 	std::swap(key_ptr, A.key_ptr);
+	waiting = A.waiting;
+	wait_text = A.wait_text;
 	CreateCallbacks();
 }
 
 void KeyMapper::CreateCallbacks()
 {
-	/*//use lambda funtion
-	this->objects[1].get()->objects[0].get()->SetMainCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
+	//use a lambda function
+	this->objects[1].get()->SetMainCallbackFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
-		float inside_size = parent->objects[0].get()->defaultstate.inside_size;
-		float height_1 = parent->objects[1].get()->defaultstate.size.y - 2 * parent->objects[1].get()->defaultstate.margin;
-		float height_2 = parent->objects[1].get()->objects[0].get()->defaultstate.size.y;
-		float max_slide_scroll = height_1 - height_2;
-		//relative scroll coefficient
-		float rel_coef = (inside_size - height_1) / max_slide_scroll;
-		parent->ScrollBy(state.mouse_speed.y*rel_coef);
-	}, false);
-
-	this->SetMainHoverFunction([parent = this](sf::RenderWindow * window, InputState & state)
-	{
-		//wheel scroll 
-		if (state.wheel != 0.f)
-		{
-			float ds = 20.f;
-			parent->ScrollBy(-state.wheel*ds);
-		}
+		parent->waiting = true;
+		//get the text pointer out of the object pointer inside the parent
+		Text *text_ptr = static_cast<Text*>(parent->objects[1].get()->objects[0].get());
+		text_ptr->SetString(parent->wait_text);
 	});
+
 
 	this->SetMainDefaultFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
-		bool A = false;
-
-		if (state.keys[sf::Keyboard::Up])
+		if (parent->waiting)
 		{
-			parent->Cursor(-1);
-			A = 1;
+			if (state.key_press[sf::Keyboard::Escape])
+			{
+				parent->SetKeyString(); //exit
+			}
+			else switch (parent->this_type)
+			{
+			case KEYBOARD:
+				if (state.isKeyPressed)
+				{
+					//search for the pressed key
+					for (sf::Keyboard::Key i = sf::Keyboard::A; i < sf::Keyboard::KeyCount; i = sf::Keyboard::Key(i + 1))
+					{
+						if (state.keys[i]) //found
+						{
+							*(parent->key_ptr) = i;
+							parent->SetKeyString();
+							break;
+						}
+					}
+				}
+				break;
+			case JOYSTICK_AXIS:
+				//search for the axis
+				for (int i = 0; i < sf::Joystick::AxisCount; i++)
+				{
+					if (abs(sf::Joystick::getAxisPosition(0, sf::Joystick::Axis(i))) > 0.5f )
+					{
+						*(parent->key_ptr) = i;
+						parent->SetKeyString();
+						break;
+					}
+				}
+				break;
+			case JOYSTICK_KEYS:
+				//search for the pressed joystick key
+				for (int i = 0; i < sf::Joystick::ButtonCount; i++)
+				{
+					if (sf::Joystick::isButtonPressed(0, i))
+					{
+						*(parent->key_ptr) = i;
+						parent->SetKeyString();
+						break;
+					}
+				}
+				
+				break;
+			}
 		}
+	});
+}
 
-		if (state.keys[sf::Keyboard::Down])
-		{
-			parent->Cursor(1);
-			A = 1;
-		}
-
-		if (state.keys[sf::Keyboard::Enter])
-		{
-			//run the callback function of the chosen object
-			A = parent->objects[0].get()->objects[parent->cursor_id].get()->RunCallback(window, state);
-		}
-
-		if (A) parent->action_time = action_dt;
-
-		A = false;
-
-		if (state.key_press[sf::Keyboard::Up])
-		{
-			parent->action_time = action_dt / 4;
-		}
-
-		if (state.key_press[sf::Keyboard::Down])
-		{
-			parent->action_time = action_dt / 4;
-		}
-	});*/
+void KeyMapper::SetKeyString()
+{
+	Text *text_ptr = static_cast<Text*>(objects[1].get()->objects[0].get());
+	waiting = false;
+	sf::Keyboard::Key key = sf::Keyboard::Key(*key_ptr);
+	switch (this_type)
+	{
+	case KEYBOARD:
+		text_ptr->SetString(key_name(key));
+		break;
+	case JOYSTICK_AXIS:
+		text_ptr->SetString("Axis " + num2str(*key_ptr));
+		break;
+	case JOYSTICK_KEYS:
+		text_ptr->SetString("Key " + num2str(*key_ptr));
+		break;
+	}
 }
 
 Object * KeyMapper::GetCopy()

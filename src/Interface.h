@@ -34,6 +34,13 @@ static const std::string priority_png = "images/priority.png";
 static const std::string done_png = "images/done.png";
 extern int focused;
 
+template < typename T > std::string num2str(const T& n)
+{
+	std::ostringstream stm;
+	if (n < 10) stm << "0";
+	stm << n;
+	return stm.str();
+}
 
 struct ColorFloat
 {
@@ -54,6 +61,7 @@ ColorFloat ToColorF(sf::Color a);
 
 struct InputState
 {
+	bool isKeyPressed;
 	bool keys[sf::Keyboard::KeyCount] = { false };
 	bool key_press[sf::Keyboard::KeyCount] = { false };
 	bool mouse[3] = { false };
@@ -324,6 +332,9 @@ public:
 	Text(Text& A);
 	Text(Text&& A);
 
+	template<class T>
+	void SetString(T str);
+
 	void operator=(Text& A);
 	void operator=(Text&& A);
 
@@ -340,6 +351,12 @@ inline Text::Text(T str, sf::Font & f, float size, sf::Color col)
 	SetBorderColor(sf::Color::Black);
 	SetBorderWidth(2);
 	clone_states();
+}
+
+template<class T>
+inline void Text::SetString(T str)
+{
+	text.get()->setString(str);
 }
 
 
@@ -410,25 +427,29 @@ public:
 	void operator=(KeyMapper&& A);
 
 	void CreateCallbacks();
+	void SetKeyString();
 
 	virtual Object* GetCopy();
 
 	MapperType this_type;
 	int *key_ptr;
+	bool waiting;
+	std::wstring wait_text;
 };
 
 template<class T>
-inline KeyMapper::KeyMapper(T label, T act_label, int * key, float w, float h, MapperType type, sf::Color color_active, sf::Color color_hover, sf::Color color_main)
+inline KeyMapper::KeyMapper(T label, T act_label, int * key, float w, float h, MapperType type, sf::Color color_active, sf::Color color_hover, sf::Color color_main): waiting(false), this_type(type), wait_text(act_label)
 {
 	SetSize(w, h);
-	this_type = type;
 	SetBackgroundColor(color_main);
 	Box LeftBox(0, 0, float(w * 0.5f), h-defaultstate.margin*2.f, sf::Color(0, 100, 200, 0)),
 		RightBox(0, 0, float(w * 0.33f), h - defaultstate.margin * 2.f, sf::Color(0, 100, 200, 128));
 	LeftBox.AddObject(&Text(label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::LEFT);
-	RightBox.AddObject(&Text(act_label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::RIGHT);
+	RightBox.AddObject(&Text(act_label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::CENTER);
 	RightBox.activestate.color_main = color_active;
 	hoverstate.color_main = color_hover;
 	this->AddObject(&LeftBox,Allign::LEFT);
 	this->AddObject(&RightBox, Allign::RIGHT);
+	key_ptr = key;
+	SetKeyString();
 }
