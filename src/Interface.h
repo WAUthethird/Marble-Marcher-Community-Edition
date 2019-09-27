@@ -387,5 +387,48 @@ inline Button::Button(T text, float w, float h, std::function<void(sf::RenderWin
 	button_text.SetBorderColor(sf::Color::Black);
 	hoverstate.color_main = color_hover;
 	SetCallbackFunction(fun, true);
-	this->AddObject(&button_text, Object::Allign::CENTER);
+	this->AddObject(&button_text,Object::Allign::CENTER);
+}
+
+std::string key_name(sf::Keyboard::Key& key);
+
+//basic object for control mapping
+class KeyMapper : public Box
+{
+public:
+	enum MapperType {
+		KEYBOARD, JOYSTICK_AXIS, JOYSTICK_KEYS
+	};
+
+	template<class T>
+	KeyMapper(T label, T act_label, int* key, float w, float h, MapperType type, sf::Color color_active = sf::Color::Blue, sf::Color color_hover = default_hover_main_color, sf::Color color_main = default_main_color);
+
+	KeyMapper(KeyMapper& A);
+	KeyMapper(KeyMapper&& A);
+
+	void operator=(KeyMapper& A);
+	void operator=(KeyMapper&& A);
+
+	void CreateCallbacks();
+
+	virtual Object* GetCopy();
+
+	MapperType this_type;
+	int *key_ptr;
+};
+
+template<class T>
+inline KeyMapper::KeyMapper(T label, T act_label, int * key, float w, float h, MapperType type, sf::Color color_active, sf::Color color_hover, sf::Color color_main)
+{
+	SetSize(w, h);
+	this_type = type;
+	SetBackgroundColor(color_main);
+	Box LeftBox(0, 0, float(w * 0.5f), h-defaultstate.margin*2.f, sf::Color(0, 100, 200, 0)),
+		RightBox(0, 0, float(w * 0.33f), h - defaultstate.margin * 2.f, sf::Color(0, 100, 200, 128));
+	LeftBox.AddObject(&Text(label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::LEFT);
+	RightBox.AddObject(&Text(act_label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::RIGHT);
+	RightBox.activestate.color_main = color_active;
+	hoverstate.color_main = color_hover;
+	this->AddObject(&LeftBox,Allign::LEFT);
+	this->AddObject(&RightBox, Allign::RIGHT);
 }

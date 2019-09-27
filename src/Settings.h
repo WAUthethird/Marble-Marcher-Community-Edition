@@ -23,10 +23,12 @@
 #include <AntTweakBar.h>
 namespace fs = std::filesystem;
 
-const int num_of_keys = 14;
+const int num_of_keys = 18;
 enum KEYS {
 	UP, DOWN, LEFT, RIGHT, VIEWUP, VIEWDOWN, VIEWLEFT, VIEWRIGHT, 
-	JOYSTICK_MOVE_AXIS_X, JOYSTICK_MOVE_AXIS_Y, JOYSTICK_VIEW_AXIS_X, JOYSTICK_VIEW_AXIS_Y, JOYSTICK_EXIT, JOYSTICK_SCREENSHOT
+	PAUSE, RESTART, SCREENSHOT,
+	JOYSTICK_MOVE_AXIS_X, JOYSTICK_MOVE_AXIS_Y, JOYSTICK_VIEW_AXIS_X, JOYSTICK_VIEW_AXIS_Y, 
+	JOYSTICK_EXIT, JOYSTICK_SCREENSHOT, JOYSTICK_RESTART
 };
 
 struct MainSettings
@@ -81,9 +83,11 @@ struct MainSettings
 };
 
 extern TwEnumVal resolutions[];
-static const std::array<int, num_of_keys> default_control_mapping = { sf::Keyboard::W, sf::Keyboard::S, sf::Keyboard::A, sf::Keyboard::D,
-																	sf::Keyboard::Up, sf::Keyboard::Down, sf::Keyboard::Left, sf::Keyboard::Right,
-																	1, 2, 3, 4, 1, 2};
+static const std::array<int, num_of_keys> default_control_mapping =
+{ sf::Keyboard::W, sf::Keyboard::S, sf::Keyboard::A, sf::Keyboard::D,
+  sf::Keyboard::P, sf::Keyboard::R, sf::Keyboard::F5,
+  sf::Keyboard::Up, sf::Keyboard::Down, sf::Keyboard::Left, sf::Keyboard::Right,
+	1, 2, 3, 4, 1, 2, 3};
 //an incomprehensible wall of default parameters 
 static const MainSettings default_settings = 
 { 
