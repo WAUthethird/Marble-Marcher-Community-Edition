@@ -1394,7 +1394,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 		TwAddButton(debug, "Record", StartRecording, NULL, " label='Record game input'  ");
 		TwAddButton(debug, "Playback", StartReplay, NULL, " label='Play recording'  ");
 		TwAddVarRW(debug, "Slow", TW_TYPE_BOOLCPP, &SETTINGS.stg.speed_regulation, " label='Speed regulation'");
-		TwAddVarRW(debug, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=240 step=1");
+		TwAddVarRW(debug, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=1 max=240 step=1");
 		TwAddVarRO(debug, "Replay frame", TW_TYPE_INT32, &cur_frame, "");
 		TwAddVarRO(debug, "Replay mode", TW_TYPE_BOOLCPP, &replay, "");
 		TwAddVarRO(debug, "Recording mode", TW_TYPE_BOOLCPP, &recording, "");
