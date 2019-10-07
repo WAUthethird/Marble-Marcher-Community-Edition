@@ -293,10 +293,10 @@ void Renderer::Render()
 		shader_pipeline[i].Run(global_size[i]);
 
 		//unbind all of the textures
-		for (int k = 0; k < tex_id; k++)
+		/*for (int k = 0; k < tex_id; k++)
 		{
 			glBindImageTexture(k, 0, 0, 0, 0, 0, 0);
-		}
+		}*/
 	}
 
 	camera.UpdateExposure(EvaluateAvgIllumination());
