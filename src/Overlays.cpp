@@ -215,7 +215,7 @@ void Overlays::DrawLevels(sf::RenderWindow& window) {
 
 void Overlays::DrawSumTime(sf::RenderWindow& window, int t) {
   sf::Text text;
-  MakeTime(t, 10, 680, 32, sf::Color::White, text);
+  MakeTime(t, 10, 10, 32, sf::Color::White, text);
   window.draw(text);
 }
 

@@ -29,12 +29,41 @@ void Renderer::LoadConfigs(std::string config_file)
 	config_folder = fs::path(config_file).parent_path().string();
 }
 
-void Renderer::Initialize(int w, int h, std::string config_f)
+void Renderer::ClearTextures()
 {
+	for (int i = 0; i < main_textures.size(); i++)
+	{
+		glDeleteTextures(1, &main_textures[i]);
+	}
+
+	for (int i = 0; i < shader_textures.size(); i++)
+	{
+		for (int j = 0; j < shader_textures[i].size(); j++)
+		{
+			glDeleteTextures(1, &shader_textures[i][j]);
+		}
+	}
+
 	main_textures.clear();
 	shader_textures.clear();
 	global_size.clear();
+}
+
+void Renderer::ClearShaders()
+{
+	for (int i = 0; i < shader_pipeline.size(); i++)
+	{
+		shader_pipeline[i].Delete();
+	}
 	shader_pipeline.clear();
+}
+
+
+void Renderer::Initialize(int w, int h, std::string config_f)
+{
+	glUseProgram(0);
+	ClearShaders();
+	ClearTextures();
 
 	width = w;
 	height = h;
@@ -115,9 +144,8 @@ void Renderer::Initialize(int w, int h, std::string config_f)
 
 void Renderer::ReInitialize(int w, int h)
 {
-	main_textures.clear();
-	shader_textures.clear();
-	global_size.clear();
+	glUseProgram(0);
+	ClearTextures();
 
 	width = w;
 	height = h;
@@ -144,6 +172,7 @@ void Renderer::ReInitialize(int w, int h)
 	std::vector<GLuint> stage_textures;
 	std::string shader_file;
 	vec2 global, tex_resolution;
+
 	while (std::getline(config, line))
 	{
 		if (line.substr(0, 1) != "#")

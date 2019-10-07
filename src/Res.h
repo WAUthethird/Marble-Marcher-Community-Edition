@@ -43,5 +43,6 @@ static const char shatter_wav[] = "sound/fx/shatter.wav";
 static const char screenshot_wav[] = "sound/fx/screenshot.wav";
 
 static const char level_folder[] = "levels";
+static const char recordings_folder[] = "levels/best_runs";
 static const char music_folder[] = "sound/music";
 static std::string local_folder = "locals";

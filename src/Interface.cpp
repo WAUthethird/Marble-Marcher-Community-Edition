@@ -1007,10 +1007,10 @@ void MenuBox::ScrollBy(float dx)
 {
 	float inside_size = this->objects[0].get()->defaultstate.inside_size;
 	float cur_scroll = -this->objects[0].get()->defaultstate.scroll + dx;
-	float height_1 = this->objects[1].get()->defaultstate.size.y - 2 * this->objects[1].get()->defaultstate.margin;
+	float height_1 = this->objects[0].get()->defaultstate.size.y - 2 * this->objects[1].get()->defaultstate.margin;
 	float height_2 = this->objects[1].get()->objects[0].get()->defaultstate.size.y;
 	//only scroll within the appropriate range
-	if (cur_scroll <= inside_size - height_1 + 100 && cur_scroll >= 0)
+	if (cur_scroll <= inside_size - height_1 && cur_scroll >= 0 && inside_size > height_1)
 	{
 		this->objects[0].get()->ApplyScroll(-cur_scroll);
 		float max_slide_scroll = height_1 - height_2;
@@ -1294,7 +1294,7 @@ void KeyMapper::CreateCallbacks()
 				//search for the axis
 				for (int i = 0; i < sf::Joystick::AxisCount; i++)
 				{
-					if (abs(sf::Joystick::getAxisPosition(0, sf::Joystick::Axis(i))) > 0.5f )
+					if (abs(state.axis_value[i]) > 0.5f  && state.axis_moved[i])
 					{
 						*(parent->key_ptr) = i;
 						parent->SetKeyString();
@@ -1306,7 +1306,7 @@ void KeyMapper::CreateCallbacks()
 				//search for the pressed joystick key
 				for (int i = 0; i < sf::Joystick::ButtonCount; i++)
 				{
-					if (sf::Joystick::isButtonPressed(0, i))
+					if (state.button_pressed[i])
 					{
 						*(parent->key_ptr) = i;
 						parent->SetKeyString();

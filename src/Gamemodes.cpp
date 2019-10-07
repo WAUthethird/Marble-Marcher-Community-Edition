@@ -2,12 +2,8 @@
 
 
 //Global variables
-bool recording = false;
-bool replay = false;
-
 sf::Vector2i mouse_pos, mouse_prev_pos;
 InputState io_state;
-GamepadState gamepad_state;
 
 bool fullscreen_current = false;
 bool all_keys[sf::Keyboard::KeyCount] = { 0 };
@@ -242,6 +238,7 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 
 void OpenEditor(Scene * scene, Overlays * overlays, int level)
 {
+	StopReplay();
 	scene->StopMusic();
 	RemoveAllObjects();
 	//go to level editor
@@ -257,10 +254,21 @@ void OpenEditor(Scene * scene, Overlays * overlays, int level)
 
 void PlayLevel(Scene * scene, sf::RenderWindow * window, int level)
 {
+	StopReplay();
 	RemoveAllObjects();
 	//play level
 	game_mode = PLAYING;
 	scene->StartSingle(level);
+	LockMouse(*window);
+}
+
+void RePlayBest(Scene * scene, sf::RenderWindow * window, int level)
+{
+	StopReplay();
+	RemoveAllObjects();
+	//play level
+	game_mode = PLAYING;
+	scene->ReplayLevel(level);
 	LockMouse(*window);
 }
 
@@ -502,6 +510,7 @@ void OpenScreenSaver(Scene * scene, Overlays * overlays)
 
 void PlayNewGame(Scene * scene, sf::RenderWindow * window, int level)
 {
+	StopReplay();
 	RemoveAllObjects();
 	game_mode = PLAYING;
 	scene->StartNewGame();
@@ -612,7 +621,7 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 		lvltext.AddObject(&lvldescr, Object::Allign::LEFT);
 		lvlbtton.AddObject(&lvltext, Object::Allign::LEFT);
 
-		Box lvlscore(500, 40);
+		Box lvlscore(500, 62);
 		lvlscore.SetBackgroundColor(sf::Color::Transparent);
 		std::string score_text = "--:--:--";
 		if (scores[ids[i]].best_time != 0)
@@ -627,6 +636,17 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 		Text lvlscorev(score_text, LOCAL("default"), 35, sf::Color::White);
 		lvlscorev.SetBackgroundColor(sf::Color::Green);
 		lvlscore.AddObject(&lvlscorev, Object::Allign::CENTER);
+		if (scores[ids[i]].best_time != 0 && fs::exists(std::string(recordings_folder) + "/" + ConvertSpaces2_(names[ids[i]]) + ".bin"))
+		{
+			lvlscore.AddObject(&Box(0, 5), Object::Allign::CENTER);
+			lvlscore.AddObject(&Button(LOCAL["Replay best run"], 260, 20,
+				[scene, overlays, id = ids[i]](sf::RenderWindow * window, InputState & state)
+			{
+				RePlayBest(scene, window, id);
+				overlays->sound_click.play();
+			},
+				sf::Color(200, 40, 0, 255), sf::Color(128, 128, 128, 128)), Object::Allign::CENTER);
+		}
 		lvlbtton.AddObject(&lvlscore, Object::Allign::LEFT);
 
 		Box lvlavg(500, 40);
@@ -744,6 +764,42 @@ void ConfirmEditorExit(Scene* scene, Overlays* overlays)
 		overlays->TWBAR_ENABLED = false;
 		TwDefine("LevelEditor visible=false");
 		TwDefine("FractalEditor visible=false");
+		overlays->sound_click.play();
+	});
+
+	get_glob_obj(id).objects[1].get()->objects[0].get()->objects[2].get()->SetCallbackFunction([scene, overlays, id](sf::RenderWindow * window, InputState & state)
+	{
+		Add2DeleteQueue(id);
+		overlays->sound_click.play();
+	});
+}
+
+
+void ConfirmExit(Scene* scene, Overlays* overlays)
+{
+	sf::Vector2f wsize = default_size;
+	Window confirm(wsize.x*0.4f, wsize.y*0.4f, 500, 215, sf::Color(0, 0, 0, 128), LOCAL["You_sure"], LOCAL("default"));
+	Text button1(LOCAL["Yes"], LOCAL("default"), 30, sf::Color::White);
+	Text button2(LOCAL["No"], LOCAL("default"), 30, sf::Color::White);
+	Text text(LOCAL["You_sure"], LOCAL("default"), 30, sf::Color::White);
+
+	Box but1(0, 0, 240, 40, sf::Color(0, 64, 128, 240));
+	Box but2(0, 0, 240, 40, sf::Color(0, 64, 128, 240));
+
+	but1.hoverstate.color_main = sf::Color(230, 40, 20, 200);
+	but2.hoverstate.color_main = sf::Color(40, 230, 20, 200);
+	but1.AddObject(&button1, Box::CENTER);
+	but2.AddObject(&button2, Box::CENTER);
+
+	confirm.Add(&text, Box::CENTER);
+	confirm.Add(&but1, Box::RIGHT);
+	confirm.Add(&but2, Box::RIGHT);
+
+	int id = AddGlobalObject(confirm);
+
+	get_glob_obj(id).objects[1].get()->objects[0].get()->objects[1].get()->SetCallbackFunction([scene, overlays, id](sf::RenderWindow * window, InputState & state)
+	{
+		window->close();
 		overlays->sound_click.play();
 	});
 
@@ -1079,137 +1135,30 @@ void TW_CALL InitialOK(void *data)
 	OpenMainMenu(scene_ptr, overlays_ptr);
 }
 
-int CUR_SET_BUTTON = -1;
-std::string status_text = "Nothing";
-int cur_frame = 0;
-std::vector<InputRecord> recording_data;
-
-void TW_CALL SetButton(void *data)
-{
-	status_text = "Waiting for a keypress";
-	CUR_SET_BUTTON = *static_cast<int*>(data);
-}
-
-std::fstream input_recording;
-
 void TW_CALL StartRecording(void* data)
 {
-	if (!replay)
-	{
-		recording = !recording;
-	}
-	
 	if (!recording)
 	{
-		input_recording.open("input_record.bin", std::ios::out | std::ios::binary | std::ios::trunc);
-		
-		if (!input_recording.is_open())
-		{
-			DisplayError("Error opening record file");
-		}
-		else
-		{
-			for (auto &input : recording_data)
-			{
-				input_recording.write((char*)&input, sizeof(InputRecord));
-			}
-		}
-		recording_data.clear();
-		
-		input_recording.close();
+		StartRecording();
+	}
+	else
+	{
+		StopRecording2File("input_recording.bin");
 	}
 }
 
 void TW_CALL StartReplay(void* data)
 {
-	if (!recording)
+	if (!replay)
 	{
-		replay = !replay;
+		StartReplayFromFile("input_recording.bin");
 	}
-	
-	if (replay)
+	else
 	{
-		input_recording.open("input_record.bin", std::ios::in | std::ios::binary);
-
-		if (!input_recording.is_open())
-		{
-			replay = false;
-			DisplayError("Error opening record file");
-		}
-		else
-		{
-			input_recording.seekg(0, input_recording.beg);
-			InputRecord rec;
-			while (input_recording)
-			{
-				input_recording.read((char*)&rec, sizeof(InputRecord));
-				recording_data.push_back(rec);
-			}
-			cur_frame = 0;
-		}
-
-		input_recording.close();
+		StopReplay();
 	}
 }
 
-void SaveRecord(float mx, float my, float vx, float vy, float cz, bool mc)
-{
-	if (recording && !replay)
-	{
-		InputRecord rec;
-		rec.move_x = mx;
-		rec.move_y = my;
-		rec.view_x = vx;
-		rec.view_y = vy;
-		rec.cam_z = cz;
-		rec.mouse_clicked = mc;
-
-		recording_data.push_back(rec);
-	}
-}
-
-InputRecord GetRecord()
-{
-	if (replay)
-	{
-		if (cur_frame >= recording_data.size())
-		{
-			cur_frame = 0;
-			replay = false;
-			recording_data.clear();
-			return InputRecord();
-		}
-		return recording_data[cur_frame++];
-	}
-	return InputRecord();
-}
-
-void ApplyButton(int NUM, int MODE)
-{
-	if (CUR_SET_BUTTON >= 0)
-	{
-		if (CUR_SET_BUTTON < JOYSTICK_MOVE_AXIS_X && MODE == 0)//if keyboard
-		{
-			//TODO
-			CUR_SET_BUTTON = -1;
-			status_text = "Nothing";
-		}
-		else if (CUR_SET_BUTTON >= JOYSTICK_MOVE_AXIS_X && CUR_SET_BUTTON <= JOYSTICK_VIEW_AXIS_Y && MODE == 1)//if gamepad axis
-		{
-			SETTINGS.stg.control_mapping[CUR_SET_BUTTON] = NUM;
-			CUR_SET_BUTTON = -1;
-			status_text = "Nothing";
-		}
-		else if (MODE == 2)//if gamepad buttons
-		{
-			SETTINGS.stg.control_mapping[CUR_SET_BUTTON] = NUM;
-			CUR_SET_BUTTON = -1;
-			status_text = "Nothing";
-		}
-	}
-}
-
-KEYS key[num_of_keys] = { JOYSTICK_MOVE_AXIS_X, JOYSTICK_MOVE_AXIS_Y, JOYSTICK_VIEW_AXIS_X, JOYSTICK_VIEW_AXIS_Y };
 
 #if(DEBUG_MODE)
 	TwBar *debug;
@@ -1218,7 +1167,7 @@ KEYS key[num_of_keys] = { JOYSTICK_MOVE_AXIS_X, JOYSTICK_MOVE_AXIS_Y, JOYSTICK_V
 void InitializeATBWindows(float* fps, float *target_fps)
 {
 	overlays_ptr->stats = TwNewBar("Statistics");
-	TwDefine(" GLOBAL help='Marble Marcher: Community Edition. \n Use F5 to take screenshots. \n Use F4 to open or close settings windows.' ");
+	TwDefine(" GLOBAL help='Marble Marcher: Community Edition. \nUse F4 to open or close settings windows. \nCtr+D to enable the debug menu' ");
 
 	std::map<int, std::string> level_list = scene_ptr->levels.getLevelNames();
 	std::vector<int> lvlnum = scene_ptr->levels.getLevelIds();
@@ -1405,9 +1354,15 @@ void InitializeATBWindows(float* fps, float *target_fps)
 		TwAddButton(debug, "Playback", StartReplay, NULL, " label='Play recording'  ");
 		TwAddVarRW(debug, "Slow", TW_TYPE_BOOLCPP, &SETTINGS.stg.speed_regulation, " label='Speed regulation'");
 		TwAddVarRW(debug, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=1 max=240 step=1");
-		TwAddVarRO(debug, "Replay frame", TW_TYPE_INT32, &cur_frame, "");
+		TwAddVarRO(debug, "Replay frame", TW_TYPE_INT32, GetReplayFrame(), "");
 		TwAddVarRO(debug, "Replay mode", TW_TYPE_BOOLCPP, &replay, "");
 		TwAddVarRO(debug, "Recording mode", TW_TYPE_BOOLCPP, &recording, "");
+
+		for (int i = 0; i < sf::Joystick::AxisCount; i++)
+		{
+			TwAddVarRO(debug, ("axis" + num2str(i)).c_str(), TW_TYPE_FLOAT, &io_state.axis_value[i], "group='Gamepad state'");
+		}
+
 		TwDefine("Debug_bar visible=false color='0 0 255' alpha=240 size='420 160' valueswidth=200");
 	#endif
 

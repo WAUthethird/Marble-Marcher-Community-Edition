@@ -56,4 +56,6 @@ public:
 	void SaveErrors(const fs::path & filename, std::string code, std::string errors);
 
 	std::string LoadFileText(fs::path path);
+
+	void Delete();
 };

@@ -3,11 +3,7 @@ bool initialized = false;
 
 ComputeShader::ComputeShader()
 {
-	/*int work_grp_cnt[3];
 
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);*/
 }
 
 ComputeShader::ComputeShader(const std::string file_path)
@@ -32,6 +28,12 @@ std::string ComputeShader::LoadFileText(fs::path path)
 	}
 	return text;
 }
+
+void ComputeShader::Delete()
+{
+	glDeleteProgram(ProgramID);
+}
+
 
 void ComputeShader::LoadShader(const std::string file_path)
 {
@@ -74,6 +76,10 @@ void ComputeShader::LoadShader(const std::string file_path)
 			glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
 			ERROR_MSG(("Compute program error. \n" + std::string(&ProgramErrorMessage[0])).c_str());
 		}
+
+		glDetachShader(ProgramID, ComputeShaderID);
+
+		glDeleteShader(ComputeShaderID);
 }
 
 void ComputeShader::Run(vec2 global)

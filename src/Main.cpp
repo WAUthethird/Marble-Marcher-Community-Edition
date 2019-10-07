@@ -172,14 +172,26 @@ int main(int argc, char *argv[]) {
 			touch_pxy[i] = touch_xy[i];
 		}
 
+		for (int i = 0; i < sf::Keyboard::KeyCount; i++)
+		{
+			io_state.key_press[i] = false;
+		}
+
+		for (int i = 0; i < sf::Joystick::AxisCount; i++)
+		{
+			io_state.axis_moved[i] = false;
+		}
+
+		for (int i = 0; i < sf::Joystick::ButtonCount; i++)
+		{
+			io_state.button_pressed[i] = false;
+		}
+
+
+
 		while (window.pollEvent(event)) 
 		{
-			bool handled = overlays.TwManageEvent(&event);
-
-			for (int i = 0; i < sf::Keyboard::KeyCount; i++)
-			{
-				io_state.key_press[i] = false;
-			}
+			bool handled = overlays.TwManageEvent(&event);	
 
 			if (event.type == sf::Event::Closed) 
 			{
@@ -258,17 +270,34 @@ int main(int argc, char *argv[]) {
 
 				if (event.type == sf::Event::JoystickButtonPressed)
 				{
-					ApplyButton(event.joystickButton.button, 2);
-					gamepad_state.buttons[event.joystickButton.button] = true;
+					io_state.buttons[event.joystickButton.button] = true;
+					io_state.button_pressed[event.joystickButton.button] = true;
+
+					if (event.joystickButton.button == SETTINGS.stg.control_mapping[JOYSTICK_RESTART])
+					{
+						if (game_mode == PLAYING) {
+							scene.ResetLevel();
+						}
+					}
+					else if (event.joystickButton.button == SETTINGS.stg.control_mapping[JOYSTICK_EXIT])
+					{
+						if (game_mode == PLAYING) {
+							PauseGame(window, &overlays, &scene);
+						}
+					} 
+					else if (event.joystickButton.button == SETTINGS.stg.control_mapping[JOYSTICK_SCREENSHOT])
+					{
+						TakeScreenshot();
+					}
 				}
 				else if (event.type == sf::Event::JoystickButtonReleased)
 				{
-					gamepad_state.buttons[event.joystickButton.button] = false;
+					io_state.buttons[event.joystickButton.button] = false;
 				}
 				else if (event.type == sf::Event::JoystickMoved)
 				{
-					ApplyButton(event.joystickButton.button, 1);
-					gamepad_state.axis_value[event.joystickMove.axis] = event.joystickMove.position;
+					io_state.axis_value[event.joystickMove.axis] = event.joystickMove.position;
+					io_state.axis_moved[event.joystickMove.axis] = true;
 				}
 				else if (event.type == sf::Event::KeyPressed)
 				{
@@ -301,8 +330,7 @@ int main(int argc, char *argv[]) {
 					{
 						if (game_mode == MAIN_MENU)
 						{
-							window.close();
-							break;
+							ConfirmExit(&scene, &overlays);
 						}
 						else if (game_mode == CONTROLS || game_mode == LEVELS) 
 						{
@@ -560,8 +588,8 @@ int main(int argc, char *argv[]) {
 						  (all_keys[SETTINGS.stg.control_mapping[RIGHT]] ? 1.0f : 0.0f);
 			}
 			//Collect gamepad input
-			force_y -= gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_Y]];
-			force_x += gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_X]];
+			force_y -= io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_Y]];
+			force_x += io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_X]];
 			 
 			InputRecord record = GetRecord();
 
@@ -603,8 +631,8 @@ int main(int argc, char *argv[]) {
 
 			float cam_lr = float(-mouse_delta.x) * ms;
 			float cam_ud = float(-mouse_delta.y) * ms;
-			cam_ud -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y]];
-			cam_lr -= 0.05* ms *gamepad_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X]];
+			cam_ud -= 0.05* ms *io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y]];
+			cam_lr -= 0.05* ms *io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X]];
 
 			cam_ud += 5*ms * ( (all_keys[SETTINGS.stg.control_mapping[VIEWUP]] ? -1.0f : 0.0f) +
 							(all_keys[SETTINGS.stg.control_mapping[VIEWDOWN]] ? 1.0f : 0.0f) );

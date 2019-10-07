@@ -72,6 +72,10 @@ struct InputState
 	sf::Vector2f mouse_speed = sf::Vector2f(0, 0);
 	sf::Vector2f window_size = sf::Vector2f(0, 0);
 	float time = 0, dt = 0;
+	bool axis_moved[sf::Joystick::AxisCount] = { false };
+	float axis_value[sf::Joystick::AxisCount] = { 0.f };
+	bool  buttons[sf::Joystick::ButtonCount] = { false };
+	bool  button_pressed[sf::Joystick::ButtonCount] = { false };
 
 	InputState();
 	InputState(bool keys[sf::Keyboard::KeyCount], bool mouse[3], sf::Vector2f mouse_pos, sf::Vector2f mouse_speed);

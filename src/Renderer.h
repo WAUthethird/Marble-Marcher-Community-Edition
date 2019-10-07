@@ -27,6 +27,10 @@ public:
 
 	void LoadConfigs(std::string config_file);
 
+	void ClearTextures();
+
+	void ClearShaders();
+
 	void Initialize(int w, int h, std::string config);
 	void ReInitialize(int w, int h);
 
