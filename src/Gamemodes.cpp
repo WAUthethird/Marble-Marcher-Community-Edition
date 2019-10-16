@@ -1351,24 +1351,25 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->flaunch, "Language", Languages, &SETTINGS.stg.language, "");
 	TwAddButton(overlays_ptr->flaunch, "OK", InitialOK, NULL, " label='OK'  ");
 
-	#if(DEBUG_MODE)
-		debug = TwNewBar("Debug_bar");
-		TwAddButton(debug, "Record", StartRecording, NULL, " label='Record game input'  ");
-		TwAddButton(debug, "Playback", StartReplay, NULL, " label='Play recording'  ");
-		TwAddVarRW(debug, "Slow", TW_TYPE_BOOLCPP, &SETTINGS.stg.speed_regulation, " label='Speed regulation'");
-		TwAddVarRW(debug, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=1 max=240 step=1");
-		TwAddVarRO(debug, "Replay frame", TW_TYPE_INT32, GetReplayFrame(), "");
-		TwAddVarRO(debug, "Replay mode", TW_TYPE_BOOLCPP, &replay, "");
-		TwAddVarRO(debug, "Recording mode", TW_TYPE_BOOLCPP, &recording, "");
+	debug = TwNewBar("Debug_bar");
+	TwAddButton(debug, "Record", StartRecording, NULL, " label='Record game input'  ");
+	TwAddButton(debug, "Playback", StartReplay, NULL, " label='Play recording'  ");
+	TwAddVarRW(debug, "Slow", TW_TYPE_BOOLCPP, &SETTINGS.stg.speed_regulation, " label='Speed regulation'");
+	TwAddVarRW(debug, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=1 max=240 step=1");
+	TwAddVarRO(debug, "Replay frame", TW_TYPE_INT32, GetReplayFrame(), "");
+	TwAddVarRO(debug, "Replay mode", TW_TYPE_BOOLCPP, &replay, "");
+	TwAddVarRO(debug, "Recording mode", TW_TYPE_BOOLCPP, &recording, "");
 
-		for (int i = 0; i < sf::Joystick::AxisCount; i++)
-		{
-			TwAddVarRO(debug, ("axis" + num2str(i)).c_str(), TW_TYPE_FLOAT, &io_state.axis_value[i], "group='Gamepad state'");
-		}
+	for (int i = 0; i < sf::Joystick::AxisCount; i++)
+	{
+		TwAddVarRO(debug, ("axis" + num2str(i)).c_str(), TW_TYPE_FLOAT, &io_state.axis_value[i], "group='Gamepad state'");
+	}
 
-		TwDefine("Debug_bar visible=false color='0 0 255' alpha=240 size='420 160' valueswidth=200");
-	#endif
+	TwDefine("Debug_bar visible=false color='0 0 255' alpha=240 size='420 160' valueswidth=200");
 
+	overlays_ptr->cheats = TwNewBar("Cheats");
+
+	TwDefine("Cheats visible=false color='0 0 0' alpha=255 size='500 200' valueswidth=300");
 	TwDefine(" GLOBAL fontsize=3 ");
 	TwDefine("LevelEditor visible=false size='420 350' color='0 80 230' alpha=210 label='Level editor' valueswidth=200");
 	TwDefine("FractalEditor visible=false size='420 350' color='0 120 200' alpha=210 label='Fractal editor' valueswidth=200");

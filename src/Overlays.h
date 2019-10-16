@@ -50,7 +50,7 @@ public:
     NUM_TEXTS
   };
   static const int LEVELS_PER_PAGE = 15;
-  TwBar *stats, *settings, *fractal_editor, *level_editor, *flaunch;
+  TwBar *stats, *settings, *fractal_editor, *level_editor, *flaunch, *cheats;
   bool TWBAR_ENABLED;
 
   sf::Sound sound_hover;

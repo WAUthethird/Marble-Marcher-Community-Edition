@@ -296,7 +296,8 @@ int main(int argc, char *argv[]) {
 				}
 				else if (event.type == sf::Event::JoystickMoved)
 				{
-					io_state.axis_value[event.joystickMove.axis] = event.joystickMove.position;
+					io_state.axis_value[event.joystickMove.axis] = 
+						(abs(event.joystickMove.position)<SETTINGS.stg.gamepad_deadzone)?0.f:event.joystickMove.position;
 					io_state.axis_moved[event.joystickMove.axis] = true;
 				}
 				else if (event.type == sf::Event::KeyPressed)
