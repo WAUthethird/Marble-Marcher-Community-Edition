@@ -40,7 +40,10 @@ void Renderer::ClearTextures()
 	{
 		for (int j = 0; j < shader_textures[i].size(); j++)
 		{
-			glDeleteTextures(1, &shader_textures[i][j]);
+			if (!(i == shader_textures.size() - 1 && j == 0))
+			{
+				glDeleteTextures(1, &shader_textures[i][j]);
+			}
 		}
 	}
 
@@ -61,6 +64,11 @@ void Renderer::ClearShaders()
 
 void Renderer::Initialize(int w, int h, std::string config_f)
 {
+	if (config_f == "")
+	{
+		config_f = config_file;
+	}
+
 	glUseProgram(0);
 	ClearShaders();
 	ClearTextures();
@@ -313,10 +321,6 @@ float Renderer::EvaluateAvgIllumination()
 		glBindImageTexture(2, illumination_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 		weight_shader.setCamera(camera.GetGLdata());
 		weight_shader.Run(vec2(ceil(width / 8.f), ceil(height / 8.f)));
-		for (int k = 0; k < 3; k++)
-		{
-			glBindImageTexture(k, 0, 0, 0, 0, 0, 0);
-		}
 	}
 
 	if (main_textures.size() > 0)

@@ -30,6 +30,8 @@ extern sf::Vector2i mouse_pos, mouse_prev_pos;
 extern bool all_keys[sf::Keyboard::KeyCount];
 extern bool mouse_clicked;
 extern bool show_cheats;
+extern bool taken_screenshot;
+extern sf::Clock screenshot_clock;
 extern InputState io_state;
 
 //Constants
@@ -72,6 +74,7 @@ int DirExists(const char *path);
 void FirstStart(Overlays* overlays);
 
 void SetPointers(sf::RenderWindow * w, Scene * scene, Overlays * overlays, Renderer * rd, sf::Texture * main, sf::Texture * screensht);
+sf::Vector2i getResolution(int i);
 void TakeScreenshot();
 
 void TW_CALL ApplySettings(void * data);

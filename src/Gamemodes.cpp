@@ -9,7 +9,8 @@ bool fullscreen_current = false;
 bool all_keys[sf::Keyboard::KeyCount] = { 0 };
 bool mouse_clicked = false;
 bool show_cheats = false;
-
+bool taken_screenshot = false;
+sf::Clock screenshot_clock;
 //Constants
 
 float target_fps = 60.0f;
@@ -940,15 +941,16 @@ sf::Vector2i getResolution(int i)
 
 void TakeScreenshot()
 {
+	taken_screenshot = true;
 	sf::Vector2i rendering_resolution = getResolution(SETTINGS.stg.rendering_resolution);
 	sf::Vector2i screenshot_resolution = getResolution(SETTINGS.stg.screenshot_resolution);
-	
+
 	scene_ptr->SetResolution(screenshot_resolution.x, screenshot_resolution.y);
 	renderer_ptr->ReInitialize(screenshot_resolution.x, screenshot_resolution.y);
 
 	scene_ptr->WriteRenderer(*renderer_ptr);
 	renderer_ptr->SetOutputTexture(*screenshot_txt);
-	
+
 	renderer_ptr->camera.SetMotionBlur(0);
 	renderer_ptr->Render();
 
@@ -958,6 +960,7 @@ void TakeScreenshot()
 	renderer_ptr->ReInitialize(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->SetOutputTexture(*main_txt);
 	overlays_ptr->sound_screenshot.play();
+	screenshot_clock.restart();
 }
 
 void InitializeRendering(std::string config)

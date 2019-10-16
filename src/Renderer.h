@@ -31,7 +31,7 @@ public:
 
 	void ClearShaders();
 
-	void Initialize(int w, int h, std::string config);
+	void Initialize(int w, int h, std::string config = "");
 	void ReInitialize(int w, int h);
 
 	void SetOutputTexture(sf::Texture& tex);

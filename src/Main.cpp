@@ -634,8 +634,8 @@ int main(int argc, char *argv[]) {
 			cam_ud -= 0.05* ms *io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y]];
 			cam_lr -= 0.05* ms *io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X]];
 
-			cam_ud += 5*ms * ( (all_keys[SETTINGS.stg.control_mapping[VIEWUP]] ? -1.0f : 0.0f) +
-							(all_keys[SETTINGS.stg.control_mapping[VIEWDOWN]] ? 1.0f : 0.0f) );
+			cam_ud +=  5*ms * ( (all_keys[SETTINGS.stg.control_mapping[VIEWUP]] ? -1.0f : 0.0f) +
+						    	(all_keys[SETTINGS.stg.control_mapping[VIEWDOWN]] ? 1.0f : 0.0f) );
 			cam_lr +=  5*ms * ((all_keys[SETTINGS.stg.control_mapping[VIEWRIGHT]] ? -1.0f : 0.0f) +
 								(all_keys[SETTINGS.stg.control_mapping[VIEWLEFT]] ? 1.0f : 0.0f));
 			
@@ -665,25 +665,39 @@ int main(int argc, char *argv[]) {
 			//Update the shader values
 			if (game_mode != FIRST_START)
 			{
-				scene.WriteRenderer(rend);
-				rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
-				rend.SetOutputTexture(main_txt);
+				if (!taken_screenshot && !SETTINGS.stg.screenshot_preview)
+				{
+					scene.WriteRenderer(rend);
+					rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
+					rend.SetOutputTexture(main_txt);
+					//Draw to the render texture
+					rend.Render();
+
+					//Draw render texture to main window
+					sf::Sprite sprite(main_txt);
+					sprite.setScale(float(window.getSize().x) / float(rend.variables["width"]),
+						float(window.getSize().y) / float(rend.variables["height"]));
+					window.draw(sprite);
+				}
+				else
+				{
+					//Draw screenshot preview
+					sf::Sprite sprite(screenshot_txt);
+					sf::Vector2u ssize = screenshot_txt.getSize();
+					float scale = min(float(window.getSize().x) / float(ssize.x),
+						float(window.getSize().y) / float(ssize.y));
+					vec2 pos = vec2(window.getSize().x - ssize.x*scale, window.getSize().y - ssize.y*scale)*0.5f;
+					sprite.setScale(scale, scale);
+					sprite.setPosition(pos.x, pos.y);
+					window.draw(sprite);
+
+					const float s = screenshot_clock.getElapsedTime().asSeconds();
+					if (s > SETTINGS.stg.preview_time)
+					{
+						taken_screenshot = false;
+					}
+				}
 			}
-
-
-			//Draw the fractal	
-			if (game_mode != FIRST_START)
-			{
-				//Draw to the render texture
-				rend.Render();
-
-				//Draw render texture to main window
-				sf::Sprite sprite(main_txt);
-				sprite.setScale(float(window.getSize().x) / float(rend.variables["width"]),
-					float(window.getSize().y) / float(rend.variables["height"]));
-				window.draw(sprite);
-			}
-		
 		}
 
 		//Draw text overlays to the window
