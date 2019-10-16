@@ -665,7 +665,7 @@ int main(int argc, char *argv[]) {
 			//Update the shader values
 			if (game_mode != FIRST_START)
 			{
-				if (!taken_screenshot && !SETTINGS.stg.screenshot_preview)
+				if (!(taken_screenshot && SETTINGS.stg.screenshot_preview))
 				{
 					scene.WriteRenderer(rend);
 					rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
