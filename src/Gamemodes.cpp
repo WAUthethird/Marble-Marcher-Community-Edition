@@ -1242,6 +1242,8 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Cross-eye 3D", TW_TYPE_BOOLCPP, &SETTINGS.stg.cross_eye, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "3D eye separation", TW_TYPE_FLOAT, &SETTINGS.stg.eye_separation, "min=-2 step=0.05 max=2 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Screenshot preview", TW_TYPE_BOOLCPP, &SETTINGS.stg.screenshot_preview, "group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Screenshot preview time", TW_TYPE_FLOAT, &SETTINGS.stg.preview_time, "min=0 step=0.01 max=5 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Shader configuration", Configurations, &SETTINGS.stg.shader_config, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Multi Resolution Ray Marching scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings' help='Don't touch this'");
 	TwAddVarRW(overlays_ptr->settings, "Shadow downscaling", TW_TYPE_INT32, &SETTINGS.stg.shadow_resolution, "min=1 max=8 group='Rendering settings'");
@@ -1281,6 +1283,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 
 	TwAddVarRW(overlays_ptr->settings, "Mouse sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Control settings'");
 	TwAddVarRW(overlays_ptr->settings, "Wheel sensitivity", TW_TYPE_FLOAT, &SETTINGS.stg.wheel_sensitivity, "min=0.01 max=0.5 step=0.01 group='Control settings'");
+	TwAddVarRW(overlays_ptr->settings, "Gamepad deadzone", TW_TYPE_FLOAT, &SETTINGS.stg.gamepad_deadzone, "min=0.0 max=0.9 step=0.01 group='Control settings'");
 	TwAddVarRW(overlays_ptr->settings, "Windows touch controls(experimental)", TW_TYPE_BOOLCPP, &SETTINGS.stg.touch_mode, "group='Control settings' help='Use a touchscreen'");
 	TwAddButton(overlays_ptr->settings, "Apply4", ApplySettings, NULL, "group='Control settings' label='Apply settings'  ");
 	int barPos1[2] = { 16, 250 };
