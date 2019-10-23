@@ -146,7 +146,7 @@ void SaveRecord(float mx, float my, float vx, float vy, float cz, bool mc)
 
 void AddResetPadding()
 {
-	for (int i = 0; i < frame_orbit; i++)
+	for (int i = 0; i < frame_deorbit; i++)
 	{
 		SaveRecord(0, 0, 0, 0, 0, 0);
 	}
@@ -367,6 +367,7 @@ void Scene::StartNextLevel() {
 		SetLevel(level_copy.link_level);
 		HideObjects();
 		SetMode(ORBIT);
+		StartRecording();
 	}
 	else
 	{
@@ -381,6 +382,7 @@ void Scene::StartNextLevel() {
     SetLevel(cur_level + 1);
     HideObjects();
     SetMode(ORBIT);
+	StartRecording();
   }
 }
 
