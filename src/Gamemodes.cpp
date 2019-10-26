@@ -329,6 +329,8 @@ void OpenControlMenu(Scene * scene, Overlays * overlays)
 	controls.AddObject(&KeyMapper(LOCAL["PAUSE"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[PAUSE], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
 	controls.AddObject(&KeyMapper(LOCAL["RESTART"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[RESTART], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
 	controls.AddObject(&KeyMapper(LOCAL["SCREENSHOT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[SCREENSHOT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(&KeyMapper(LOCAL["ZOOM_IN"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[ZOOM_IN], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(&KeyMapper(LOCAL["ZOOM_OUT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[ZOOM_OUT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
 	controls.AddObject(&Box(800, 0), Object::Allign::CENTER);
 	controls.AddObject(&Text(LOCAL["Gamepad Controls"], LOCAL("default"), 50), Object::Allign::LEFT);
 	controls.AddObject(&Box(800, 0), Object::Allign::CENTER);
@@ -1138,6 +1140,11 @@ void TW_CALL InitialOK(void *data)
 	OpenMainMenu(scene_ptr, overlays_ptr);
 }
 
+void TW_CALL ResetEditorCamera(void* data)
+{
+	scene_ptr->ResetCamera();
+}
+
 void TW_CALL StartRecording(void* data)
 {
 	if (!recording)
@@ -1309,6 +1316,9 @@ void InitializeATBWindows(float* fps, float *target_fps)
 
 	TwAddButton(overlays_ptr->level_editor, "Set Flag", FlagSet, NULL,
 		" label='Set Flag Position'  help='Click on the fractal to place' ");
+
+	TwAddButton(overlays_ptr->level_editor, "Reset camera", ResetEditorCamera, NULL,
+		" label='Reset camera' ");
 
 	TwAddVarRW(overlays_ptr->level_editor, "Flag Position", TW_TYPE_DIR3F, copy->end_pos.data(), "");
 	TwAddVarRW(overlays_ptr->level_editor, "Marble Position", TW_TYPE_DIR3F, copy->start_pos.data(), "");

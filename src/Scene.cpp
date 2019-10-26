@@ -432,6 +432,12 @@ void Scene::StartLevelEditor(int level)
 	free_camera = true;
 }
 
+void Scene::ResetCamera()
+{
+	SetMode(DEORBIT);
+	timer = frame_deorbit;
+}
+
 void Scene::StartDefault()
 {
 	cur_level = -1;

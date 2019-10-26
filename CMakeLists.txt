@@ -23,11 +23,11 @@ if(BIT EQUAL 32)
 	set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1/include)
 	set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar.lib)
 	set(GLEW_LIB ${GLEW_INCLUDE_DIR}/lib/Release/Win32/glew32.lib)
-elseif()
+else()
 #64 bit compilation
 	set(SFML_DIR C:/Libraries/SFML-2.5.1_64/lib/cmake/SFML)
 	set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1_64/include)
-	set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar.lib)
+	set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar64.lib)
 	set(GLEW_LIB ${GLEW_INCLUDE_DIR}/lib/Release/x64/glew32.lib)
 endif()
 
@@ -61,6 +61,15 @@ endif()
 add_custom_command(TARGET MarbleMarcher PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                        ${CMAKE_SOURCE_DIR}/game_folder $<TARGET_FILE_DIR:MarbleMarcher>)
+if(BIT EQUAL 32)
+	add_custom_command(TARGET MarbleMarcher PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_SOURCE_DIR}/bin32 $<TARGET_FILE_DIR:MarbleMarcher>)
+else()
+	add_custom_command(TARGET MarbleMarcher PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_SOURCE_DIR}/bin64 $<TARGET_FILE_DIR:MarbleMarcher>)
+endif()					   
 
 target_compile_definitions(MarbleMarcher PRIVATE SFML_STATIC)
 target_link_libraries(MarbleMarcher

@@ -133,6 +133,7 @@ public:
   void ReplayLevel(int level);
   void StartSingle(int level);
   void StartLevelEditor(int level);
+  void ResetCamera();
   void StartDefault();
   void ResetLevel();
   void ResetCheats();

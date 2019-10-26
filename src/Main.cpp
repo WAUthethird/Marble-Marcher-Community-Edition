@@ -374,6 +374,18 @@ int main(int argc, char *argv[]) {
 							PauseGame(window, &overlays, &scene);
 						}
 					}
+					else if (keycode == SETTINGS.stg.control_mapping[ZOOM_IN])
+					{
+						if (game_mode == PLAYING) {
+							mouse_wheel += 1.f;
+						}
+					}
+					else if (keycode == SETTINGS.stg.control_mapping[ZOOM_OUT])
+					{
+						if (game_mode == PLAYING) {
+							mouse_wheel -= 1.f;
+						}
+					}
 					else if (keycode == sf::Keyboard::F1) 
 					{
 						if (game_mode == PLAYING) {
