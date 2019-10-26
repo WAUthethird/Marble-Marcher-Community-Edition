@@ -436,6 +436,7 @@ void Scene::ResetCamera()
 {
 	SetMode(DEORBIT);
 	timer = frame_deorbit;
+	free_camera_speed = 1.f;
 }
 
 void Scene::StartDefault()
