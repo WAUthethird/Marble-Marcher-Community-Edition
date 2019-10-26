@@ -1,0 +1,1 @@
+Rename glew32_64 to glew32 if you complile to 64 bits
