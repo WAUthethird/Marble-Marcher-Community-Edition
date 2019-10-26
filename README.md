@@ -9,6 +9,10 @@ This is the community edition of Marble Marcher, a procedurally rendered fractal
 Because version 1.1.0 was the last feature update of Marble Marcher, we (the Marble Marcher Community) opted to create a community edition to keep the community around the game alive and continuously improve the experience.
 Currently this is maintained mainly by members of the [Marble Marcher Community on Discord](https://discord.gg/r3XrJxH), in addition to the members of the [subreddit](https://www.reddit.com/r/marblemarcher) and anyone else who has contributed.
 
+Marble Marcher: Community Edition comes with a wealth of new features and improvements, including performance improvements and graphical enhancements.
+
+If you have suggestions, issues, or would like to contribute, feel free to submit issues and pull requests. After all, this is a community project!
+
 All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade](https://www.youtube.com/channel/UCrv269YwJzuZL3dH5PCgxUw)) for the [original game](https://github.com/HackerPoet/MarbleMarcher).
 
 ## Original Summary
