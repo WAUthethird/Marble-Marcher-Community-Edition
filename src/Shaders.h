@@ -5,7 +5,7 @@
 #include <GL/glew.h>
 #endif
 
-#include <glm\glm.hpp>
+#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
@@ -23,6 +23,7 @@ namespace fs = std::filesystem;
 #include <Windows.h>
 #define ERROR_MSG(x) MessageBox(nullptr, TEXT(x), TEXT("ERROR"), MB_OK);
 #else
+#include<iostream>
 #define ERROR_MSG(x) std::cerr << x << std::endl;
 #endif
 

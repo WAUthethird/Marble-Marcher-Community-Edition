@@ -156,7 +156,7 @@ void Add2DeleteQueue(int id)
 std::string key_name(sf::Keyboard::Key & key)
 {
 	//yeah, I dont like this code either
-#define ITEM(x) case sf::Keyboard:: ## x : return #x;
+#define ITEM(x) case sf::Keyboard::x : return #x;
 	switch (key)
 	{
 		ITEM(A); ITEM(B); ITEM(C);
@@ -171,10 +171,10 @@ std::string key_name(sf::Keyboard::Key & key)
 		ITEM(Num9); ITEM(Escape); ITEM(LControl); ITEM(LShift);
 		ITEM(LAlt); ITEM(LSystem); ITEM(RControl); ITEM(RShift);
 		ITEM(RAlt); ITEM(RSystem); ITEM(Menu); ITEM(LBracket);
-		ITEM(RBracket); ITEM(Semicolon); ITEM(Comma); ITEM(Period);
-		ITEM(Quote); ITEM(Slash); ITEM(Backslash); ITEM(Tilde);
-		ITEM(Equal); ITEM(Hyphen); ITEM(Space); ITEM(Enter);
-		ITEM(Backspace); ITEM(Tab); ITEM(PageUp); ITEM(PageDown);
+		ITEM(RBracket); /*ITEM(Semicolon);*/ ITEM(Comma); ITEM(Period);
+		ITEM(Quote); ITEM(Slash); /*ITEM(Backslash);*/ ITEM(Tilde);
+		ITEM(Equal);/* ITEM(Hyphen);*/ ITEM(Space); /*ITEM(Enter);*/
+		/*ITEM(Backspace); */ITEM(Tab); ITEM(PageUp); ITEM(PageDown);
 		ITEM(End); ITEM(Home); ITEM(Insert); ITEM(Delete);
 		ITEM(Add); ITEM(Subtract); ITEM(Multiply); ITEM(Divide);
 		ITEM(Left); ITEM(Right); ITEM(Up); ITEM(Down);
@@ -1104,7 +1104,7 @@ void MenuBox::CreateCallbacks()
 			A = 1;
 		}
 
-		if (state.keys[sf::Keyboard::Enter])
+		if (state.keys[sf::Keyboard::Return])
 		{
 			//run the callback function of the chosen object
 			A = parent->objects[0].get()->objects[parent->cursor_id].get()->RunCallback(window, state);

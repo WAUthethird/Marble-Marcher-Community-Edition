@@ -271,7 +271,7 @@ public:
 	void Add(Object * something, Allign a = LEFT);
 
 	template<class T>
-	Window(float x, float y, float dx, float dy, sf::Color color_main, T title, sf::Font & font);
+	Window(float x, float y, float dx, float dy, sf::Color color_main = default_main_color, T title = LOCAL["Window"], sf::Font & font = LOCAL("default"));
 
 	Window(Window& A);
 	Window(Window&& A);
@@ -283,43 +283,6 @@ public:
 
 	virtual Object* GetCopy();
 };
-
-
-template<class T>
-inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main = default_main_color, T title = LOCAL["Window"], sf::Font & font = LOCAL("default"))
-{
-	defaultstate.position.x = x;
-	defaultstate.position.y = y;
-	defaultstate.size.x = dx;
-	defaultstate.size.y = dy;
-
-	this->SetAutoSize(true);
-	defaultstate.color_main = ToColorF(color_main);
-	clone_states();
-	SetMargin(0);
-
-	Box Bar(0, 0, dx, 30, sf::Color(0, 100, 200, 128)),
-		CloseBx(0, 0, 30, 30, sf::Color(255, 255, 255, 255));
-	Text Title(title, font, 25, sf::Color::White);
-	Bar.SetMargin(0);
-	CloseBx.hoverstate.color_main = sf::Color(255, 0, 0, 255);
-
-	sf::Image close; close.loadFromFile(close_png);
-	sf::Texture closetxt; closetxt.loadFromImage(close);
-	closetxt.setSmooth(true);
-	CloseBx.SetBackground(closetxt);
-
-	Bar.AddObject(&Title, Box::LEFT);
-	Bar.AddObject(&CloseBx, Box::RIGHT);
-
-	MenuBox Inside(dx, dy - 30, true);
-
-
-	this->AddObject(&Bar, Box::CENTER);
-	this->AddObject(&Inside, Box::LEFT);
-
-	CreateCallbacks();
-}
 
 
 class Text : public Object
@@ -344,24 +307,6 @@ public:
 
 	virtual Object* GetCopy();
 };
-
-
-template<class T>
-inline Text::Text(T str, sf::Font & f, float size, sf::Color col)
-{
-	text.reset(new sf::Text(str, f, size));
-	defaultstate.font_size = size;
-	defaultstate.color_main = col;
-	SetBorderColor(sf::Color::Black);
-	SetBorderWidth(2);
-	clone_states();
-}
-
-template<class T>
-inline void Text::SetString(T str)
-{
-	text.get()->setString(str);
-}
 
 
 //a button
@@ -399,17 +344,6 @@ public:
 	~Image();
 };
 
-template<class T>
-inline Button::Button(T text, float w, float h, std::function<void(sf::RenderWindow*window, InputState&state)> fun, sf::Color color_hover, sf::Color color_main)
-{
-	SetSize(w, h);
-	SetBackgroundColor(color_main);
-	Text button_text(text, LOCAL("default"), h*0.8f, sf::Color::White);
-	button_text.SetBorderColor(sf::Color::Black);
-	hoverstate.color_main = color_hover;
-	SetCallbackFunction(fun, true);
-	this->AddObject(&button_text,Object::Allign::CENTER);
-}
 
 std::string key_name(sf::Keyboard::Key& key);
 
@@ -448,12 +382,79 @@ inline KeyMapper::KeyMapper(T label, T act_label, int * key, float w, float h, M
 	SetBackgroundColor(color_main);
 	Box LeftBox(0, 0, float(w * 0.5f), h-defaultstate.margin*2.f, sf::Color(0, 100, 200, 0)),
 		RightBox(0, 0, float(w * 0.33f), h - defaultstate.margin * 2.f, sf::Color(0, 100, 200, 128));
-	LeftBox.AddObject(&Text(label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::LEFT);
-	RightBox.AddObject(&Text(act_label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::CENTER);
+	LeftBox.AddObject(new Text(label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::LEFT);
+	RightBox.AddObject(new Text(act_label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::CENTER);
 	RightBox.activestate.color_main = color_active;
 	hoverstate.color_main = color_hover;
 	this->AddObject(&LeftBox,Allign::LEFT);
 	this->AddObject(&RightBox, Allign::RIGHT);
 	key_ptr = key;
 	SetKeyString();
+}
+
+template<class T>
+inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main, T title, sf::Font & font)
+{
+	defaultstate.position.x = x;
+	defaultstate.position.y = y;
+	defaultstate.size.x = dx;
+	defaultstate.size.y = dy;
+
+	this->SetAutoSize(true);
+	defaultstate.color_main = ToColorF(color_main);
+	clone_states();
+	SetMargin(0);
+
+	Box Bar(0, 0, dx, 30, sf::Color(0, 100, 200, 128)),
+		CloseBx(0, 0, 30, 30, sf::Color(255, 255, 255, 255));
+	Text Title(title, font, 25, sf::Color::White);
+	Bar.SetMargin(0);
+	CloseBx.hoverstate.color_main = sf::Color(255, 0, 0, 255);
+
+	sf::Image close; close.loadFromFile(close_png);
+	sf::Texture closetxt; closetxt.loadFromImage(close);
+	closetxt.setSmooth(true);
+	CloseBx.SetBackground(closetxt);
+
+	Bar.AddObject(&Title, Box::LEFT);
+	Bar.AddObject(&CloseBx, Box::RIGHT);
+
+	MenuBox Inside(dx, dy - 30, true);
+
+
+	this->AddObject(&Bar, Box::CENTER);
+	this->AddObject(&Inside, Box::LEFT);
+
+	CreateCallbacks();
+}
+
+template<class T>
+inline Button::Button(T text, float w, float h, std::function<void(sf::RenderWindow*window, InputState&state)> fun, sf::Color color_hover, sf::Color color_main)
+{
+	SetSize(w, h);
+	SetBackgroundColor(color_main);
+	Text button_text(text, LOCAL("default"), h*0.8f, sf::Color::White);
+	button_text.SetBorderColor(sf::Color::Black);
+	hoverstate.color_main = color_hover;
+	SetCallbackFunction(fun, true);
+	this->AddObject(&button_text,Object::Allign::CENTER);
+}
+
+
+
+template<class T>
+inline Text::Text(T str, sf::Font & f, float size, sf::Color col)
+{
+	text.reset(new sf::Text(str, f, size));
+	defaultstate.font_size = size;
+	defaultstate.color_main = col;
+	SetBorderColor(sf::Color::Black);
+	SetBorderWidth(2);
+	clone_states();
+}
+
+template<class T>
+inline void Text::SetString(T str)
+{
+	text.get()->setString(str);
 }

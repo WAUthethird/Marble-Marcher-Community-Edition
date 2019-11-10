@@ -225,11 +225,11 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 	{
 		Box credits_entry_1(wsize.x*0.95f - 60, 120);
 		credits_entry_1.SetBackgroundColor(sf::Color(128, 128, 128, 128));
-		credits_entry_1.AddObject(&Image(str[0], 116, 116), Object::Allign::LEFT);
+		credits_entry_1.AddObject(new Image(str[0], 116, 116), Object::Allign::LEFT);
 		Box credits_text_1(wsize.x*0.95f - 200, 116, sf::Color::Transparent);
-		credits_text_1.AddObject(&Text(LOCAL[str[1]], LOCAL("default"), 50), Object::Allign::LEFT);
-		credits_text_1.AddObject(&Box(0, 50), Object::Allign::CENTER);
-		credits_text_1.AddObject(&Text(LOCAL[str[2]], LOCAL("default"), 30), Object::Allign::LEFT);
+		credits_text_1.AddObject(new Text(LOCAL[str[1]], LOCAL("default"), 50), Object::Allign::LEFT);
+		credits_text_1.AddObject(new Box(0, 50), Object::Allign::CENTER);
+		credits_text_1.AddObject(new Text(LOCAL[str[2]], LOCAL("default"), 30), Object::Allign::LEFT);
 		credits_entry_1.AddObject(&credits_text_1, Object::Allign::LEFT);
 		creditslist.AddObject(&credits_entry_1, Object::Allign::LEFT);
 	}
@@ -306,7 +306,7 @@ void OpenControlMenu(Scene * scene, Overlays * overlays)
 	ttl.SetBorderWidth(4);
 	controls.AddObject(&ttl, Object::Allign::CENTER);
 
-	controls.AddObject(&Button(LOCAL["Back2Main"], 600, 50,
+	controls.AddObject(new Button(LOCAL["Back2Main"], 600, 50,
 		[scene, overlays](sf::RenderWindow * window, InputState & state)
 		{
 			OpenMainMenu(scene, overlays);
@@ -314,33 +314,33 @@ void OpenControlMenu(Scene * scene, Overlays * overlays)
 		},
 		sf::Color(200, 40, 0, 255), sf::Color(128, 128, 128, 128)), Object::Allign::LEFT);
 
-	controls.AddObject(&Box(800, 0), Object::Allign::CENTER);
+	controls.AddObject(new Box(800, 0), Object::Allign::CENTER);
 
-	controls.AddObject(&Text(LOCAL["Keyboard Controls"], LOCAL("default"), 50), Object::Allign::LEFT);
-	controls.AddObject(&Box(800, 0), Object::Allign::CENTER);
-	controls.AddObject(&KeyMapper(LOCAL["UP"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[UP], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["DOWN"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[DOWN], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["LEFT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[LEFT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["RIGHT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[RIGHT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["VIEWUP"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[VIEWUP], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["VIEWDOWN"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[VIEWDOWN], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["VIEWLEFT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[VIEWLEFT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["VIEWRIGHT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[VIEWRIGHT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["PAUSE"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[PAUSE], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["RESTART"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[RESTART], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["SCREENSHOT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[SCREENSHOT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["ZOOM_IN"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[ZOOM_IN], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["ZOOM_OUT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[ZOOM_OUT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
-	controls.AddObject(&Box(800, 0), Object::Allign::CENTER);
-	controls.AddObject(&Text(LOCAL["Gamepad Controls"], LOCAL("default"), 50), Object::Allign::LEFT);
-	controls.AddObject(&Box(800, 0), Object::Allign::CENTER);
-	controls.AddObject(&KeyMapper(LOCAL["JOYSTICK_MOVE_AXIS_X"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_X], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_AXIS), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["JOYSTICK_MOVE_AXIS_Y"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_Y], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_AXIS), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["JOYSTICK_VIEW_AXIS_X"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_AXIS), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["JOYSTICK_VIEW_AXIS_Y"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_AXIS), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["JOYSTICK_EXIT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_EXIT], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_KEYS), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["JOYSTICK_SCREENSHOT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_SCREENSHOT], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_KEYS), Object::Allign::LEFT);
-	controls.AddObject(&KeyMapper(LOCAL["JOYSTICK_RESTART"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_RESTART], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_KEYS), Object::Allign::LEFT);
+	controls.AddObject(new Text(LOCAL["Keyboard Controls"], LOCAL("default"), 50), Object::Allign::LEFT);
+	controls.AddObject(new Box(800, 0), Object::Allign::CENTER);
+	controls.AddObject(new KeyMapper(LOCAL["UP"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[UP], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["DOWN"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[DOWN], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["LEFT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[LEFT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["RIGHT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[RIGHT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["VIEWUP"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[VIEWUP], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["VIEWDOWN"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[VIEWDOWN], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["VIEWLEFT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[VIEWLEFT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["VIEWRIGHT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[VIEWRIGHT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["PAUSE"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[PAUSE], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["RESTART"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[RESTART], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["SCREENSHOT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[SCREENSHOT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["ZOOM_IN"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[ZOOM_IN], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["ZOOM_OUT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[ZOOM_OUT], 800.f, 35.f, KeyMapper::MapperType::KEYBOARD), Object::Allign::LEFT);
+	controls.AddObject(new Box(800, 0), Object::Allign::CENTER);
+	controls.AddObject(new Text(LOCAL["Gamepad Controls"], LOCAL("default"), 50), Object::Allign::LEFT);
+	controls.AddObject(new Box(800, 0), Object::Allign::CENTER);
+	controls.AddObject(new KeyMapper(LOCAL["JOYSTICK_MOVE_AXIS_X"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_X], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_AXIS), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["JOYSTICK_MOVE_AXIS_Y"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_Y], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_AXIS), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["JOYSTICK_VIEW_AXIS_X"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_AXIS), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["JOYSTICK_VIEW_AXIS_Y"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_AXIS), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["JOYSTICK_EXIT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_EXIT], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_KEYS), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["JOYSTICK_SCREENSHOT"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_SCREENSHOT], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_KEYS), Object::Allign::LEFT);
+	controls.AddObject(new KeyMapper(LOCAL["JOYSTICK_RESTART"], LOCAL["Waiting for input"], &SETTINGS.stg.control_mapping[JOYSTICK_RESTART], 800.f, 35.f, KeyMapper::MapperType::JOYSTICK_KEYS), Object::Allign::LEFT);
 
 	AddGlobalObject(controls);
 }
@@ -641,8 +641,8 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 		lvlscore.AddObject(&lvlscorev, Object::Allign::CENTER);
 		if (scores[ids[i]].best_time != 0 && fs::exists(std::string(recordings_folder) + "/" + ConvertSpaces2_(names[ids[i]]) + ".bin"))
 		{
-			lvlscore.AddObject(&Box(0, 5), Object::Allign::CENTER);
-			lvlscore.AddObject(&Button(LOCAL["Replay best run"], 260, 20,
+			lvlscore.AddObject(new Box(0, 5), Object::Allign::CENTER);
+			lvlscore.AddObject(new Button(LOCAL["Replay best run"], 260, 20,
 				[scene, overlays, id = ids[i]](sf::RenderWindow * window, InputState & state)
 			{
 				RePlayBest(scene, window, id);
@@ -819,12 +819,12 @@ void DisplayError(std::string error_text)
 	sf::Vector2f wsize = default_size;
 	Window error_window(wsize.x*0.4f, wsize.y*0.4f, 400, 215, sf::Color(100, 0, 0, 128), LOCAL["Error"], LOCAL("default"));
 	
-	error_window.Add(&Text(error_text, LOCAL("default"), 30, sf::Color::Red), Object::Allign::CENTER);
+	error_window.Add(new Text(error_text, LOCAL("default"), 30, sf::Color::Red), Object::Allign::CENTER);
 
 	Scene* scene = scene_ptr;
 	Overlays* overlays = overlays_ptr;
 
-	error_window.Add(&Button(LOCAL["Ok"], 240, 40,
+	error_window.Add(new Button(LOCAL["Ok"], 240, 40,
 		[scene, overlays](sf::RenderWindow * window, InputState & state)
 		{
 			overlays->sound_click.play();
@@ -850,14 +850,7 @@ void UnlockMouse(sf::RenderWindow& window) {
 }
 
 int DirExists(const char *path) {
-	struct stat info;
-	if (stat(path, &info) != 0) {
-		return 0;
-	}
-	else if (info.st_mode & S_IFDIR) {
-		return 1;
-	}
-	return 0;
+	return (int)fs::exists(fs::path(path));
 }
 
 void FirstStart(Overlays* overlays)
