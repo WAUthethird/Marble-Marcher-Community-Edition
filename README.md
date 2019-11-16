@@ -163,7 +163,7 @@ Alternatively, one can use the platform-dependent build system, for example `Mak
 * `git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git`
 * `cd Marble-Marcher-Community-Edition`
 * `mkdir build && cd build`
-* `cmake .. && cmake -- build .`
+* `cmake .. && cmake --build .`
 * Run the game 
 `./MarbleMarcher`
 * You can also build a package using this command `cpack`
