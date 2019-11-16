@@ -11,8 +11,7 @@ if (WIN32)
 	endif()
 
 	## DEPENDENCIES
-	set(GLEW_DIR C:/Libraries/GLEW)
-	set(GLEW_INCLUDE_DIRS ${GLEW_DIR}/include)
+	set(GLEW_INCLUDE_DIR C:/Libraries/GLEW)
 	set(SDK_DIRECTORY "C:/Program Files (x86)/Microsoft SDKs")
 	set(EIGEN3_INCLUDE_DIR C:/Libraries/eigen3/)
 	set(GLM_INCLUDE_DIR C:/Libraries/glm)
@@ -24,26 +23,20 @@ if (WIN32)
 		set(SFML_DIR C:/Libraries/SFML-2.5.1/lib/cmake/SFML)
 		set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1/include)
 		set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar.lib)
-		set(GLEW_LIB ${GLEW_DIR}/lib/Release/Win32/glew32.lib)
+		set(GLEW_LIB ${GLEW_INCLUDE_DIR}/lib/Release/Win32/glew32.lib)
 	else()
 	#64 bit compilation
 		set(SFML_DIR C:/Libraries/SFML-2.5.1_64/lib/cmake/SFML)
 		set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1_64/include)
 		set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar64.lib)
-		set(GLEW_LIB ${GLEW_DIR}/lib/Release/x64/glew32.lib)
+		set(GLEW_LIB ${GLEW_INCLUDE_DIR}/lib/Release/x64/glew32.lib)
 	endif()
 
 	find_package(SFML 2.5 COMPONENTS system window graphics audio REQUIRED)
 
 	include_directories(${SDK_DIRECTORY}/Windows/v7.1/Include)
-elseif(UNIX)
-	#to be changed
-	set(ANTTWEAKBAR_DIR /home/michael/Documents/MMCE/AntTweakBar)
-	set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/libAntTweakBar.so)
-	set(SFML_DIR /home/michael/Documents/MMCE/SFML-2.5.1/lib/cmake/SFML)
-
+elseif(UNIX)	
 	set(SFML_STATIC_LIBRARIES FALSE)
-	find_package(SFML 2.5 COMPONENTS system window graphics audio REQUIRED)
 	find_package(GLEW REQUIRED)
 	find_package(OpenGL REQUIRED)
 	find_package(Eigen3 REQUIRED)
@@ -56,43 +49,42 @@ add_subdirectory(src)
 target_include_directories(MarbleMarcherSources PUBLIC
   src
   ${EIGEN3_INCLUDE_DIR}
-  ${SFML_INCLUDE_DIR}
+  /usr/include
   ${GLEW_INCLUDE_DIRS}
-  ${ANTTWEAKBAR_DIR}/include
+  ${OpenGL_INCLUDE_DIRS}
   ${GLM_INCLUDE_DIR}
 )
 
-include_directories(${ANTTWEAKBAR_DIR}/include)
 include_directories(${GLM_INCLUDE_DIR})
 
 target_compile_definitions(MarbleMarcherSources PRIVATE SFML_STATIC)
 
 if(WIN32)
-	include_directories(${SDK_DIRECTORY}/Windows/v7.1/Include)
-	add_executable(MarbleMarcher WIN32 src/Main.cpp src/Resource.rc assets/icon.ico)
-	set_source_files_properties(icon.ico Resource.rc PROPERTIES LANGUAGE RC)
+  add_executable(MarbleMarcher WIN32 src/Main.cpp src/Resource.rc assets/icon.ico)
+  set_source_files_properties(icon.ico Resource.rc PROPERTIES LANGUAGE RC)
 else()
-	target_include_directories(MarbleMarcherSources PUBLIC
-		${OpenGL_INCLUDE_DIRS}
-	)
-	add_executable(MarbleMarcher src/Main.cpp)
+  add_executable(MarbleMarcher src/Main.cpp)
 endif()
 
 #ADD A COMMAND TO COPY THE FILES FROM GAME_FOLDER TO COMPILATION FOLDER
 add_custom_command(TARGET MarbleMarcher PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                        ${CMAKE_SOURCE_DIR}/game_folder $<TARGET_FILE_DIR:MarbleMarcher>)
-if(BIT EQUAL 32)
-	add_custom_command(TARGET MarbleMarcher PRE_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       ${CMAKE_SOURCE_DIR}/bin32 $<TARGET_FILE_DIR:MarbleMarcher>)
-else()
-	add_custom_command(TARGET MarbleMarcher PRE_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       ${CMAKE_SOURCE_DIR}/bin64 $<TARGET_FILE_DIR:MarbleMarcher>)
+
+if(WIN32)
+	if(BIT EQUAL 32)
+		add_custom_command(TARGET MarbleMarcher PRE_BUILD
+		           COMMAND ${CMAKE_COMMAND} -E copy_directory
+		               ${CMAKE_SOURCE_DIR}/bin32 $<TARGET_FILE_DIR:MarbleMarcher>)
+	else()
+		add_custom_command(TARGET MarbleMarcher PRE_BUILD
+		           COMMAND ${CMAKE_COMMAND} -E copy_directory
+		               ${CMAKE_SOURCE_DIR}/bin64 $<TARGET_FILE_DIR:MarbleMarcher>)
+	endif()	
 endif()	
 
 if(CMAKE_COMPILER_IS_GNUCC)
+  # needed for gcc 4.6+
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
 endif()				   
 
@@ -111,12 +103,32 @@ elseif(UNIX)
 	target_link_libraries(MarbleMarcher
 		MarbleMarcherSources
 		${OPENGL_LIBRARIES}
-		${ATB_LIB}	
+		libAntTweakBar.so	
 		${GLEW_LIBRARIES}
 		stdc++fs
-		sfml-system
-		sfml-window
-		sfml-graphics
-		sfml-audio
+		libsfml-system.so
+		libsfml-window.so
+		libsfml-graphics.so
+		libsfml-audio.so
 	)
+	install(TARGETS MarbleMarcher
+	    COMPONENT linapp
+	    RUNTIME DESTINATION "/home/MMCE1.4"
+	    LIBRARY DESTINATION "/home/MMCE1.4"
+	    DESTINATION "/home/MMCE1.4"
+	)
+
+	install(DIRECTORY "${PROJECT_SOURCE_DIR}/game_folder/" DESTINATION "/home/MMCE1.4")
+
+	set(CPACK_PACKAGE_NAME "MarbleMarcher")
+	set(CPACK_PACKAGE_VENDOR "MarbleMarcher")
+	set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A ray marched marble game")
+	set(CPACK_PACKAGE_VERSION "1.4.0")
+	set(CPACK_PACKAGE_VERSION_MAJOR "1")
+	set(CPACK_PACKAGE_VERSION_MINOR "4")
+	set(CPACK_PACKAGE_VERSION_PATCH "7")
+
+	SET(CPACK_GENERATOR "DEB")
+	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "KK") #required
+	INCLUDE(CPack)
 endif()
