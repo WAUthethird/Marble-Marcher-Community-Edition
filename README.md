@@ -156,6 +156,17 @@ Alternatively, one can use the platform-dependent build system, for example `Mak
 * `cmake --build build`
 * `cp build/MarbleMarcher ./`
 
+### Ubuntu
+* Install packages
+`sudo apt-get install libanttweakbar-dev libanttweakbar1 libsfml-system2.4 libsfml-graphics2.4 libsfml-audio2.4 libsfml-window2.4 libglew-dev libeigen3-dev libglm-dev libsfml-dev`
+* `cd ~`
+* `git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git`
+* `cd Marble-Marcher-Community-Edition`
+* `mkdir build && cd build`
+* `cmake .. && cmake -- build .`
+* Run the game 
+`./MarbleMarcher`
+
 ### Compiling on Windows
 Windows compilation should work just fine now. It's relatively easy to do without help, but in case you'd like them, [here are some configuring and compiling instructions](https://www.reddit.com/r/Marblemarcher/comments/bamqyh/how_to_configure_and_compile_source_for_windows/). A [copy of the instructions](build_on_windows.md) is also in the root.
 
