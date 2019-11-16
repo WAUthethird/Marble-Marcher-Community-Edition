@@ -166,6 +166,7 @@ Alternatively, one can use the platform-dependent build system, for example `Mak
 * `cmake .. && cmake -- build .`
 * Run the game 
 `./MarbleMarcher`
+* You can also build a package using this command `cpack`
 
 ### Compiling on Windows
 Windows compilation should work just fine now. It's relatively easy to do without help, but in case you'd like them, [here are some configuring and compiling instructions](https://www.reddit.com/r/Marblemarcher/comments/bamqyh/how_to_configure_and_compile_source_for_windows/). A [copy of the instructions](build_on_windows.md) is also in the root.
