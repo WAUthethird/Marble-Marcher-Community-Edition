@@ -11,7 +11,8 @@ if (WIN32)
 	endif()
 
 	## DEPENDENCIES
-	set(GLEW_INCLUDE_DIR C:/Libraries/GLEW)
+	set(GLEW_DIR C:/Libraries/GLEW/)
+	set(GLEW_INCLUDE_DIRS ${GLEW_DIR}/include)
 	set(SDK_DIRECTORY "C:/Program Files (x86)/Microsoft SDKs")
 	set(EIGEN3_INCLUDE_DIR C:/Libraries/eigen3/)
 	set(GLM_INCLUDE_DIR C:/Libraries/glm)
@@ -23,18 +24,17 @@ if (WIN32)
 		set(SFML_DIR C:/Libraries/SFML-2.5.1/lib/cmake/SFML)
 		set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1/include)
 		set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar.lib)
-		set(GLEW_LIB ${GLEW_INCLUDE_DIR}/lib/Release/Win32/glew32.lib)
+		set(GLEW_LIBRARIES ${GLEW_DIR}/lib/Release/Win32/glew32.lib)
 	else()
 	#64 bit compilation
 		set(SFML_DIR C:/Libraries/SFML-2.5.1_64/lib/cmake/SFML)
 		set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1_64/include)
 		set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar64.lib)
-		set(GLEW_LIB ${GLEW_INCLUDE_DIR}/lib/Release/x64/glew32.lib)
+		set(GLEW_LIBRARIES ${GLEW_DIR}/lib/Release/x64/glew32.lib)
 	endif()
 
 	find_package(SFML 2.5 COMPONENTS system window graphics audio REQUIRED)
 
-	include_directories(${SDK_DIRECTORY}/Windows/v7.1/Include)
 elseif(UNIX)	
 	set(SFML_STATIC_LIBRARIES FALSE)
 	find_package(GLEW REQUIRED)
@@ -56,6 +56,20 @@ target_include_directories(MarbleMarcherSources PUBLIC
 )
 
 include_directories(${GLM_INCLUDE_DIR})
+include_directories(${ANTTWEAKBAR_DIR}/include)
+if(WIN32)
+	target_include_directories(MarbleMarcherSources PUBLIC
+	  ${SFML_INCLUDE_DIR}
+	  ${ANTTWEAKBAR_DIR}/include
+	)
+	include_directories(${ANTTWEAKBAR_DIR}/include)
+	include_directories(${SDK_DIRECTORY}/Windows/v7.1/Include)
+else()
+	target_include_directories(MarbleMarcherSources PUBLIC
+	  src
+	  /usr/include
+	)
+endif()
 
 target_compile_definitions(MarbleMarcherSources PRIVATE SFML_STATIC)
 
@@ -93,7 +107,7 @@ if(WIN32)
 	target_link_libraries(MarbleMarcher
 	  MarbleMarcherSources
 	  ${ATB_LIB}
-	  ${GLEW_LIB}
+	  ${GLEW_LIBRARIES}
 	  sfml-system
 	  sfml-window
 	  sfml-graphics
