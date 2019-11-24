@@ -331,7 +331,8 @@ int main(int argc, char *argv[]) {
 					{
 						if (game_mode == MAIN_MENU)
 						{
-							ConfirmExit(&scene, &overlays);
+							if(NumberOfObjects() < 2)
+								ConfirmExit(&scene, &overlays);
 						}
 						else if (game_mode == CONTROLS || game_mode == LEVELS) 
 						{
@@ -353,13 +354,7 @@ int main(int argc, char *argv[]) {
 						{
 							//if no interface objects created
 							if (NoObjects())
-							{
 								ConfirmEditorExit(&scene, &overlays);
-							}
-							else if(get_glob_obj(focused).action_time < 0.f)//remove confirm window
-							{
-								RemoveGlobalObject(focused);
-							}
 						}
 					}
 					else if (keycode == SETTINGS.stg.control_mapping[RESTART])

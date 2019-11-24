@@ -120,6 +120,11 @@ bool NoObjects()
 	return true;
 }
 
+int NumberOfObjects()
+{
+	return global_objects.size();
+}
+
 void RemoveGlobalObject(int id)
 {
 	if (global_objects.count(id) != 0)
