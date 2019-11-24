@@ -49,14 +49,12 @@ add_subdirectory(src)
 target_include_directories(MarbleMarcherSources PUBLIC
   src
   ${EIGEN3_INCLUDE_DIR}
-  /usr/include
   ${GLEW_INCLUDE_DIRS}
   ${OpenGL_INCLUDE_DIRS}
   ${GLM_INCLUDE_DIR}
 )
 
 include_directories(${GLM_INCLUDE_DIR})
-include_directories(${ANTTWEAKBAR_DIR}/include)
 if(WIN32)
 	target_include_directories(MarbleMarcherSources PUBLIC
 	  ${SFML_INCLUDE_DIR}
