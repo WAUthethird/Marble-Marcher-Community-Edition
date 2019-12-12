@@ -36,6 +36,7 @@ void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer
 
 void OpenMainMenu(Scene * scene, Overlays * overlays)
 {
+	SetCameraFocus(4.5);
 	RemoveAllObjects();
 	game_mode = MAIN_MENU;
 
@@ -239,6 +240,7 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 
 void OpenEditor(Scene * scene, Overlays * overlays, int level)
 {
+	SetCameraFocus(1e10);
 	StopReplay();
 	scene->StopMusic();
 	RemoveAllObjects();
@@ -255,6 +257,7 @@ void OpenEditor(Scene * scene, Overlays * overlays, int level)
 
 void PlayLevel(Scene * scene, sf::RenderWindow * window, int level)
 {
+	SetCameraFocus(1e10);
 	StopReplay();
 	RemoveAllObjects();
 	//play level
@@ -265,6 +268,7 @@ void PlayLevel(Scene * scene, sf::RenderWindow * window, int level)
 
 void RePlayBest(Scene * scene, sf::RenderWindow * window, int level)
 {
+	SetCameraFocus(1e10);
 	StopReplay();
 	RemoveAllObjects();
 	//play level
@@ -276,6 +280,7 @@ void RePlayBest(Scene * scene, sf::RenderWindow * window, int level)
 
 void OpenControlMenu(Scene * scene, Overlays * overlays)
 {
+
 	RemoveAllObjects();
 	game_mode = CONTROLS;
 
@@ -347,6 +352,7 @@ void OpenControlMenu(Scene * scene, Overlays * overlays)
 
 void ResumeGame(sf::RenderWindow &window)
 {
+	SetCameraFocus(1e10);
 	RemoveAllObjects();
 	game_mode = PLAYING;
 	LockMouse(window);
@@ -355,6 +361,7 @@ void ResumeGame(sf::RenderWindow &window)
 
 void OpenPauseMenu(Scene * scene, Overlays * overlays)
 {
+	SetCameraFocus(scene->GetMarbleScale()*15.);
 	RemoveAllObjects();
 	scene->SetExposure(1.0f);
 	sf::Vector2f wsize = default_size;
@@ -401,9 +408,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	resumebtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
 		RemoveAllObjects();
-		game_mode = PLAYING;
-		scene->SetExposure(1.0f);
-		LockMouse(*window);
+		ResumeGame(*window);
 		overlays->sound_click.play();
 	}, true);
 	resumebtn.AddObject(&button1, Object::Allign::CENTER);
@@ -498,6 +503,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 }
 
 void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene) {
+	SetCameraFocus(1e10);
 	game_mode = PAUSED;
 	UnlockMouse(window);
 	OpenPauseMenu(scene, overlays);
@@ -506,6 +512,7 @@ void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene) {
 
 void OpenScreenSaver(Scene * scene, Overlays * overlays)
 {
+	SetCameraFocus(6.);
 	RemoveAllObjects();
 	game_mode = SCREEN_SAVER;
 	scene->SetMode(Scene::SCREEN_SAVER);
@@ -843,6 +850,8 @@ void DisplayError(std::string error_text)
 void LockMouse(sf::RenderWindow& window) {
 	window.setMouseCursorVisible(false);
 	sf::Mouse::setPosition(sf::Vector2i(window.getSize().x*0.5, window.getSize().y*0.5), window);
+	mouse_prev_pos = sf::Vector2i(window.getSize().x * 0.5, window.getSize().y * 0.5);
+	mouse_pos = sf::Vector2i(window.getSize().x * 0.5, window.getSize().y * 0.5);
 }
 
 void UnlockMouse(sf::RenderWindow& window) {
@@ -991,6 +1000,11 @@ void InitializeRendering(std::string config)
 	main_txt->create(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->SetOutputTexture(*main_txt);
 	screenshot_txt->create(screenshot_resolution.x, screenshot_resolution.y);
+}
+
+void SetCameraFocus(float f)
+{
+	renderer_ptr->camera.SetFocus(f);
 }
 
 int music_id = 0;
