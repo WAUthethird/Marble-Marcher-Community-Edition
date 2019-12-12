@@ -2,10 +2,11 @@
 
 #define MAX_DIST 500
 #define MIN_DIST 1e-5
-#define MAX_MARCHES 700
+#define MAX_MARCHES 256
 #define NORMARCHES 8
+#define overrelax 1.3
 
-
+/* OLD CODE
 void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov) 
 {
 	float pDE = 0;
@@ -22,32 +23,72 @@ void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov)
 			break;
 		}
 	}
+}*/
+
+
+void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float max_d = MAX_DIST)
+{
+    float prev_h = 0., td = 0.;
+    float omega = overrelax;
+    float candidate_td = 1.;
+    float candidate_error = 1e6;
+    for(; ((ray.w+td) < max_d) && (var.x < MAX_MARCHES);   var.x+= 1.)
+    {
+        p.w = DE(p.xyz + td*ray.xyz);
+        
+        if(prev_h*omega>max(p.w,0.)+max(prev_h,0.)) //if overtepped
+        {
+            td += (1.-omega)*prev_h; // step back to the safe distance
+            prev_h = 0.;
+            omega = (omega - 1.)*0.7 + 1.; //make the overstepping smaller
+        }
+        else
+        {
+			if(p.w < 0.)
+			{
+				candidate_error = 0.;
+				candidate_td = td;
+				break;
+			}
+			
+            if(p.w/td < candidate_error)
+            {
+                candidate_error = p.w/td;
+                candidate_td = td; 
+				
+                if(p.w < (ray.w+td)*angle) //if closer to the surface than the cone radius
+                {
+                    break;
+                }
+            }
+			
+            
+            td += p.w*omega; //continue marching
+            
+            prev_h = p.w;        
+        }
+    }
+    
+    ray.w += candidate_td;
+	p.xyz = p.xyz + candidate_td*ray.xyz;
+	p.w = candidate_error*candidate_td;
 }
 
 void ray_march_limited(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float d0) 
 {
-
-	pos.w = DE(pos.xyz)-d0*dir.w;
-	
-	for (; var.x < MAX_MARCHES; var.x += 1.0) {
-		//if the distance from the surface is less than the distance per pixel we stop
-		if(dir.w > MAX_DIST)
+	ray_march(pos, dir, var, 1.4*d0);
+	if((pos.w > 0.) && (dir.w < MAX_DIST) && (var.x < MAX_MARCHES))
+	{
+		pos.w = DE(pos.xyz) - 1.4*d0*dir.w;
+		for (int i = 0; i < 1; i++)
 		{
-			break;
+			pos.xyz += pos.w*dir.xyz;
+			dir.w += pos.w;
+			pos.w = DE(pos.xyz) - 1.4*d0*dir.w;
 		}
-		
-		if(pos.w < max(fov*dir.w, MIN_DIST))
-		{
-			break;
-		}
-	
-		dir.w += pos.w;
-		pos.xyz += pos.w*dir.xyz;
-	
-		pos.w = DE(pos.xyz)-d0*dir.w;
+		pos.w += 1.4*d0*dir.w;
 	}
 	
-	pos.w += d0*dir.w;
 }
 
 void ray_march_continue(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov) 
@@ -55,27 +96,14 @@ void ray_march_continue(inout vec4 pos, inout vec4 dir, inout vec4 var, float fo
 	dir.w += pos.w;
 	pos.xyz += pos.w*dir.xyz;
 	
-	if(dir.w > MAX_DIST)
+	if((dir.w > MAX_DIST) || (pos.w < 0.) || (var.x >= MAX_MARCHES))
 	{
 		return;
 	}
 	
-	pos.w = DE(pos.xyz);
-	
-	//March the ray
-	for (; var.x < MAX_MARCHES; var.x += 1.0) {
-		//if the distance from the surface is less than the distance per pixel we stop
-		if(dir.w > MAX_DIST || pos.w < max(fov*dir.w, MIN_DIST))
-		{
-			break;
-		}
-		
-		dir.w += pos.w;
-		pos.xyz += pos.w*dir.xyz;
-		pos.w = DE(pos.xyz);
-	}
+	ray_march(pos, dir, var, fov);
 }
-
+#define shadow_steps 75
 float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 {
 	float light_visibility = 1;
@@ -83,7 +111,7 @@ float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 	float dDEdt = 0;
 	pos.w = DE(pos.xyz);
 	int i = 0;
-	for (; i < MAX_MARCHES; i++) {
+	for (; i < shadow_steps; i++) {
 	
 		dir.w += pos.w;
 		pos.xyz += pos.w*dir.xyz;
@@ -107,6 +135,11 @@ float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 		{
 			return 0;
 		}
+	}
+	
+	if(i >= shadow_steps)
+	{
+		light_visibility=0.;
 	}
 	//return light_visibility; //bad
 	return 0.5-cos(3.14159265*light_visibility)*0.5; //looks better and is more physically accurate(for a circular light source)

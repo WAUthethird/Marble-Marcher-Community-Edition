@@ -352,7 +352,7 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 		else
 		{
 			//optimize color sampling 
-			vec3 cpos = pos.xyz - pos.w*norm.xyz;
+			vec3 cpos = pos.xyz - norm.w*norm.xyz;
 		//	cpos = cpos - DE(cpos)*norm.xyz;
 		//	cpos = cpos - DE(cpos)*norm.xyz;
 		//	cpos = cpos - DE(cpos)*norm.xyz;
@@ -367,18 +367,18 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 				vec3 p2 = cpos.xyz + (dot(q, n) * 2.0 * iMarbleRad) * q;
 				n = normalize(p2 - iMarblePos);
 				q = (dot(q, dir.xyz) * 2.0) * q - dir.xyz;
-				vec4 p_temp = vec4(p2 + n * (MIN_DIST * 10), 0);
+				vec4 p_temp = vec4(p2 + n*dir.w*fov*2., 0);
 				vec4 r_temp = vec4(q, dir.w);
 				
-				refr = render_ray(p_temp, r_temp, fov*4);
+				refr = render_ray(p_temp, r_temp, fov*2);
 
 				//Calculate reflection
 				n = normalize(cpos.xyz - iMarblePos);
 				q = dir.xyz - n*(2*dot(dir.xyz,n));
-				p_temp = vec4(cpos.xyz + n * (MIN_DIST * 10), 0);
+				p_temp = vec4(cpos.xyz + n*dir.w*fov*2., 0);
 				r_temp = vec4(q, dir.w);
 				
-				refl = render_ray(p_temp, r_temp, fov*4);
+				refl = render_ray(p_temp, r_temp, fov*2);
 			}
 			
 			return lighting(color, pbr, vec4(cpos, pos.w), dir, norm, refl, refr, shadow); 

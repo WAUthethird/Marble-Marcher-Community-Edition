@@ -978,6 +978,8 @@ void InitializeRendering(std::string config)
 	renderer_ptr->camera.cross_eye = SETTINGS.stg.cross_eye;
 	renderer_ptr->camera.eye_separation = SETTINGS.stg.eye_separation;
 	renderer_ptr->camera.SetExposure(SETTINGS.stg.exposure);
+	renderer_ptr->camera.SetBokehRadius(SETTINGS.stg.DOF_max);
+	renderer_ptr->camera.SetFocus(SETTINGS.stg.DOF_focus);
 
 	scene_ptr->Refl_Refr_Enabled = SETTINGS.stg.refl_refr;
 	scene_ptr->Shadows_Enabled = SETTINGS.stg.shadows;
@@ -1261,6 +1263,8 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Exposure", TW_TYPE_FLOAT, &SETTINGS.stg.exposure, "min=0 max=5 step=0.001 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom Intensity", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_intensity, "min=0 max=5 step=0.001 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom Radius", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_radius, "min=1 max=10 step=0.1 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "DOF Radius", TW_TYPE_FLOAT, &SETTINGS.stg.DOF_max, "min=0. max=100 step=0.1 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "DOF Default focus", TW_TYPE_FLOAT, &SETTINGS.stg.DOF_focus, "min=0. max=100 step=0.01 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Material gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_material, "min=0 max=4 step=0.1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Sky gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_sky, "min=0 max=4 step=0.1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_camera, "min=0 max=4 step=0.1 group='Graphics settings'");

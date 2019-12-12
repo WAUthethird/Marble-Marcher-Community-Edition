@@ -42,7 +42,7 @@ void main() {
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))
 	{
 		color = prev_color*Camera.mblur + (1-Camera.mblur)*color; //blur
-		imageStore(color_HDR, global_pos, vec4(color.xyz, 1));	 
-		imageStore(color_output, global_pos, vec4(color.xyz, 1));	 
+		imageStore(color_HDR, global_pos, vec4(color.xyz, td));	 
+		imageStore(color_output, global_pos, vec4(color.xyz, td));	 
 	}
 }

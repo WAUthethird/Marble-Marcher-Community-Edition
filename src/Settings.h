@@ -84,6 +84,8 @@ struct MainSettings
 	bool screenshot_preview;
 	float preview_time;
 	float gamepad_deadzone;
+
+	float DOF_max, DOF_focus;
 };
 
 extern TwEnumVal resolutions[];
@@ -97,7 +99,7 @@ static const MainSettings default_settings =
 { 
 	6, 10, 5, 2, 3, 0, true, true, true, 0.06, 9, 2.2, 70, 20, 20, 0.005, 0.2, false,
 	0.005, 0.45, 0, false, true, 0, true, 0.7, 0.6, 2.2, false, -0.02, 0.2, 0.55, 
-	false, default_control_mapping, true, 60, true, 1.f, 0.1f
+	false, default_control_mapping, true, 60, true, 1.f, 0.1f, 60.f, 1.f 
 };
 
 
