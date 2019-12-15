@@ -26,7 +26,7 @@ void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov)
 }*/
 
 
-void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float max_d = MAX_DIST)
+void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float max_d)
 {
     float prev_h = 0., td = 0.;
     float omega = overrelax;
@@ -73,6 +73,13 @@ void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float 
 	p.xyz = p.xyz + candidate_td*ray.xyz;
 	p.w = candidate_error*candidate_td;
 }
+
+
+void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle)
+{
+	ray_march(p, ray, var, angle, MAX_DIST);
+}
+
 
 void ray_march_limited(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float d0) 
 {
