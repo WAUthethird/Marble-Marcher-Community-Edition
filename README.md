@@ -47,13 +47,14 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 ## Changes
 - Numerous miscellaneous fixes have been applied
 - Easier compilation for macOS
-- Feasible Windows compilation
+- Feasible Windows and Linux compilation
 - README.md overhaul
 - New rendering engine
 - Ingame statistics added (marble speed, ground/air state, ...). Press `o` to toggle.
 - AntTweakBar editor added. Press `F4` to toggle.
 - Confirmation, exit buttons in end screens
 - Change "controls" menu to "settings" and have audio, controls, sensitivity and fullscreen options there, also allow custom input bindings
+- Added controller support (+deadzone)
 - Improved text rendering
 - Better layout
 - Anaglyph/stereoscopic mode
@@ -62,6 +63,7 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 - Added auto-exposure, aka adaptive brightness
 - Improved bloom
 - Improved shadow upscaling
+- Added DOF
 - Added original shaders as a new configuration
 - Added NEON shaders
 - Added a credits menu
@@ -82,7 +84,6 @@ Though Marble Marcher CE is a largely finished game, there are still several imp
 - ### Fixes
   - Make sure game runs at the same speed everywhere
   - Mouse/camera speed is too fast while skipping cutscenes
-  - Figure out why so many people get `Failed to compile vertex shader`
 - ### User Experience Improvements
   - Pre-built versions for the common operating systems and make them available as GitHub releases (in progress)
   - Make the fractal recoloring from cheats persistent
@@ -91,7 +92,6 @@ Though Marble Marcher CE is a largely finished game, there are still several imp
   - Better autosplitter integration
 - ### New Features
   - Cheat: no drag
-  - Native controller support (+deadzone)
   - Custom marble designs
   - Add a script to build for all platforms at once
   - Have MarbleMarcher added to package managers
