@@ -31,7 +31,7 @@ void main() {
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
-		
+	
 	vec4 sph = imageLoad(DE_input, prev_pos);
 	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
 	
@@ -44,7 +44,7 @@ void main() {
 	{
 		vec4 norm = calcNormal(pos.xyz, max(2*fovray*td, MIN_DIST)); 
 		norm.xyz = normalize(norm.xyz);
-		pos.xyz += norm.xyz*max(2*fovray*td, MIN_DIST);
+		pos.xyz -= (norm.w - 4*fovray*td)*norm.xyz;
 		illum.x = shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, LIGHT_ANGLE);
 		
 		//illum.y = ambient_occlusion(pos, norm);

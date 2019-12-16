@@ -4,7 +4,7 @@
 #define MIN_DIST 1e-5
 #define MAX_MARCHES 256
 #define NORMARCHES 8
-#define overrelax 1.3
+#define overrelax 1.5
 
 /* OLD CODE
 void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov) 
@@ -31,7 +31,7 @@ void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float 
     float prev_h = 0., td = 0.;
     float omega = overrelax;
     float candidate_td = 1.;
-    float candidate_error = 1e6;
+    float candidate_error = 1e8;
     for(; ((ray.w+td) < max_d) && (var.x < MAX_MARCHES);   var.x+= 1.)
     {
         p.w = DE(p.xyz + td*ray.xyz);
@@ -40,7 +40,7 @@ void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float 
         {
             td += (1.-omega)*prev_h; // step back to the safe distance
             prev_h = 0.;
-            omega = (omega - 1.)*0.7 + 1.; //make the overstepping smaller
+            omega = (omega - 1.)*0.55 + 1.; //make the overstepping smaller
         }
         else
         {
@@ -61,7 +61,6 @@ void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float 
                     break;
                 }
             }
-			
             
             td += p.w*omega; //continue marching
             
@@ -81,19 +80,19 @@ void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle)
 }
 
 
-void ray_march_limited(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov, float d0) 
+void ray_march_limited(inout vec4 pos, inout vec4 dir, inout vec4 var, float d0) 
 {
-	ray_march(pos, dir, var, 1.4*d0);
+	ray_march(pos, dir, var, d0);
 	if((pos.w > 0.) && (dir.w < MAX_DIST) && (var.x < MAX_MARCHES))
 	{
-		pos.w = DE(pos.xyz) - 1.4*d0*dir.w;
+		pos.w = DE(pos.xyz) - d0*dir.w;
 		for (int i = 0; i < 1; i++)
 		{
 			pos.xyz += pos.w*dir.xyz;
 			dir.w += pos.w;
-			pos.w = DE(pos.xyz) - 1.4*d0*dir.w;
+			pos.w = DE(pos.xyz) - d0*dir.w;
 		}
-		pos.w += 1.4*d0*dir.w;
+		pos.w += d0*dir.w;
 	}
 	
 }
@@ -110,7 +109,7 @@ void ray_march_continue(inout vec4 pos, inout vec4 dir, inout vec4 var, float fo
 	
 	ray_march(pos, dir, var, fov);
 }
-#define shadow_steps 75
+#define shadow_steps 128
 float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 {
 	float light_visibility = 1;
@@ -130,7 +129,9 @@ float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 		
         light_visibility = min(light_visibility, angle);
 		
+		//minimizing banding even further
 		dDEdt = dDEdt*0.75 + 0.25*(pos.w-ph)/ph;
+		
 		ph = pos.w;
 		
 		if(dir.w >= distance2light)
@@ -149,7 +150,7 @@ float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 		light_visibility=0.;
 	}
 	//return light_visibility; //bad
-	return 0.5-cos(3.14159265*light_visibility)*0.5; //looks better and is more physically accurate(for a circular light source)
+	return (light_visibility*sqrt(1.-light_visibility*light_visibility) + asin(light_visibility))/3.14159265; //looks better and is more physically accurate(for a circular light source)
 }
 
 float sphere_intersection(vec3 r, vec3 p, vec4 sphere)
