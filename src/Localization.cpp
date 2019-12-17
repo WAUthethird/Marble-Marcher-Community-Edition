@@ -10,6 +10,7 @@ void Localization::LoadLocalsFromFolder(std::string folder, Fonts *fonts)
 {
 	fonts_ptr = fonts;
 	std::vector<fs::path> files = GetFilesInFolder(folder, ".loc");
+	sort(files.begin(), files.end());
 	for (int i = 0; i < files.size(); i++)
 	{
 		LoadLocalFromFile(files[i]);
