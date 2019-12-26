@@ -22,6 +22,7 @@ Renderer::Renderer()
 void Renderer::LoadConfigs(std::string config_file)
 {
 	std::vector<fs::path> configs = GetFilesInFolder(fs::path(config_file).parent_path().string(), ".cfg");
+	sort(configs.begin(), configs.end());
 	for (auto &file : configs)
 	{
 		rendering_configurations.push_back(file.filename().string());
