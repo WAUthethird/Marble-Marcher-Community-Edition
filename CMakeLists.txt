@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(MarbleMarcher)
 set(CMAKE_CXX_STANDARD 17)
-
+set(MM_VERSION 1.4.1)
 if (WIN32)
 	#CHECK THE BITNESS
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -125,17 +125,17 @@ elseif(UNIX)
 	)
 	install(TARGETS MarbleMarcher
 	    COMPONENT linapp
-	    RUNTIME DESTINATION "/home/MMCE1.4"
-	    LIBRARY DESTINATION "/home/MMCE1.4"
-	    DESTINATION "/home/MMCE1.4"
+	    RUNTIME DESTINATION "/home/MMCE"
+	    LIBRARY DESTINATION "/home/MMCE"
+	    DESTINATION "/home/MMCE"
 	)
 
-	install(DIRECTORY "${PROJECT_SOURCE_DIR}/game_folder/" DESTINATION "/home/MMCE1.4")
+	install(DIRECTORY "${PROJECT_SOURCE_DIR}/game_folder/" DESTINATION "/home/MMCE")
 
 	set(CPACK_PACKAGE_NAME "MarbleMarcher")
 	set(CPACK_PACKAGE_VENDOR "MarbleMarcher")
 	set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A ray marched marble game")
-	set(CPACK_PACKAGE_VERSION "1.4.0")
+	set(CPACK_PACKAGE_VERSION "${MM_VERSION}")
 	set(CPACK_PACKAGE_VERSION_MAJOR "1")
 	set(CPACK_PACKAGE_VERSION_MINOR "4")
 	set(CPACK_PACKAGE_VERSION_PATCH "7")
