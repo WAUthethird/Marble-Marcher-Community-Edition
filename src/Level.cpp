@@ -46,6 +46,9 @@ vector<fs::path> GetFilesInFolder(string folder, string filetype)
 		}
 	}
 
+	//sort the files in alphabetical order
+	sort(paths.begin(), paths.end());
+
 	return paths;
 }
 

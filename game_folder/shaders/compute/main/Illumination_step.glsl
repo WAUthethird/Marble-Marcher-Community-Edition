@@ -10,8 +10,8 @@ layout(rgba32f, binding = 2) uniform image2D color_HDR; //calculate final color
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
 
-#include<camera.glsl>
-#include<shading.glsl>
+#include<utility/camera.glsl>
+#include<utility/shading.glsl>
 
 ///Half-resolution illumination step
 

@@ -12,8 +12,8 @@ layout(rgba32f, binding = 4) uniform image2D color_HDR; //calculate final color
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
 
-#include<camera.glsl>
-#include<ray_marching.glsl>
+#include<utility/camera.glsl>
+#include<utility/ray_marching.glsl>
 
 ///The first step of multi resolution ray marching
 

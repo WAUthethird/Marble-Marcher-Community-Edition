@@ -145,7 +145,7 @@ void Renderer::Initialize(int w, int h, std::string config_f)
 	}
 
 	illumination_texture = GenerateTexture(width, height);
-	weight_shader = ComputeShader(compute_folder + "/auto_exposure_weighting.glsl");
+	weight_shader = ComputeShader(compute_folder + "/auto_exposure/auto_exposure_weighting.glsl");
 
 	config.close();
 }
@@ -299,15 +299,12 @@ void Renderer::Render()
 		
 		shader_pipeline[i].setCamera(camera.GetGLdata());
 		shader_pipeline[i].Run(global_size[i]);
-
-		//unbind all of the textures
-		/*for (int k = 0; k < tex_id; k++)
-		{
-			glBindImageTexture(k, 0, 0, 0, 0, 0, 0);
-		}*/
 	}
 
 	camera.UpdateExposure(EvaluateAvgIllumination());
+
+	//increment frame number
+	camera.Fpp();
 }
 
 float Renderer::EvaluateAvgIllumination()

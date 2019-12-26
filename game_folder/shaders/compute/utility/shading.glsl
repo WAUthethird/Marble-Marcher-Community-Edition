@@ -1,4 +1,4 @@
-#include<ray_marching.glsl>
+#include<utility/ray_marching.glsl>
 
 #define PI 3.14159265
 #define AMBIENT_MARCHES 3
@@ -129,36 +129,26 @@ vec3 ambient_sky_color(in vec3 pos)
 }
 
 vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
-{
-	vec3 dir1 = normalize(cross(dir.xyz,norm.xyz));
-	vec3 dir2 = normalize(cross(dir1,norm.xyz));
-	pos.w = iMarbleRad/2; 
-	
+{	
 	vec3 pos0 = pos.xyz;
 	
-	float shifter = 2;
-	float dcoef = 0.02/iMarbleRad;
-	float occlusion_angle = 0;
-	float integral = 0;
-	float i_coef = 0;
+	float occlusion_angle = 0.;
 	vec3 direction = normalize(norm.xyz);
 	vec3 ambient_color = ambient_sky_color(norm.xyz);
-	
+	//step out
+	pos.xyz += 0.06*dir.w*direction;
 	//march in the direction of the normal
-	#pragma unroll
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
 		pos.xyz += pos.w*direction;
 		pos.w = DE(pos.xyz);
 		
 		norm.w = length(pos0 - pos.xyz);
-		i_coef = 1/(dcoef*norm.w+1);//importance
-		occlusion_angle += i_coef*clamp(pos.w/norm.w,0,1);
-		integral += i_coef;
+		occlusion_angle += clamp(pos.w/norm.w,0.,1.);
 	}
 	
-	occlusion_angle /= integral; // average weighted by importance
-	return vec4(ambient_color,1)*(0.5-cos(3.14159265*occlusion_angle)*0.5);
+	occlusion_angle /= float(AMBIENT_MARCHES); // average weighted by importance
+	return vec4(ambient_color,1.)*(0.5-cos(3.14159265*occlusion_angle)*0.5);
 }
 
 
@@ -264,7 +254,7 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 
 	if(color.w>0.5) // if marble
 	{
-		vec3 n = normalize(pos.xyz - iMarblePos);
+		vec3 n = norm.xyz;
 		vec3 q = dir.xyz - n*(2*dot(dir.xyz,n));
 		//Combine for final marble color
 		if(MARBLE_MODE == 0)
@@ -333,7 +323,7 @@ vec3 render_ray(in vec4 pos, in vec4 dir, float fov)
 {
 	vec4 var = vec4(0,0,0,1);
 	ray_march(pos, dir, var, fov); 
-	float shadow = shadow_march(pos, vec4(LIGHT_DIRECTION,0), MAX_DIST, LIGHT_ANGLE);
+	float shadow = shadow_march(pos, vec4(LIGHT_DIRECTION,0), 10., LIGHT_ANGLE);
 	return shading_simple(pos, dir, fov, shadow);
 }
 
@@ -362,23 +352,23 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 			vec3 refr = vec3(0);
 			if(color.w>0.5) // if marble
 			{
-				vec3 n = normalize(iMarblePos - cpos.xyz);
+				vec3 n = -normalize(norm.xyz);
 				vec3 q = refraction(dir.xyz, n, 1.0 / 1.5);
-				vec3 p2 = cpos.xyz + (dot(q, n) * 2.0 * iMarbleRad) * q;
+				vec3 p2 = pos.xyz + (dot(q, n) * 2. * iMarbleRad) * q;
 				n = normalize(p2 - iMarblePos);
 				q = (dot(q, dir.xyz) * 2.0) * q - dir.xyz;
-				vec4 p_temp = vec4(p2 + n*dir.w*fov*2., 0);
+				vec4 p_temp = vec4(p2+ n*fov*dir.w*1.5, 0);
 				vec4 r_temp = vec4(q, dir.w);
 				
-				refr = render_ray(p_temp, r_temp, fov*2);
+				refr = render_ray(p_temp, r_temp, fov*1.5);
 
 				//Calculate reflection
-				n = normalize(cpos.xyz - iMarblePos);
+				n = normalize(norm.xyz);
 				q = dir.xyz - n*(2*dot(dir.xyz,n));
-				p_temp = vec4(cpos.xyz + n*dir.w*fov*2., 0);
+				p_temp = vec4(pos.xyz + n*fov*dir.w*2., 0);
 				r_temp = vec4(q, dir.w);
 				
-				refl = render_ray(p_temp, r_temp, fov*2);
+				refl = render_ray(p_temp, r_temp, fov*1.5);
 			}
 			
 			return lighting(color, pbr, vec4(cpos, pos.w), dir, norm, refl, refr, shadow); 
@@ -392,7 +382,7 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 }
 
 #define NEON_iterations 3 
-#define NEON_marches 5 
+#define NEON_marches 4
 
 vec3 NEON_shading(in vec4 pos, in vec4 dir)
 {
@@ -409,9 +399,9 @@ vec3 NEON_shading(in vec4 pos, in vec4 dir)
 		vec4 norm = calcNormal(pos.xyz, MIN_DIST); 
 		vec3 cpos = pos.xyz - pos.w*norm.xyz;
 		
-		color += COL(cpos).xyz*(NEON_iterations-i)/(NEON_iterations*(1+pos.w));
+		color += COL(cpos).xyz/(1+pos.w);
 	}
-	return color;
+	return color/NEON_iterations;
 }
 
 vec3 HDRmapping(vec3 color, float exposure)

@@ -1,4 +1,4 @@
-#include<distance_estimators.glsl>
+#include<utility/distance_estimators.glsl>
 
 #define MAX_DIST 500
 #define MIN_DIST 1e-5

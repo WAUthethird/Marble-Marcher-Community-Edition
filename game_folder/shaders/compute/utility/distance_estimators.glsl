@@ -53,38 +53,16 @@ float smoothmin(float a, float b, float k) {
 	z.z += a;
 }*/
 
-
-void mengerFold(inout vec4 z) {
-	float a = min(z.x - z.y, 0.0);
-	z.x -= a;
-	z.y += a;
-	a = min(z.x - z.z, 0.0);
-	z.x -= a;
-	z.z += a;
-	a = min(z.y - z.z, 0.0);
-	z.y -= a;
-	z.z += a;
+vec2 mp = vec2(-1.,1.);
+void mengerFold(inout vec4 z) 
+{
+	z.xy += min(z.x - z.y, 0.0)*mp;
+	z.xz += min(z.x - z.z, 0.0)*mp;
+	z.yz += min(z.y - z.z, 0.0)*mp;
 }
+
 void boxFold(inout vec4 z, vec3 r) {
 	z.xyz = clamp(z.xyz, -r, r) * 2.0 - z.xyz;
-}
-void rotX(inout vec4 z, float s, float c) {
-	z.yz = vec2(c*z.y + s*z.z, c*z.z - s*z.y);
-}
-void rotY(inout vec4 z, float s, float c) {
-	z.xz = vec2(c*z.x - s*z.z, c*z.z + s*z.x);
-}
-void rotZ(inout vec4 z, float s, float c) {
-	z.xy = vec2(c*z.x + s*z.y, c*z.y - s*z.x);
-}
-void rotX(inout vec4 z, float a) {
-	rotX(z, sin(a), cos(a));
-}
-void rotY(inout vec4 z, float a) {
-	rotY(z, sin(a), cos(a));
-}
-void rotZ(inout vec4 z, float a) {
-	rotZ(z, sin(a), cos(a));
 }
 
 //##########################################
@@ -112,6 +90,21 @@ float de_capsule(vec4 p, float h, float r) {
 //##########################################
 float de_fractal(vec4 p)
 {
+	mat2 rmZ = mat2(c1, s1, -s1, c1);
+	mat2 rmX = mat2(c2, s2, -s2, c2);
+	for (int i = 0; i < FRACTAL_ITER; ++i) {
+		p.xyz = abs(p.xyz);
+		p.xy *= rmZ;
+		mengerFold(p);
+		p.yz *= rmX;
+		p *= iFracScale;
+		p.xyz += iFracShift;
+	}
+	return de_box(p, vec3(6.0));
+}
+/*
+float de_fractal(vec4 p) 
+{
 	for (int i = 0; i < FRACTAL_ITER; ++i) {
 		p.xyz = abs(p.xyz);
 		rotZ(p, s1, c1);
@@ -121,16 +114,18 @@ float de_fractal(vec4 p)
 		p.xyz += iFracShift;
 	}
 	return de_box(p, vec3(6.0));
-}
+}*/
 
 vec4 col_fractal(vec4 p) 
 {
 	vec3 orbit = vec3(0.0);
+	mat2 rmZ = mat2(c1, s1, -s1, c1); 
+	mat2 rmX = mat2(c2, s2, -s2, c2);
 	for (int i = 0; i < FRACTAL_ITER; ++i) {
 		p.xyz = abs(p.xyz);
-		rotZ(p, s1, c1);
+		p.xy *= rmZ; //rotation around z
 		mengerFold(p);
-		rotX(p, s2, c2);
+		p.yz *= rmX; //rotation around x
 		p *= iFracScale;
 		p.xyz += iFracShift;
 		orbit = max(orbit, p.xyz*iFracCol);
@@ -182,11 +177,8 @@ vec4 col_flag(vec4 p)
 	}
 }
 
-//float DE_count = 0;
-
 float de_scene(vec3 pos) 
 {
-	//DE_count = DE_count+1;
 	vec4 p = vec4(pos,1.f);
 	float d = de_fractal(p);
 	d = min(d, de_marble(p));
@@ -196,7 +188,6 @@ float de_scene(vec3 pos)
 
 vec4 col_scene(vec3 pos) 
 {
-	//DE_count = DE_count+1;
 	vec4 p = vec4(pos,1.f);
 	vec4 col = col_fractal(p);
 	vec4 col_f = col_flag(p);

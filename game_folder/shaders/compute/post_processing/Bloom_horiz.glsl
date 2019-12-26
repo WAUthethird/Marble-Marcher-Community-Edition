@@ -10,8 +10,8 @@ layout(rgba32f, binding = 2) uniform image2D blurred_hor2; //calculate bloom
 layout(rgba32f, binding = 3) uniform image2D DE_input; 
 layout(rgba32f, binding = 4) uniform image2D color_HDR; //calculate final color
 
-#include<camera.glsl>
-#include<bloom.glsl>
+#include<utility/camera.glsl>
+#include<utility/bloom.glsl>
 
 shared vec3 color_buffer[buffer_size];
 

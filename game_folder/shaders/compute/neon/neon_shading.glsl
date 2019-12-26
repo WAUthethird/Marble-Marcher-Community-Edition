@@ -9,8 +9,8 @@ layout(rgba8, binding = 0) uniform image2D final_color;
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
 
-#include<camera.glsl>
-#include<shading.glsl>
+#include<utility/camera.glsl>
+#include<utility/shading.glsl>
 
 void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
@@ -22,7 +22,7 @@ void main() {
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
 	
-	vec3 color = 2*NEON_shading(pos, dir)*Camera.exposure;
+	vec3 color = NEON_shading(pos, dir);
 	
-	imageStore(final_color, global_pos,  vec4(color, 1));	 	 
+	imageStore(final_color, global_pos,  vec4(HDRmapping(color,1.), 1));	 	 
 }

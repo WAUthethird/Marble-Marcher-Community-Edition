@@ -140,6 +140,11 @@ vec4 Camera::GetCameraProperties2()
 	return vec4(size, mblur, speckle, 0);
 }
 
+void Camera::Fpp()
+{
+	iFrame++;
+}
+
 gl_camera Camera::GetGLdata()
 {
 	gl_camera cam;
@@ -163,7 +168,7 @@ gl_camera Camera::GetGLdata()
 	cam.resolution = resolution; //not a property of the camera, but of the renderer
 	cam.cross_eye = cross_eye;
 	cam.eye_separation = eye_separation;
-
+	cam.iFrame = iFrame;
 	return cam;
 }
 

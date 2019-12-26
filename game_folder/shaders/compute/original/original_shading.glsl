@@ -13,8 +13,9 @@ layout(rgba32f, binding = 3) uniform image2D color_HDR; //calculate final color
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
 
-#include<camera.glsl>
-#include<shading.glsl>
+#include<utility/camera.glsl>
+#include<utility/shading.glsl>
+#include<original/original_functions.glsl>
 
 void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
@@ -36,13 +37,13 @@ void main() {
 	pos = sph;
 	dir.w += td; 
 	
-	vec3 color = shading(pos, dir, fovray, illum.x);
-	//color  = vec3(illum.x);
+	vec3 color = shading_orig(pos, dir, fovray, illum.x);
+	
 	vec3 prev_color = imageLoad(color_HDR, global_pos).xyz;
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))
 	{
-		color = prev_color*Camera.mblur + (1-Camera.mblur)*color; //blur
+		//color = prev_color*Camera.mblur + (1-Camera.mblur)*color; //blur
 		imageStore(color_HDR, global_pos, vec4(color.xyz, td));	 
-		imageStore(color_output, global_pos, vec4(color.xyz, td));	 
+		imageStore(color_output, global_pos, vec4(color.xyz, 1.));	 
 	}
 }

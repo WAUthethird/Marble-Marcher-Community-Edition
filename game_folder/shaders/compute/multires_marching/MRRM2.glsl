@@ -13,8 +13,8 @@ layout(rgba32f, binding = 3) uniform image2D DE_output; //calculate final DE sph
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
 
-#include<camera.glsl>
-#include<shading.glsl>
+#include<utility/camera.glsl>
+#include<utility/shading.glsl>
 
 ///The second step of multi resolution ray marching
 

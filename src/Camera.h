@@ -24,6 +24,7 @@ typedef struct
 	float bloomradius;
 	bool cross_eye;
 	float eye_separation;
+	int iFrame;
 } gl_camera;
 
 class Camera
@@ -37,7 +38,8 @@ public:
 	};
 
 	Camera() : alpha(0), beta(0), gamma(0), cur_mode(Free), radius(1.f), auto_exposure_speed(0.5),
-		smooth(0.3f), FOV(75.f), focus(1e10), bokeh(0), mblur(0.008), speckle(10), size(0), exposure(0.7f), bloomintensity(0.05), bloomradius(3)
+		smooth(0.3f), FOV(75.f), focus(1e10), bokeh(0), mblur(0.008), speckle(10), size(0),
+		exposure(0.7f), bloomintensity(0.05), bloomradius(3), iFrame(0)
 	{
 		//camera directions
 		dirx = quat(0, 1, 0, 0);
@@ -47,7 +49,6 @@ public:
 		velocity = vec3(0);
 		position = vec3(0);
 	}
-
 	void SetPosition(vec3 pos);
 	void RotateLR(float a);
 	void RotateUD(float a);
@@ -78,6 +79,7 @@ public:
 	vec3 GetDirZ();
 	vec4 GetCameraProperties();
 	vec4 GetCameraProperties2();
+	void Fpp();
 
 	gl_camera GetGLdata();
 
@@ -126,4 +128,6 @@ private:
 	float smooth;
 
 	float aspect_ratio;
+
+	int iFrame;
 };

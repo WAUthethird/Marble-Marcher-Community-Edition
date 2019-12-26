@@ -7,6 +7,8 @@ layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D high_res; 
 layout(rgba32f, binding = 1) uniform image2D low_res; 
 
+//downsamples the texture from the previous step
+
 void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);

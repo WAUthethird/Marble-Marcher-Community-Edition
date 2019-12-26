@@ -957,7 +957,6 @@ void Scene::WriteRenderer(Renderer & rd)
 	rd.camera.SetDirZ(dirz);
 	rd.camera.SetCameraSize(camera_size*level_copy.marble_rad / 0.035f);
 	rd.camera.eye_separation = SETTINGS.stg.eye_separation*level_copy.marble_rad / 0.035f;
-
 	//write all the uniform values to the rendering pipeline
 	for (auto &shader : rd.shader_pipeline)
 	{

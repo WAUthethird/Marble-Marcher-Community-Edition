@@ -13,7 +13,7 @@ layout(rgba32f, binding = 4) uniform image2D color_HDR;
 shared vec3 color_buffer_hoz1[buffer_size];
 shared vec3 color_buffer_hoz2[buffer_size];
 
-#include<camera.glsl>
+#include<utility/camera.glsl>
 
 int safe_coord(int y, vec2 img_size)
 {

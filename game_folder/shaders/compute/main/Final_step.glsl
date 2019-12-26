@@ -12,12 +12,11 @@ layout(rgba32f, binding = 3) uniform image2D color_HDR;
 //??
 shared vec4 de_sph[1][1]; 
 
-#include<camera.glsl>
-#include<shading.glsl>
+#include<utility/camera.glsl>
+#include<utility/shading.glsl>
 
 #define DOF_samples 60
 #define DOF
-
 
 #define RA 5.
 const float GA = 2.399; 

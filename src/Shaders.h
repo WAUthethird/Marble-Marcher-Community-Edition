@@ -16,6 +16,7 @@
 #include <map>
 #include <algorithm>
 #include <sstream>
+#include <Res.h>
 
 namespace fs = std::filesystem;
 
