@@ -52,7 +52,7 @@ void main() {
 	memoryBarrierShared(); 
 	barrier();
 	
-	float width = Camera.bloomradius*img_size.x/640;
+	float width = min(Camera.bloomradius*img_size.x/640, 128./15.);
 	float k1 = 0.2;
 	float k2 = 1;
 	float a1 = 0.4;
