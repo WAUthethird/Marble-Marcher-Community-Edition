@@ -42,9 +42,9 @@ void main() {
 	
 	if(pos.w < max(2*fovray*td, MIN_DIST) && SHADOWS_ENABLED)
 	{
-		vec4 norm = calcNormal(pos.xyz, max(2*fovray*td, MIN_DIST)); 
-		norm.xyz = normalize(norm.xyz);
-		pos.xyz -= (norm.w - 4*fovray*td)*norm.xyz;
+		pos.xyz += (DE(pos.xyz) - 2.*fovray*td/step_scale.x)*dir.xyz;
+		pos.xyz += (DE(pos.xyz) - 2.*fovray*td/step_scale.x)*dir.xyz;
+		pos.xyz += (DE(pos.xyz) - 2.*fovray*td/step_scale.x)*dir.xyz;
 		illum.x = shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, LIGHT_ANGLE);
 		
 		//illum.y = ambient_occlusion(pos, norm);

@@ -136,7 +136,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	vec3 direction = normalize(norm.xyz);
 	vec3 ambient_color = ambient_sky_color(norm.xyz);
 	//step out
-	pos.xyz += 0.06*dir.w*direction;
+	pos.xyz += 0.03*dir.w*direction;
 	//march in the direction of the normal
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
@@ -352,18 +352,18 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 			vec3 refr = vec3(0);
 			if(color.w>0.5) // if marble
 			{
-				vec3 n = -normalize(norm.xyz);
+				vec3 n = normalize(iMarblePos - cpos.xyz);
 				vec3 q = refraction(dir.xyz, n, 1.0 / 1.5);
 				vec3 p2 = pos.xyz + (dot(q, n) * 2. * iMarbleRad) * q;
 				n = normalize(p2 - iMarblePos);
 				q = (dot(q, dir.xyz) * 2.0) * q - dir.xyz;
-				vec4 p_temp = vec4(p2+ n*fov*dir.w*1.5, 0);
+				vec4 p_temp = vec4(p2+ n*fov*dir.w*2.5, 0);
 				vec4 r_temp = vec4(q, dir.w);
 				
 				refr = render_ray(p_temp, r_temp, fov*1.5);
 
 				//Calculate reflection
-				n = normalize(norm.xyz);
+				n = -normalize(iMarblePos - cpos.xyz);
 				q = dir.xyz - n*(2*dot(dir.xyz,n));
 				p_temp = vec4(pos.xyz + n*fov*dir.w*2., 0);
 				r_temp = vec4(q, dir.w);

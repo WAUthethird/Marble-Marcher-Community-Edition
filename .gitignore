@@ -7,3 +7,4 @@ winBuild
 MarbleMarcher.exe
 MarbleMarcher
 game_folder/game_folder.rar
+game_folder/shaders/compute/noise/noise.glsl_error.txt

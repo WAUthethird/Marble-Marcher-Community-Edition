@@ -1,10 +1,10 @@
 #include<utility/distance_estimators.glsl>
 
 #define MAX_DIST 500
-#define MIN_DIST 1e-5
+#define MIN_DIST 1e-6
 #define MAX_MARCHES 256
 #define NORMARCHES 8
-#define overrelax 1.5
+#define overrelax 1.25
 
 /* OLD CODE
 void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov) 
@@ -43,16 +43,16 @@ void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float 
             omega = (omega - 1.)*0.55 + 1.; //make the overstepping smaller
         }
         else
-        {
-			if(p.w < 0.)
-			{
-				candidate_error = 0.;
-				candidate_td = td;
-				break;
-			}
-			
+        {	
             if(p.w/td < candidate_error)
             {
+				if(p.w < 0.)
+				{
+					candidate_error = 0.;
+					candidate_td = td;
+					break;
+				}
+			
                 candidate_error = p.w/td;
                 candidate_td = td; 
 				
