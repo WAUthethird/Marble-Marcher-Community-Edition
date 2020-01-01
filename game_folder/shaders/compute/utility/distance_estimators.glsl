@@ -244,3 +244,14 @@ vec4 calcNormal(vec3 p, float dx) {
 			 k.yxyx*DE(p + k.yxy*dx) +
 			 k.xxxx*DE(p + k.xxx*dx))/vec4(4*dx,4*dx,4*dx,4);
 }
+
+//calculate the normal using an already evaluated distance in one point
+vec3 calcNormalA(in vec3 pos, in float h)
+{
+    vec4 e = vec4(0.0005,-0.0005, 1., -1);
+    pos = pos - e.xxx;
+    return normalize(e.zww*DE( pos + e.xyy ) + 
+  			 		 e.wwz*DE( pos + e.yyx ) + 
+			  		 e.wzw*DE( pos + e.yxy ) + 
+              		 e.zzz*h );
+}

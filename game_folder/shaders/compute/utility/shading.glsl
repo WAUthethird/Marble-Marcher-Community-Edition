@@ -151,6 +151,31 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	return vec4(ambient_color,1.)*(0.5-cos(3.14159265*occlusion_angle)*0.5);
 }
 
+//Global illumination approximation, loicvdb's shader https://www.shadertoy.com/view/3t3GWH used as reference
+#define GIStrength .3
+#define AOStrength .3
+#define AmbientLightSteps 14
+vec3 ambient_light(vec3 pos)
+{
+    vec3 pos0 = pos;
+    float dist0 = DE(pos);
+    vec3 normal = calcNormal(pos, MIN_DIST).xyz, gi, al = vec3(0.0);
+    float ao = 1., dist = dist0;
+	vec3 lcolor = ambient_sky_color(LIGHT_DIRECTION);
+    for(int i = 0; i < AmbientLightSteps; i++){
+        float expectedDist = dist * (1. + .8);
+        dist = DE(pos);
+        float weight = AOStrength*(1.-float(i)/float(AmbientLightSteps));	//more weight to first samples
+        ao *= pow(clamp(dist/expectedDist, 0., 1.0), weight);
+        normal = normalize(calcNormalA(pos, dist)+1.5*normal); //"smoothed" normal to avoid artifacts
+        pos += normal * .8*dist; //slightly shorter to avoid artifacts
+        al += ambient_sky_color(normal);
+        if(i == 6 || i == 13) gi += ao*lcolor*shadow_march(vec4(pos, MIN_DIST), vec4(LIGHT_DIRECTION,0), 10., LIGHT_ANGLE); // two GI samples
+    }
+    gi *= GIStrength/2.0;
+    return gi + al/float(AmbientLightSteps) * ao;
+}
+
 
 vec3 refraction(vec3 rd, vec3 n, float p) {
 	float dot_nd = dot(rd, n);
@@ -404,10 +429,20 @@ vec3 NEON_shading(in vec4 pos, in vec4 dir)
 	return color/NEON_iterations;
 }
 
+vec3 ACESFilm(vec3 x)
+{
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return (x*(a*x+b))/(x*(c*x+d)+e);
+}
+
 vec3 HDRmapping(vec3 color, float exposure)
 {
 	// Exposure tone mapping
-    vec3 mapped = vec3(1.0) - exp(-color * exposure);
+    vec3 mapped = ACESFilm(color * exposure);
     // Gamma correction 
     return pow(mapped, vec3(1.0 / gamma_camera));
 }

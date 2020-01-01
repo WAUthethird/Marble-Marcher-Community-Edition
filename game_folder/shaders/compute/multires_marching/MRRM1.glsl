@@ -31,7 +31,7 @@ void main() {
 	float res_ratio = float(imageSize(color_HDR).x/imageSize(DE_output).x);
 	fovray *= res_ratio;
 	dir.w = 4*Camera.size;
-	ray_march_limited(pos, dir, var, 1.5*fovray);
+	ray_march_limited(pos, dir, var, 2.*fovray);
 	
 	vec4 pos1 = pos;
 	
