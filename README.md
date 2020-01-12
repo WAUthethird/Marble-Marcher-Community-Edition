@@ -1,6 +1,6 @@
 # Marble Marcher: Community Edition
 
-### Version 1.4.0 beta
+### Version 1.4.2 beta
 
 ![Logo](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/LOGO.PNG)
 
