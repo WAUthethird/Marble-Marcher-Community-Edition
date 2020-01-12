@@ -4,11 +4,10 @@
 #define block_size 64
 
 layout(local_size_x = group_size, local_size_y = group_size) in;
-layout(rgba32f, binding = 0) uniform image2D illuminationDirect; 
-layout(rgba32f, binding = 1) uniform image2D illuminationGI; 
-layout(rgba32f, binding = 2) uniform image2D color_output; 
-layout(rgba32f, binding = 3) uniform image2D DE_input; 
-layout(rgba32f, binding = 4) uniform image2D color_HDR; //calculate final color
+layout(rgba32f, binding = 0) uniform image2D illumination; //shadows
+layout(rgba32f, binding = 1) uniform image2D color_output; 
+layout(rgba32f, binding = 2) uniform image2D DE_input; 
+layout(rgba32f, binding = 3) uniform image2D color_HDR; //calculate final color
 
 
 //make all the local distance estimator spheres shared
@@ -21,7 +20,7 @@ void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);
 	vec2 img_size = vec2(imageSize(color_HDR));
-	float res_ratio = imageSize(illuminationDirect).x/img_size.x;
+	float res_ratio = imageSize(illumination).x/img_size.x;
 	vec4 sph = imageLoad(DE_input, global_pos);
 	
 	
@@ -32,13 +31,12 @@ void main() {
 	
 	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
 	
-	vec4 illumDIR = bilinear_surface(illuminationDirect, td, 3*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
-	vec4 illumGI = bilinear_surface(illuminationGI, td, 3*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
+	vec4 illum = bilinear_surface(illumination, td, 3*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
 	//vec4 illum = interp(illumination, vec2(global_pos)*res_ratio);
 	pos = sph;
 	dir.w += td; 
 	
-	vec3 color = shading(pos, dir, fovray, illumDIR.xyz, illumGI.xyz);
+	vec3 color = shading(pos, dir, fovray, illum.x);
 	//color  = vec3(illum.x);
 	vec3 prev_color = imageLoad(color_HDR, global_pos).xyz;
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))

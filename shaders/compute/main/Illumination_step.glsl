@@ -3,10 +3,9 @@
 #define block_size 64
 
 layout(local_size_x = group_size, local_size_y = group_size) in;
-layout(rgba32f, binding = 0) uniform image2D global_illum; 
-layout(rgba32f, binding = 1) uniform image2D normals; 
-layout(rgba32f, binding = 2) uniform image2D DE_input; 
-layout(rgba32f, binding = 3) uniform image2D color_HDR; //calculate final color
+layout(rgba32f, binding = 0) uniform image2D illumination; 
+layout(rgba32f, binding = 1) uniform image2D DE_input; 
+layout(rgba32f, binding = 2) uniform image2D color_HDR; //calculate final color
 
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
@@ -14,14 +13,15 @@ shared vec4 de_sph[group_size][group_size];
 #include<utility/camera.glsl>
 #include<utility/shading.glsl>
 
-///Half-resolution global illumination step
+///Half-resolution illumination step
+
 
 void main() {
 
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);
 	
-	vec2 img_size = vec2(imageSize(global_illum));
+	vec2 img_size = vec2(imageSize(illumination));
 	vec2 pimg_size = vec2(imageSize(DE_input));
 	vec2 step_scale = img_size/pimg_size;
 	
@@ -39,18 +39,16 @@ void main() {
 	dir.w += td; 
 	
 	vec4 illum = vec4(0);
-	vec4 norm = vec4(1,0,0,0);
+	
 	if(pos.w < max(2*fovray*td, MIN_DIST) && SHADOWS_ENABLED)
 	{
-		//marching towards a point at a distance = to the pixel cone radius from the object
-		float pix_cone_rad = 10.*fovray*td/step_scale.x;
-		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
-		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
-		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
-		norm = calcNormal(pos.xyz, 0.1*pix_cone_rad);
-		illum.xyz = ambient_light(pos.xyz, pix_cone_rad);
+		pos.xyz += (DE(pos.xyz) - 2.*fovray*td/step_scale.x)*dir.xyz;
+		pos.xyz += (DE(pos.xyz) - 2.*fovray*td/step_scale.x)*dir.xyz;
+		pos.xyz += (DE(pos.xyz) - 2.*fovray*td/step_scale.x)*dir.xyz;
+		illum.x = shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, LIGHT_ANGLE);
+		
+		//illum.y = ambient_occlusion(pos, norm);
 	}
 	illum.w = td;
-	imageStore(global_illum, global_pos, illum);	 
-	imageStore(normals, global_pos, norm);	 
+	imageStore(illumination, global_pos, illum);	 
 }

@@ -17,7 +17,7 @@ uniform float time;
 uniform float PBR_METALLIC;
 uniform float PBR_ROUGHNESS;
 
-layout(rgba8, binding = 5) uniform image2D color_flag; 
+layout(rgba8, binding = 4) uniform image2D color_flag; 
 
 ///Original MM distance estimators
 

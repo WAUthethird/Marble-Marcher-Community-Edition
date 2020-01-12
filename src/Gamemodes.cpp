@@ -520,6 +520,7 @@ void OpenScreenSaver(Scene * scene, Overlays * overlays)
 
 void PlayNewGame(Scene * scene, sf::RenderWindow * window, int level)
 {
+	SetCameraFocus(1e10);
 	StopReplay();
 	RemoveAllObjects();
 	game_mode = PLAYING;

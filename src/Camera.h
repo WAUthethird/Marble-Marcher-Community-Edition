@@ -37,9 +37,10 @@ public:
 		FirstPerson
 	};
 
-	Camera() : alpha(0), beta(0), gamma(0), cur_mode(Free), radius(1.f), auto_exposure_speed(0.5),
+	Camera() : alpha(0), beta(0), gamma(0), cur_mode(Camera::Free), radius(1.f), auto_exposure_speed(0.5),
 		smooth(0.3f), FOV(75.f), focus(1e10), bokeh(0), mblur(0.008), speckle(10), size(0),
-		exposure(0.7f), bloomintensity(0.05), bloomradius(3), iFrame(0)
+		exposure(0.7f), bloomintensity(0.05), bloomradius(3), iFrame(0), auto_exposure_range(4.), 
+		aspect_ratio(1.), auto_exposure_target(1.), cross_eye(false), eye_separation(0.01), radv(1.f)
 	{
 		//camera directions
 		dirx = quat(0, 1, 0, 0);
@@ -98,6 +99,7 @@ public:
 
 	float auto_exposure_speed;
 	float auto_exposure_target;
+	float auto_exposure_range;
 private:
 	CameraMode cur_mode;
 	

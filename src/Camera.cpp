@@ -102,7 +102,7 @@ void Camera::SetDirZ(vec3 dir)
 
 void Camera::UpdateExposure(float illumination)
 {
-	exposure += auto_exposure_speed*(auto_exposure_target - illumination)*exposure;
+	exposure = exp(clamp(log(exposure + auto_exposure_speed*(auto_exposure_target - illumination)*exposure), -auto_exposure_range * 0.5f, auto_exposure_range * 0.5f));
 }
 
 vec3 Camera::GetPosition()

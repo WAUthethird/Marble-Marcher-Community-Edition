@@ -3,9 +3,10 @@
 #define block_size 64
 
 layout(local_size_x = group_size, local_size_y = group_size) in;
-layout(rgba32f, binding = 0) uniform image2D illumination; 
-layout(rgba32f, binding = 1) uniform image2D DE_input; 
-layout(rgba32f, binding = 2) uniform image2D color_HDR; //calculate final color
+layout(rgba32f, binding = 0) uniform image2D illuminationDirect; 
+layout(rgba32f, binding = 1) uniform image2D illuminationGI; 
+layout(rgba32f, binding = 2) uniform image2D DE_input; 
+layout(rgba32f, binding = 3) uniform image2D color_HDR; //calculate final color
 
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
@@ -13,15 +14,14 @@ shared vec4 de_sph[group_size][group_size];
 #include<utility/camera.glsl>
 #include<utility/shading.glsl>
 
-///Half-resolution illumination step
-
+///Low-resolution illumination step
 
 void main() {
 
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);
 	
-	vec2 img_size = vec2(imageSize(illumination));
+	vec2 img_size = vec2(imageSize(illuminationDirect));
 	vec2 pimg_size = vec2(imageSize(DE_input));
 	vec2 step_scale = img_size/pimg_size;
 	
@@ -38,17 +38,22 @@ void main() {
 	pos = sph;
 	dir.w += td; 
 	
-	vec4 illum = vec4(0);
+	vec4 illumDIR = vec4(0);
+	vec4 illumGI = vec4(1.);
 	
 	if(pos.w < max(2*fovray*td, MIN_DIST) && SHADOWS_ENABLED)
 	{
-		pos.xyz += (DE(pos.xyz) - 2.*fovray*td/step_scale.x)*dir.xyz;
-		pos.xyz += (DE(pos.xyz) - 2.*fovray*td/step_scale.x)*dir.xyz;
-		pos.xyz += (DE(pos.xyz) - 2.*fovray*td/step_scale.x)*dir.xyz;
-		illum.x = shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, LIGHT_ANGLE);
+		//marching towards a point at a distance = to the pixel cone radius from the object
+		float pix_cone_rad = 2.*fovray*td/step_scale.x;
+		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
+		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
+		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
 		
-		//illum.y = ambient_occlusion(pos, norm);
+		illumDIR.xyz = sky_color(LIGHT_DIRECTION)*shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, LIGHT_ANGLE);
 	}
-	illum.w = td;
-	imageStore(illumination, global_pos, illum);	 
+	illumDIR.w = td;
+	illumGI.w = td;
+	
+	imageStore(illuminationDirect, global_pos, illumDIR);
+	imageStore(illuminationGI, global_pos, illumGI);	
 }

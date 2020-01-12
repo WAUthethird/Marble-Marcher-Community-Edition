@@ -96,8 +96,6 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 }
 ///END PBR functions
 
-
-#include<utility/RNG.glsl>
 const float Br = 0.0025;
 const float Bm = 0.0003;
 const float g =  0.9800;
@@ -107,20 +105,19 @@ const vec3 Km = Bm / pow(nitrogen, vec3(0.84));
 
 vec3 sky_color(in vec3 pos)
 {
-	pos = normalize(pos);
 	// Atmosphere Scattering
 	vec3 fsun = LIGHT_DIRECTION;
-	float brightnees = exp(-sqrt(pow(abs(min(5*(pos.y-0.01),0)),2)+0.));
+	float brightnees = exp(-sqrt(pow(min(5*(pos.y-0.1),0),2)+0.1));
 	if(pos.y < 0)
 	{
-		pos.y = 0.;
-		pos = normalize(pos);
+		pos.y = 0;
+		pos.xyz = normalize(pos.xyz);
 	}
     float mu = dot(normalize(pos), normalize(fsun));
 	
 	vec3 extinction = mix(exp(-exp(-((pos.y + fsun.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0, vec3(1.0 - exp(fsun.y)) * 0.2, -fsun.y * 0.2 + 0.5);
 	vec3 sky_col = brightnees* 3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
-	sky_col = 0.4*clamp(sky_col,0.001,15.);
+	sky_col = 0.4*clamp(sky_col,0,10);
 	return pow(sky_col,vec3(1.f/gamma_sky)); 
 }
 
@@ -128,7 +125,7 @@ vec3 ambient_sky_color(in vec3 pos)
 {
 	float y = pos.y;
 	pos.xyz = normalize(vec3(1,0,0));
-	return 0.5*sky_color(pos)*exp(-abs(y));
+	return sky_color(pos)*exp(-abs(y));
 }
 
 vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
@@ -139,7 +136,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	vec3 direction = normalize(norm.xyz);
 	vec3 ambient_color = ambient_sky_color(norm.xyz);
 	//step out
-	pos.xyz += 0.04*dir.w*direction;
+	pos.xyz += 0.03*dir.w*direction;
 	//march in the direction of the normal
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
@@ -155,31 +152,28 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 }
 
 //Global illumination approximation, loicvdb's shader https://www.shadertoy.com/view/3t3GWH used as reference
-#define GIStrength .45
+#define GIStrength .3
 #define AOStrength .3
-#define precision 1.01
 #define AmbientLightSteps 14
-
-
-vec3 ambient_light(vec3 pos, float d)
+vec3 ambient_light(vec3 pos)
 {
     vec3 pos0 = pos;
     float dist0 = DE(pos);
-    vec3 normal = calcNormal(pos, d).xyz, gi = vec3(0.), al = vec3(0.0);
+    vec3 normal = calcNormal(pos, MIN_DIST).xyz, gi, al = vec3(0.0);
     float ao = 1., dist = dist0;
-	vec3 lcolor = sky_color(LIGHT_DIRECTION);
+	vec3 lcolor = ambient_sky_color(LIGHT_DIRECTION);
     for(int i = 0; i < AmbientLightSteps; i++){
         float expectedDist = dist * (1. + .8);
-        dist = max(DE(pos),MIN_DIST);
+        dist = DE(pos);
         float weight = AOStrength*(1.-float(i)/float(AmbientLightSteps));	//more weight to first samples
-        ao *= pow(clamp(dist/max(max(expectedDist, d),MIN_DIST), 0., 1.0), weight);
-        normal = normalize(calcNormalA(pos, dist) + (hash33(pos)-0.5));
-        pos += normal/precision*dist; //slightly shorter to avoid artifacts
+        ao *= pow(clamp(dist/expectedDist, 0., 1.0), weight);
+        normal = normalize(calcNormalA(pos, dist)+1.5*normal); //"smoothed" normal to avoid artifacts
+        pos += normal * .8*dist; //slightly shorter to avoid artifacts
         al += ambient_sky_color(normal);
-        if(i == 6 || i == 13) gi += ao*lcolor*shadow_march(vec4(pos, MIN_DIST), vec4(normalize(LIGHT_DIRECTION),0), 10., 0.3); // two GI samples
+        if(i == 6 || i == 13) gi += ao*lcolor*shadow_march(vec4(pos, MIN_DIST), vec4(LIGHT_DIRECTION,0), 10., LIGHT_ANGLE); // two GI samples
     }
     gi *= GIStrength/2.0;
-    return gi + al * ao / float(AmbientLightSteps);
+    return gi + al/float(AmbientLightSteps) * ao;
 }
 
 
@@ -188,16 +182,13 @@ vec3 refraction(vec3 rd, vec3 n, float p) {
 	return p * (rd - dot_nd * n) + sqrt(1.0 - (p * p) * (1.0 - dot_nd * dot_nd)) * n;
 }
 
-vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, vec3 direct, vec3 GI) 
+vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, float shadow) 
 {
 	vec3 albedo = color.xyz;
 	albedo = pow(albedo,vec3(1.f/gamma_material)); //square it to make the fractals more colorfull 
 	
 	vec4 ambient_color = ambient_occlusion(pos, norm, dir);
-	if(GI == vec3(0.))
-		GI = ambient_color.xyz;
-	else
-		GI *= 0.5*ambient_color.xyz + 0.5*length(ambient_color.xyz)*sqrt(0.3333);
+	
 	float metallic = pbr.x;
 	vec3 F0 = vec3(0.04); 
 	F0 = mix(F0, albedo, metallic);
@@ -207,16 +198,11 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 	vec3 V = -dir.xyz;
 	vec3 N = norm.xyz;
 	
-	if(!SHADOWS_ENABLED)
-	{
-		direct = ambient_color.xyz;
-	}
-
-	{ //light contribution
-		float roughness = pbr.y;
-		vec3 L = normalize(LIGHT_DIRECTION);
+	{ //ambient occlusion contribution
+		float roughness = max(pbr.y,0.5);
+		vec3 L = normalize(N);
 		vec3 H = normalize(V + L);
-		vec3 radiance = direct*(0.9+0.1*ambient_color.w);        
+		vec3 radiance = ambient_color.xyz;        
 		
 		// cook-torrance brdf
 		float NDF = DistributionGGX(N, H, roughness);        
@@ -236,11 +222,18 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 	
-	{ //light reflection, global illumination
-		float roughness = 0.95;
-		vec3 L = normalize(N);
+	if(!SHADOWS_ENABLED)
+	{
+		shadow = ambient_color.w;
+	}
+	
+	vec3 sun_color = sky_color(LIGHT_DIRECTION);
+
+	{ //light contribution
+		float roughness = pbr.y;
+		vec3 L = normalize(LIGHT_DIRECTION);
 		vec3 H = normalize(V + L);
-		vec3 radiance = GI;        
+		vec3 radiance = sun_color*shadow*(0.8+0.2*ambient_color.w);        
 		
 		// cook-torrance brdf
 		float NDF = DistributionGGX(N, H, roughness);        
@@ -259,6 +252,30 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 		float NdotL = max(dot(N, L), 0.0);                
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
+	/*
+	{ //light reflection, GI imitation
+		float roughness = max(PBR_ROUGHNESS,0.5);
+		vec3 L = normalize(-LIGHT_DIRECTION);
+		vec3 H = normalize(V + L);
+		vec3 radiance = 0.35*sun_color*ambient_color.w*(1-ambient_color.w);        
+		
+		// cook-torrance brdf
+		float NDF = DistributionGGX(N, H, roughness);        
+		float G   = GeometrySmith(N, V, L, roughness);      
+		vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+		
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - metallic;	  
+		
+		vec3 numerator    = NDF * G * F;
+		float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+		vec3 specular     = numerator / max(denominator, 0.001);  
+			
+		// add to outgoing radiance Lo
+		float NdotL = max(dot(N, L), 0.0);                
+		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+	}*/
 
 	if(color.w>0.5) // if marble
 	{
@@ -294,8 +311,10 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 	return Lo;
 }
 
-vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, vec3 direct, float k)
+vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, float shadow)
 {
+	
+	
 	if(pos.w < max(16*fovray*dir.w, MIN_DIST))
 	{
 		//calculate the normal
@@ -310,10 +329,12 @@ vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, vec3 direct, float k)
 		{
 			//optimize color sampling 
 			vec3 cpos = pos.xyz - pos.w*norm.xyz;
+			//cpos = cpos - DE(cpos)*norm.xyz;
+			//cpos = cpos - DE(cpos)*norm.xyz;
 			
 			vec4 color; vec2 pbr;
 			scene_material(cpos, color, pbr);
-			return lighting(color, pbr, pos, dir, norm, vec3(0), vec3(0), direct, vec3(k)); 
+			return lighting(color, pbr, pos, dir, norm, vec3(0), vec3(0), shadow); 
 		}
 	}
 	else
@@ -323,15 +344,15 @@ vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, vec3 direct, float k)
 }
 
 
-vec3 render_ray(in vec4 pos, in vec4 dir, float fov, float k)
+vec3 render_ray(in vec4 pos, in vec4 dir, float fov)
 {
 	vec4 var = vec4(0,0,0,1);
 	ray_march(pos, dir, var, fov); 
-	vec3 direct = sky_color(LIGHT_DIRECTION)*shadow_march(pos, vec4(LIGHT_DIRECTION,0), 10., LIGHT_ANGLE);
-	return shading_simple(pos, dir, fov, direct, k);
+	float shadow = shadow_march(pos, vec4(LIGHT_DIRECTION,0), 10., LIGHT_ANGLE);
+	return shading_simple(pos, dir, fov, shadow);
 }
 
-vec3 shading(in vec4 pos, in vec4 dir, float fov, vec3 direct, vec3 GI)
+vec3 shading(in vec4 pos, in vec4 dir, float fov, float shadow)
 {
 	if(pos.w < max(2*fovray*dir.w, MIN_DIST))
 	{
@@ -347,13 +368,15 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, vec3 direct, vec3 GI)
 		{
 			//optimize color sampling 
 			vec3 cpos = pos.xyz - norm.w*norm.xyz;
+		//	cpos = cpos - DE(cpos)*norm.xyz;
+		//	cpos = cpos - DE(cpos)*norm.xyz;
+		//	cpos = cpos - DE(cpos)*norm.xyz;
 			vec4 color; vec2 pbr;
 			scene_material(cpos, color, pbr);
 			vec3 refl = vec3(0);
 			vec3 refr = vec3(0);
 			if(color.w>0.5) // if marble
 			{
-				//Calculate refraction
 				vec3 n = normalize(iMarblePos - cpos.xyz);
 				vec3 q = refraction(dir.xyz, n, 1.0 / 1.5);
 				vec3 p2 = pos.xyz + (dot(q, n) * 2. * iMarbleRad) * q;
@@ -362,7 +385,7 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, vec3 direct, vec3 GI)
 				vec4 p_temp = vec4(p2+ n*fov*dir.w*2.5, 0);
 				vec4 r_temp = vec4(q, dir.w);
 				
-				refr = render_ray(p_temp, r_temp, fov*1.5, length(GI));
+				refr = render_ray(p_temp, r_temp, fov*1.5);
 
 				//Calculate reflection
 				n = -normalize(iMarblePos - cpos.xyz);
@@ -370,10 +393,10 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, vec3 direct, vec3 GI)
 				p_temp = vec4(pos.xyz + n*fov*dir.w*2., 0);
 				r_temp = vec4(q, dir.w);
 				
-				refl = render_ray(p_temp, r_temp, fov*1.5, length(GI));
+				refl = render_ray(p_temp, r_temp, fov*1.5);
 			}
 			
-			return lighting(color, pbr, vec4(cpos, pos.w), dir, norm, refl, refr, direct, GI); 
+			return lighting(color, pbr, vec4(cpos, pos.w), dir, norm, refl, refr, shadow); 
 		}
 	}
 	else

@@ -18,7 +18,7 @@ shared vec4 de_sph[1][1];
 #define DOF_samples 50
 #define DOF
 
-#define RA 3.5
+#define RA 2.5
 const float GA = 2.399; 
 const mat2 rot = mat2(cos(GA),sin(GA),-sin(GA),cos(GA));
 
