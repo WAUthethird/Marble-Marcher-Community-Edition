@@ -5,16 +5,22 @@
 
 layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D before; 
-layout(rgba32f, binding = 1) uniform image2D after; 
-layout(rgba32f, binding = 2) uniform image2D DE_input; 
+layout(rgba32f, binding = 1) uniform image2D before_normal; 
+layout(rgba32f, binding = 2) uniform image2D after; 
+layout(rgba32f, binding = 3) uniform image2D DE_input; 
 
 //bilateral blur... 
 //4 pixel radius
-#define blur_R 1
+#define blur_R 4
 
 vec3 getpos(vec2 p, vec2 rr)
 {
 	return imageLoad(DE_input, ivec2(p*rr)).xyz;
+}
+
+vec3 getnorm(vec2 p)
+{
+	return imageLoad(before_normal, ivec2(p)).xyz;
 }
 
 #include<utility/camera.glsl>
@@ -36,6 +42,7 @@ void main() {
 	vec4 var = vec4(0);
 	
 	vec3 cpos = getpos(global_pos, res_ratio);
+	vec3 cnorm = getnorm(global_pos);
 	float td = dot(dir.xyz, cpos - pos.xyz);//traveled distance
 	float DX = fovray*td;
 	
@@ -44,7 +51,8 @@ void main() {
 		for(int j = -blur_R; j <= blur_R; j++)
 		{
 			vec3 dpos = (getpos(global_pos + vec2(i,j),res_ratio) - cpos)/td;
-			float weight = exp(- 1200.*dot(dpos,dpos));
+			vec3 dnorm = getnorm(global_pos + vec2(i,j)) - cnorm;
+			float weight = exp(- 1200.*dot(dpos,dpos) - 8.*dot(dnorm,dnorm));
 			sum += weight*imageLoad(before, ivec2(global_pos) + ivec2(i,j));
 			norm += weight;
 		}

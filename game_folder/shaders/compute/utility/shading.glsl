@@ -17,14 +17,48 @@ uniform float gamma_camera;
 //better to use a sampler though
 vec4 interp(layout (rgba32f) image2D text, vec2 coord)
 {
-	ivec2 ci = ivec2(coord)+ivec2(0,0);
+	//coord += vec2(0.5);
+	ivec2 ci = ivec2(coord);
 	vec2 d = coord - floor(coord);
-	//d = vec2(0,0);
-	//a fix for gamma ruining the interpolation
 	return (imageLoad(text, ci)*(1-d.x)*(1-d.y) +
 		   imageLoad(text, ci+ivec2(1,0))*d.x*(1-d.y) +
 		   imageLoad(text, ci+ivec2(0,1))*(1-d.x)*d.y +
 		   imageLoad(text, ci+ivec2(1,1))*d.x*d.y);
+}
+
+
+vec4 cubic(vec4 p0, vec4 p1, vec4 p2, vec4 p3, float x)
+{
+	return  p1 + 0.5 * x*(p2 - p0 + x*(2.0*p0 - 5.0*p1 + 4.0*p2 - p3 + x*(3.0*(p1 - p2) + p3 - p0)));
+}
+
+vec4 val(layout (rgba32f) image2D T, ivec2 a, int b, int c)
+{
+	return imageLoad(T, a+ivec2(b,c));
+}
+
+vec4 interp_bicubic(layout (rgba32f) image2D T, vec2 coord)
+{
+	ivec2 i = ivec2(coord);
+	vec2 d = coord - floor(coord);
+	vec4 p0 = cubic(val(T, i, -1,-1), val(T, i, 0,-1), val(T, i, 1,-1), val(T, i, 2,-1), d.x);
+	vec4 p1 = cubic(val(T, i, -1, 0), val(T, i, 0, 0), val(T, i, 1, 0), val(T, i, 2, 0), d.x);
+	vec4 p2 = cubic(val(T, i, -1, 1), val(T, i, 0, 1), val(T, i, 1, 1), val(T, i, 2, 1), d.x);
+	vec4 p3 = cubic(val(T, i, -1, 2), val(T, i, 0, 2), val(T, i, 1, 2), val(T, i, 2, 2), d.x);
+	return abs(cubic(p0, p1, p2, p3, d.y));
+}
+
+vec4 interp_sharp(layout (rgba32f) image2D text, vec2 coord, float sharpness)
+{
+	//coord += vec2(0.5);
+	ivec2 ci = ivec2(coord);
+	vec2 d = coord - floor(coord);
+	float b0 = tanh(0.5*sharpness);
+	vec2 k = (tanh(sharpness*(d - 0.5))+b0)*0.5/b0;
+	vec4 r1 = mix(imageLoad(text, ci), imageLoad(text, ci+ivec2(1,0)), k.x);
+	vec4 r2 = mix(imageLoad(text, ci+ivec2(0,1)), imageLoad(text, ci+ivec2(1,1)), k.x);
+	vec4 c = mix(r1, r2, k.y);
+	return c;
 }
 
 //2d interpolation that is aware of the 3d positions of our points
@@ -96,8 +130,6 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 }
 ///END PBR functions
 
-
-#include<utility/RNG.glsl>
 const float Br = 0.0025;
 const float Bm = 0.0003;
 const float g =  0.9800;
@@ -139,7 +171,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	vec3 direction = normalize(norm.xyz);
 	vec3 ambient_color = ambient_sky_color(norm.xyz);
 	//step out
-	pos.xyz += 0.04*dir.w*direction;
+	pos.xyz += 0.025*dir.w*direction;
 	//march in the direction of the normal
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
@@ -237,7 +269,7 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 	}
 	
 	{ //light reflection, global illumination
-		float roughness = 0.95;
+		float roughness = 0.7;
 		vec3 L = normalize(N);
 		vec3 H = normalize(V + L);
 		vec3 radiance = GI;        

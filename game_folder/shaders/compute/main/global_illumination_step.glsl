@@ -43,11 +43,11 @@ void main() {
 	if(pos.w < max(2*fovray*td, MIN_DIST) && SHADOWS_ENABLED)
 	{
 		//marching towards a point at a distance = to the pixel cone radius from the object
-		float pix_cone_rad = 10.*fovray*td/step_scale.x;
+		float pix_cone_rad = 2.*fovray*td/step_scale.x;
 		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
 		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
 		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
-		norm = calcNormal(pos.xyz, 0.1*pix_cone_rad);
+		norm = calcNormal(pos.xyz, pix_cone_rad);
 		illum.xyz = ambient_light(pos.xyz, pix_cone_rad);
 	}
 	illum.w = td;

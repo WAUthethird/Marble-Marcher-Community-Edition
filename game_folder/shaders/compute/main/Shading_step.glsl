@@ -9,7 +9,8 @@ layout(rgba32f, binding = 1) uniform image2D illuminationGI;
 layout(rgba32f, binding = 2) uniform image2D color_output; 
 layout(rgba32f, binding = 3) uniform image2D DE_input; 
 layout(rgba32f, binding = 4) uniform image2D color_HDR; //calculate final color
-
+layout(rgba32f, binding = 5) uniform image2D prevDE; //calculate final color
+layout(rgba32f, binding = 6) uniform image2D color_HDR1; //calculate final color
 
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
@@ -24,9 +25,9 @@ void main() {
 	float res_ratio = imageSize(illuminationDirect).x/img_size.x;
 	vec4 sph = imageLoad(DE_input, global_pos);
 	
-	
 	ray rr = get_ray(vec2(global_pos)/img_size);
 	vec4 pos = vec4(rr.pos,0);
+	vec3 cpos = pos.xyz;
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
 	
@@ -34,17 +35,14 @@ void main() {
 	
 	vec4 illumDIR = bilinear_surface(illuminationDirect, td, 3*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
 	vec4 illumGI = bilinear_surface(illuminationGI, td, 3*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
-	//vec4 illum = interp(illumination, vec2(global_pos)*res_ratio);
 	pos = sph;
 	dir.w += td; 
 	
 	vec3 color = shading(pos, dir, fovray, illumDIR.xyz, illumGI.xyz);
-	//color  = vec3(illum.x);
-	vec3 prev_color = imageLoad(color_HDR, global_pos).xyz;
+
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))
 	{
-		//color = prev_color*Camera.mblur + (1-Camera.mblur)*color; //blur
-		imageStore(color_HDR, global_pos, vec4(color.xyz, td));	 
+		imageStore(color_HDR1, global_pos, vec4(color.xyz, 1.));	 
 		imageStore(color_output, global_pos, vec4(color.xyz, td));	 
 	}
 }

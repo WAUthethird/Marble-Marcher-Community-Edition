@@ -1,9 +1,10 @@
+#define PI 3.14159265
 #define SQRT2 1.4142135
 #define SQRT3 1.7320508
 #define SQRT5 2.2360679
 #define PERLIN_SCALE 3
 
-uniform float iFrame;
+uniform int iFrame;
 
 // HASH STUFF
 

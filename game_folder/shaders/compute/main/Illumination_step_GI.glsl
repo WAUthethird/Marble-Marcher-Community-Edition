@@ -43,15 +43,16 @@ void main() {
 	vec4 illumDIR = vec4(0);
 	vec4 illumGI = vec4(0);
 	
-	if(pos.w < max(2*fovray*td, MIN_DIST) && SHADOWS_ENABLED)
+	if(pos.w < max(5*fovray*td, MIN_DIST) && SHADOWS_ENABLED)
 	{
+		illumGI = bilinear_surface(global_illum, td, GIscale, vec2(global_pos)*GIscale);
 		//marching towards a point at a distance = to the pixel cone radius from the object
-		float pix_cone_rad = 2.*fovray*td/step_scale.x;
+		float pix_cone_rad = 3.*fovray*td/step_scale.x;
 		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
 		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
 		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
 			
-		illumGI = bilinear_surface(global_illum, td, GIscale, vec2(global_pos)*GIscale);
+	
 		illumDIR.xyz = sky_color(LIGHT_DIRECTION)*shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, LIGHT_ANGLE);
 	}
 	illumDIR.w = td;

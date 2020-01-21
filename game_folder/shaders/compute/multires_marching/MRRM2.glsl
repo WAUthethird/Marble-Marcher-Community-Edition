@@ -9,6 +9,8 @@ layout(rgba32f, binding = 0) uniform image2D DE_input;
 layout(rgba32f, binding = 1) uniform image2D DE2_input;
 layout(rgba32f, binding = 2) uniform image2D var_input; 
 layout(rgba32f, binding = 3) uniform image2D DE_output; //calculate final DE spheres
+layout(rgba32f, binding = 4) uniform image2D HDR; 
+layout(rgba32f, binding = 5) uniform image2D prevDE; //previous 
 
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
@@ -36,7 +38,7 @@ void main() {
 		memoryBarrierShared(); 
 	#endif
 	
-	ray rr = get_ray(vec2(global_pos)/img_size);
+	ray rr = get_ray(vec2(global_pos)/img_size, 1.);
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = imageLoad(var_input, prev_pos);
@@ -52,13 +54,14 @@ void main() {
 		barrier();
 		pos.w = find_furthest_intersection(dir.xyz, pos.xyz, local_indx);
 	#else
-		pos.w = sphere_intersection(dir.xyz, pos.xyz, sph);
-		pos.w = max(pos.w, sphere_intersection(dir.xyz, pos.xyz, sph_norm));
+		pos.w = 0.5*sphere_intersection(dir.xyz, pos.xyz, sph);
+		//pos.w = max(pos.w, sphere_intersection(dir.xyz, pos.xyz, sph_norm));
 	#endif
 	
 	
 	ray_march_continue(pos, dir, var, fovray);
 	
 	//save the DE spheres
+	imageStore(prevDE, global_pos, imageLoad(DE_output, global_pos));
 	imageStore(DE_output, global_pos, pos);	 	
 }

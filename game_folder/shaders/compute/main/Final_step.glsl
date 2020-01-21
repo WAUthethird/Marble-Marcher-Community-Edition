@@ -7,7 +7,9 @@ layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D bloom; 
 layout(rgba8, binding = 1) uniform image2D final_color; 
 layout(rgba32f, binding = 2) uniform image2D DE_input; 
-layout(rgba32f, binding = 3) uniform image2D color_HDR; 
+layout(rgba32f, binding = 3) uniform image2D color_HDR0; 
+layout(rgba32f, binding = 4) uniform image2D prevDE; 
+layout(rgba32f, binding = 5) uniform image2D color_HDR1; 
 
 //??
 shared vec4 de_sph[1][1]; 
@@ -15,10 +17,10 @@ shared vec4 de_sph[1][1];
 #include<utility/camera.glsl>
 #include<utility/shading.glsl>
 
-#define DOF_samples 50
+#define DOF_samples 100
 #define DOF
 
-#define RA 3.5
+#define RA 10.
 const float GA = 2.399; 
 const mat2 rot = mat2(cos(GA),sin(GA),-sin(GA),cos(GA));
 
@@ -40,10 +42,10 @@ float convol_kernel(float w1, float w2, float rad)
 vec3 dof(vec2 uv)
 {
     float rad =RA/sqrt(DOF_samples);
-	vec2 img_size = vec2(imageSize(color_HDR));
+	vec2 img_size = vec2(imageSize(color_HDR1));
     vec2 pixel=vec2(img_size.x)*0.001, angle=vec2(0,rad);
     vec4 acc=vec4(0);
-    vec4 center = imageLoad(color_HDR, ivec2(uv+pixel*(rad-1.)*angle));
+    vec4 center = imageLoad(color_HDR1, ivec2(uv+pixel*(rad-1.)*angle));
     acc += convol_kernel(center.w, center.w, rad)*vec4(center.xyz,1.);
     rad=1.;
 	if(Camera.bokeh > 0.1) for (int j=0;j<DOF_samples;j++)
@@ -51,7 +53,7 @@ vec3 dof(vec2 uv)
         rad += 1./rad;
 	    angle *= rot;
         
-        vec4 col = imageLoad(color_HDR, ivec2(uv+pixel*(rad-1.)*angle));
+        vec4 col = imageLoad(color_HDR1, ivec2(uv+pixel*(rad-1.)*angle));
 
         acc += convol_kernel(center.w, col.w, rad)*vec4(col.xyz,1.);  
     }
@@ -62,15 +64,16 @@ vec3 dof(vec2 uv)
 
 void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
-	vec2 img_size = vec2(imageSize(color_HDR));
+	vec2 img_size = vec2(imageSize(color_HDR1));
 	
 	vec2 res_ratio = vec2(imageSize(bloom))/img_size;
 	vec3 bloom_color = interp(bloom, vec2(global_pos)*res_ratio).xyz;
 	
+	imageStore(color_HDR0, global_pos, imageLoad(color_HDR1, global_pos));
 	#ifdef DOF
 		vec3 fin_color = dof(vec2(global_pos)) + bloom_color;
 	#else
-		vec3 fin_color = imageLoad(color_HDR, global_pos).xyz + bloom_color;
+		vec3 fin_color = imageLoad(color_HDR1, global_pos).xyz + bloom_color;
 	#endif
 	
 	float vignette = 1.0 - VIGNETTE_STRENGTH * length(vec2(global_pos)/img_size - 0.5);

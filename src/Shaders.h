@@ -49,6 +49,7 @@ public:
 	void setUniform(std::string name, glm::mat3 X, bool transpose);
 	void setUniform(std::string name, glm::vec3 X);
 	void setUniform(std::string name, glm::vec2 X);
+	void setCameraObj(std::string name, gl_camera cam);
 	void setCamera(gl_camera cam);
 
 	GLuint getNativeHandle();
@@ -60,4 +61,7 @@ public:
 	std::string LoadFileText(fs::path path);
 
 	void Delete();
+
+private:
+	gl_camera prev_camera;
 };

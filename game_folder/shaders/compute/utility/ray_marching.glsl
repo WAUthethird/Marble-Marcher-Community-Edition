@@ -3,7 +3,7 @@
 #define MAX_DIST 500
 #define MIN_DIST 1e-6
 #define MAX_MARCHES 256
-#define NORMARCHES 8
+#define NORMARCHES 3
 #define overrelax 1.25
 
 /* OLD CODE
@@ -29,6 +29,7 @@ void ray_march(inout vec4 pos, inout vec4 dir, inout vec4 var, float fov)
 void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float max_d)
 {
     float prev_h = 0., td = 0.;
+	vec3 pp = p.xyz;
     float omega = overrelax;
     float candidate_td = 1.;
     float candidate_error = 1e8;
@@ -67,7 +68,8 @@ void ray_march(inout vec4 p, inout vec4 ray, inout vec4 var, float angle, float 
             prev_h = p.w;        
         }
     }
-    
+    if((ray.w+td) >= max_d) candidate_td = max_d - ray.w;
+	
     ray.w += candidate_td;
 	p.xyz = p.xyz + candidate_td*ray.xyz;
 	p.w = candidate_error*candidate_td;

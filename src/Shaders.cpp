@@ -138,27 +138,35 @@ void ComputeShader::setUniform(std::string name, glm::vec2 X)
 	glUniform2fv(A, 1, glm::value_ptr(X));
 }
 
+
+void ComputeShader::setCameraObj(std::string name, gl_camera cam)
+{
+	setUniform(name + ".position", cam.position);
+	setUniform(name + ".bokeh", cam.bokeh);
+	setUniform(name + ".dirx", cam.dirx);
+	setUniform(name + ".diry", cam.diry);
+	setUniform(name + ".dirz", cam.dirz);
+	setUniform(name + ".aspect_ratio", cam.aspect_ratio);
+	setUniform(name + ".exposure", cam.exposure);
+	setUniform(name + ".focus", cam.focus);
+	setUniform(name + ".FOV", cam.FOV);
+	setUniform(name + ".mblur", cam.mblur);
+	setUniform(name + ".position", cam.position);
+	setUniform(name + ".resolution", cam.resolution);
+	setUniform(name + ".size", cam.size);
+	setUniform(name + ".bloomradius", cam.bloomradius);
+	setUniform(name + ".bloomintensity", cam.bloomintensity);
+	setUniform(name + ".speckle", cam.speckle);
+	setUniform(name + ".cross_eye", cam.cross_eye);
+	setUniform(name + ".eye_separation", cam.eye_separation);
+	setUniform("iFrame", cam.iFrame);
+}
+
 void ComputeShader::setCamera(gl_camera cam)
 {
-	setUniform("Camera.position", cam.position);
-	setUniform("Camera.bokeh", cam.bokeh);
-	setUniform("Camera.dirx", cam.dirx);
-	setUniform("Camera.diry", cam.diry);
-	setUniform("Camera.dirz", cam.dirz);
-	setUniform("Camera.aspect_ratio", cam.aspect_ratio);
-	setUniform("Camera.exposure", cam.exposure);
-	setUniform("Camera.focus", cam.focus);
-	setUniform("Camera.FOV", cam.FOV);
-	setUniform("Camera.mblur", cam.mblur);
-	setUniform("Camera.position", cam.position);
-	setUniform("Camera.resolution", cam.resolution);
-	setUniform("Camera.size", cam.size);
-	setUniform("Camera.bloomradius", cam.bloomradius);
-	setUniform("Camera.bloomintensity", cam.bloomintensity);
-	setUniform("Camera.speckle", cam.speckle);
-	setUniform("Camera.cross_eye", cam.cross_eye);
-	setUniform("Camera.eye_separation", cam.eye_separation);
-	setUniform("iFrame", cam.iFrame);
+	setCameraObj("Camera", cam);
+	setCameraObj("PrevCamera", prev_camera);
+	prev_camera = cam;
 }
 
 GLuint ComputeShader::getNativeHandle()
