@@ -959,7 +959,7 @@ void TakeScreenshot()
 	renderer_ptr->camera.SetMotionBlur(0);
 	
 	//a few rendering steps to converge the TXAA
-	for(int i = 0; i < 8; i++) 	renderer_ptr->Render();
+	for(int i = 0; i < 15; i++) 	renderer_ptr->Render();
 
 	screenshot_txt->copyToImage().saveToFile((std::string)"screenshots/screenshot" + (std::string)num2str(time(NULL)) + ".jpg");
 

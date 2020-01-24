@@ -38,7 +38,7 @@ void main() {
 		memoryBarrierShared(); 
 	#endif
 	
-	ray rr = get_ray(vec2(global_pos)/img_size, 1.);
+	ray rr = get_ray(vec2(global_pos)/img_size, 2.);
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = imageLoad(var_input, prev_pos);

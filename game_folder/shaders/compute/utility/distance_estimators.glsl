@@ -170,7 +170,7 @@ vec4 col_flag(vec4 p)
 	if (d1 < d2) {
 		vec2 color_flag_s = vec2(imageSize(color_flag));
 		vec2 texture_coord = d_pos.xy*vec2(0.5,-0.48)/fsize.xy + vec2(0.5,0.5) - 0.5*vec2(0,caps_pos.x*(0.02+ caps_pos.x* 0.5))/fsize.xy;
-		vec3 flagcolor = 0.5*sin(imageLoad(color_flag, ivec2(texture_coord*color_flag_s)).xyz)+0.5;
+		vec3 flagcolor = imageLoad(color_flag, ivec2(texture_coord*color_flag_s)).xyz;
 		return vec4(flagcolor, d1);
 	} else {
 		return vec4(0.9, 0.9, 0.1, d2);

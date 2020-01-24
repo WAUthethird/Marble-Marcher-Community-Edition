@@ -69,11 +69,10 @@ void main() {
 	vec3 antialiased = vec3(0.);
 	antialiased = lastColor.xyz;
 	
-    float mixRate = min(lastColor.w, 0.5);
+    float mixRate = min(lastColor.w, 0.95);
     
     ivec3 off = ivec3(-1, 0, 1);
     vec3 in0 = imageLoad(color_input, global_pos).xyz;
-    
     antialiased = mix(antialiased * antialiased, in0 * in0, mixRate);
     antialiased = sqrt(antialiased);
     
@@ -117,7 +116,6 @@ void main() {
     mixRate = clamp(mixRate, 0.05, 0.5);
     
     antialiased = decodePalYuv(antialiased);
-	
 	imageStore(color_output, global_pos, vec4(antialiased, td));
 	imageStore(color_HDR1, global_pos, vec4(antialiased, mixRate));
 }

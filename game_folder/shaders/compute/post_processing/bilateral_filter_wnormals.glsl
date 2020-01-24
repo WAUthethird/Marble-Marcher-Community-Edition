@@ -11,7 +11,7 @@ layout(rgba32f, binding = 3) uniform image2D DE_input;
 
 //bilateral blur... 
 //4 pixel radius
-#define blur_R 4
+#define blur_R 5
 
 vec3 getpos(vec2 p, vec2 rr)
 {
@@ -52,7 +52,7 @@ void main() {
 		{
 			vec3 dpos = (getpos(global_pos + vec2(i,j),res_ratio) - cpos)/td;
 			vec3 dnorm = getnorm(global_pos + vec2(i,j)) - cnorm;
-			float weight = exp(- 1200.*dot(dpos,dpos) - 8.*dot(dnorm,dnorm));
+			float weight = exp(- 800.*dot(dpos,dpos) - 8.*dot(dnorm,dnorm));
 			sum += weight*imageLoad(before, ivec2(global_pos) + ivec2(i,j));
 			norm += weight;
 		}

@@ -1,7 +1,7 @@
 #include<utility/ray_marching.glsl>
 
 #define PI 3.14159265
-#define AMBIENT_MARCHES 3
+#define AMBIENT_MARCHES 4
 #define AMBIENT_COLOR 2*vec4(1,1,1,1)
 #define LIGHT_ANGLE 0.08
 
@@ -171,7 +171,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	vec3 direction = normalize(norm.xyz);
 	vec3 ambient_color = ambient_sky_color(norm.xyz);
 	//step out
-	pos.xyz += 0.025*dir.w*direction;
+	pos.xyz += 0.015*dir.w*direction;
 	//march in the direction of the normal
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
@@ -226,10 +226,8 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 	albedo = pow(albedo,vec3(1.f/gamma_material)); //square it to make the fractals more colorfull 
 	
 	vec4 ambient_color = ambient_occlusion(pos, norm, dir);
-	if(GI == vec3(0.))
-		GI = ambient_color.xyz;
-	else
-		GI *= 0.5*ambient_color.xyz + 0.5*length(ambient_color.xyz)*sqrt(0.3333);
+	
+	GI *= 0.5*ambient_color.xyz + 0.5*length(ambient_color.xyz)*sqrt(0.3333);
 	float metallic = pbr.x;
 	vec3 F0 = vec3(0.04); 
 	F0 = mix(F0, albedo, metallic);
@@ -269,7 +267,7 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 	}
 	
 	{ //light reflection, global illumination
-		float roughness = 0.7;
+		float roughness = 0.6;
 		vec3 L = normalize(N);
 		vec3 H = normalize(V + L);
 		vec3 radiance = GI;        

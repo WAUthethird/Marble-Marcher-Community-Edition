@@ -13,6 +13,7 @@ shared vec4 de_sph[group_size][group_size];
 
 #include<utility/camera.glsl>
 #include<utility/shading.glsl>
+#include<utility/path_tracing.glsl>
 
 ///Half-resolution global illumination step
 
@@ -48,7 +49,8 @@ void main() {
 		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
 		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
 		norm = calcNormal(pos.xyz, pix_cone_rad);
-		illum.xyz = ambient_light(pos.xyz, pix_cone_rad);
+		float seed = dot(global_pos,vec2(1., SQRT3)) + float(iFrame%1000)*123.5;
+		illum.xyz = path_march(pos, dir, vec4(80,0,0,0), fovray/step_scale.x, seed);
 	}
 	illum.w = td;
 	imageStore(global_illum, global_pos, illum);	 
