@@ -50,9 +50,9 @@ void main() {
 	{
 		for(int j = -blur_R; j <= blur_R; j++)
 		{
-			vec3 dpos = (getpos(global_pos + vec2(i,j),res_ratio) - cpos)/td;
+			vec3 dpos = (getpos(global_pos + vec2(i,j),res_ratio) - cpos)/(45.*fovray*td);
 			vec3 dnorm = getnorm(global_pos + vec2(i,j)) - cnorm;
-			float weight = exp(- 800.*dot(dpos,dpos) - 8.*dot(dnorm,dnorm));
+			float weight = exp(- dot(dpos,dpos) - 13.*dot(dnorm,dnorm));
 			sum += weight*imageLoad(before, ivec2(global_pos) + ivec2(i,j));
 			norm += weight;
 		}

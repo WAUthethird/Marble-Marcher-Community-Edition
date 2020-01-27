@@ -6,11 +6,12 @@
 layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D illuminationDirect; 
 layout(rgba32f, binding = 1) uniform image2D illuminationGI; 
-layout(rgba32f, binding = 2) uniform image2D color_output; 
-layout(rgba32f, binding = 3) uniform image2D DE_input; 
-layout(rgba32f, binding = 4) uniform image2D color_HDR; //calculate final color
-layout(rgba32f, binding = 5) uniform image2D prevDE; //calculate final color
-layout(rgba32f, binding = 6) uniform image2D color_HDR1; //calculate final color
+layout(rgba32f, binding = 2) uniform image2D inputnormals; 
+layout(rgba32f, binding = 3) uniform image2D color_output; 
+layout(rgba32f, binding = 4) uniform image2D DE_input; 
+layout(rgba32f, binding = 5) uniform image2D color_HDR; //calculate final color
+//layout(rgba32f, binding = 6) uniform image2D prevDE; //calculate final color
+layout(rgba32f, binding = 7) uniform image2D color_HDR1; //calculate final color
 
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
@@ -32,13 +33,10 @@ void main() {
 	vec4 var = vec4(0);
 	
 	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
-	
-	vec4 illumDIR = bilinear_surface(illuminationDirect, td, 3*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
-	vec4 illumGI = bilinear_surface(illuminationGI, td, 3*td*fovray/res_ratio, vec2(global_pos)*res_ratio);
 	pos = sph;
 	dir.w += td; 
 	
-	vec3 color = shading(pos, dir, fovray, illumDIR.xyz, illumGI.xyz);
+	vec3 color = shading(pos, dir, fovray, illuminationDirect, illuminationGI, inputnormals, vec3(vec2(global_pos)*res_ratio, 2.*td*fovray/res_ratio));
 
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))
 	{

@@ -26,7 +26,6 @@ vec4 interp(layout (rgba32f) image2D text, vec2 coord)
 		   imageLoad(text, ci+ivec2(1,1))*d.x*d.y);
 }
 
-
 vec4 cubic(vec4 p0, vec4 p1, vec4 p2, vec4 p3, float x)
 {
 	return  p1 + 0.5 * x*(p2 - p0 + x*(2.0*p0 - 5.0*p1 + 4.0*p2 - p3 + x*(3.0*(p1 - p2) + p3 - p0)));
@@ -45,6 +44,63 @@ vec4 interp_bicubic(layout (rgba32f) image2D T, vec2 coord)
 	vec4 p1 = cubic(val(T, i, -1, 0), val(T, i, 0, 0), val(T, i, 1, 0), val(T, i, 2, 0), d.x);
 	vec4 p2 = cubic(val(T, i, -1, 1), val(T, i, 0, 1), val(T, i, 1, 1), val(T, i, 2, 1), d.x);
 	vec4 p3 = cubic(val(T, i, -1, 2), val(T, i, 0, 2), val(T, i, 1, 2), val(T, i, 2, 2), d.x);
+	return abs(cubic(p0, p1, p2, p3, d.y));
+}
+
+float sq(float x)
+{
+	return x*x;
+}
+
+float sq(vec2 x)
+{
+	return dot(x,x);
+}
+
+float sq(vec3 x)
+{
+	return dot(x,x);
+}
+
+float sq(vec4 x)
+{
+	return dot(x,x);
+}
+
+vec4 bicubic_surface(layout (rgba32f) image2D T, float td, float sz, vec2 coord)
+{
+	ivec2 ic = ivec2(coord);
+	vec2 d = coord - floor(coord);
+	//load data
+	vec4 data[4][4];
+	for(int i = 0; i < 4; i++)
+		for(int j = 0; j < 4; j++)
+		{
+			data[i][j] = val(T, ic, i-1, j-1);
+		}
+	
+	//3d distance interpolation
+	vec4 datai[4][4];
+	for(int i = 0; i < 4; i++)
+		for(int j = 0; j < 4; j++)
+		{
+			vec4 sum = vec4(0);
+			float k = 0.;
+			for(int ii = 0; ii < 4; ii++)
+				for(int jj = 0; jj < 4; jj++)
+				{
+					float c = 1./( sq(td - data[ii][jj].w) + sq(sz)*(sq(vec2(i-ii,j-jj)) + 0.001) );
+					sum += data[ii][jj]*c;
+					k += c;
+				}
+			datai[i][j] = sum/k;
+		}
+	
+	//2d bicubic
+	vec4 p0 = cubic(datai[0][0], datai[1][0], datai[2][0], datai[3][0], d.x);
+	vec4 p1 = cubic(datai[0][1], datai[1][1], datai[2][1], datai[3][1], d.x);
+	vec4 p2 = cubic(datai[0][2], datai[1][2], datai[2][2], datai[3][2], d.x);
+	vec4 p3 = cubic(datai[0][3], datai[1][3], datai[2][3], datai[3][3], d.x);
 	return abs(cubic(p0, p1, p2, p3, d.y));
 }
 
@@ -84,7 +140,66 @@ vec4 bilinear_surface(layout (rgba32f) image2D text, float td, float sz, vec2 co
 	
 	//a fix for gamma ruining the interpolation
 	return pow((pow(A1,vec4(1.f/gamma_camera))*w1 + pow(A2,vec4(1.f/gamma_camera))*w2 + pow(A3,vec4(1.f/gamma_camera))*w3 + pow(A4,vec4(1.f/gamma_camera))*w4)/(w1+w2+w3+w4),vec4(gamma_camera));
+}
 
+
+vec4 gm(vec4 a)
+{
+	return vec4(pow(a.xyz,vec3(1.f/gamma_camera)),a.w);
+}
+
+
+//2d interpolation which modulates the color by the normal
+vec4 bilinear_surface_enhance(layout (rgba32f) image2D T, layout (rgba32f) image2D N, float td, float sz, float enh, vec3 normal, vec2 coord)
+{
+	ivec2 ci = ivec2(coord);
+	vec2 d = coord - floor(coord);
+	
+	vec4 A1 = gm(imageLoad(T, ci));
+	vec4 A2 = gm(imageLoad(T, ci+ivec2(1,0)));
+	vec4 A3 = gm(imageLoad(T, ci+ivec2(0,1)));
+	vec4 A4 = gm(imageLoad(T, ci+ivec2(1,1)));
+	
+	vec3 N1 = imageLoad(N, ci).xyz;
+	vec3 N2 = imageLoad(N, ci+ivec2(1,0)).xyz;
+	vec3 N3 = imageLoad(N, ci+ivec2(0,1)).xyz;
+	vec3 N4 = imageLoad(N, ci+ivec2(1,1)).xyz;
+	
+	////color(normal) remodulation
+	vec3 Navg = 0.25*(N2+N4+N1+N3);
+	vec4 Aavg = 0.25*(A1+A2+A3+A4);
+	vec3 dNx = 0.5*(N2+N4-N1-N3);
+	vec3 dNy = 0.5*(N3+N4-N1-N2);
+	
+	vec2 D = vec2(dot(Camera.dirx, dNx),dot(Camera.diry, dNy));
+	
+	vec3 dAx = 0.5*(A2.xyz+A4.xyz-A1.xyz-A3.xyz)*D.x/(sq(D.x) + 0.01);
+	vec3 dAy = 0.5*(A3.xyz+A4.xyz-A1.xyz-A2.xyz)*D.y/(sq(D.y) + 0.01);
+	
+	vec3 dN = normal - Navg;
+	vec3 colormod = Aavg.xyz*tanh(80*(dot(Camera.dirx, dN)*dAx + dot(Camera.diry, dN)*dAy)/Aavg.xyz);
+	////
+	
+	float w1 = (1-d.x)*(1-d.y)/(sq(sz)*(1. + 50.*sq(normal - N1))+sq(td-A1.w));
+	float w2 = (d.x)*(1-d.y)/(sq(sz)*(1. + 50.*sq(normal - N2))+sq(td-A2.w));
+	float w3 = (1-d.x)*(d.y)/(sq(sz)*(1. + 50.*sq(normal - N3))+sq(td-A3.w));
+	float w4 = (d.x)*(d.y)/(sq(sz)*(1. + 50.*sq(normal - N4))+sq(td-A4.w));
+	
+	//a fix for gamma ruining the interpolation
+	return pow((A1*w1 + A2*w2 + A3*w3 + A4*w4)/(w1+w2+w3+w4) + enh*vec4(colormod,0.),vec4(gamma_camera));
+}
+
+
+float min_distance(layout (rgba32f) image2D T, vec3 cur, vec2 lastPos, int scale)
+{
+	ivec2 rp = ivec2(round(lastPos));
+	float mdist = 1e10;
+	for(int i = -scale; i <= scale; i++)
+		for(int j = -scale; j <= scale; j++)
+		{
+			mdist = min(length(cur - imageLoad(T, rp+ivec2(i,j)).xyz), mdist);
+		}
+	return mdist;
 }
 
 
@@ -171,7 +286,7 @@ vec4 ambient_occlusion(in vec4 pos, in vec4 norm, in vec4 dir)
 	vec3 direction = normalize(norm.xyz);
 	vec3 ambient_color = ambient_sky_color(norm.xyz);
 	//step out
-	pos.xyz += 0.015*dir.w*direction;
+	pos.xyz += 0.01*dir.w*direction;
 	//march in the direction of the normal
 	for(int i = 0; i < AMBIENT_MARCHES; i++)
 	{
@@ -227,7 +342,7 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 	
 	vec4 ambient_color = ambient_occlusion(pos, norm, dir);
 	
-	GI *= 0.5*ambient_color.xyz + 0.5*length(ambient_color.xyz)*sqrt(0.3333);
+	GI *= ambient_color.w;
 	float metallic = pbr.x;
 	vec3 F0 = vec3(0.04); 
 	F0 = mix(F0, albedo, metallic);
@@ -246,7 +361,7 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 		float roughness = pbr.y;
 		vec3 L = normalize(LIGHT_DIRECTION);
 		vec3 H = normalize(V + L);
-		vec3 radiance = direct*(0.9+0.1*ambient_color.w);        
+		vec3 radiance = direct;        
 		
 		// cook-torrance brdf
 		float NDF = DistributionGGX(N, H, roughness);        
@@ -266,28 +381,10 @@ vec3 lighting(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, ve
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 	
-	{ //light reflection, global illumination
-		float roughness = 0.6;
-		vec3 L = normalize(N);
-		vec3 H = normalize(V + L);
-		vec3 radiance = GI;        
-		
-		// cook-torrance brdf
-		float NDF = DistributionGGX(N, H, roughness);        
-		float G   = GeometrySmith(N, V, L, roughness);      
-		vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
-		
-		vec3 kS = F;
-		vec3 kD = vec3(1.0) - kS;
-		kD *= 1.0 - metallic;	  
-		
-		vec3 numerator    = NDF * G * F;
-		float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-		vec3 specular     = numerator / max(denominator, 0.001);  
-			
-		// add to outgoing radiance Lo
-		float NdotL = max(dot(N, L), 0.0);                
-		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+	{ 
+		//light reflection, global illumination
+		vec3 radiance = GI;               
+		Lo += radiance*albedo; //remodulate albedo
 	}
 
 	if(color.w>0.5) // if marble
@@ -341,8 +438,8 @@ vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, vec3 direct, float k)
 			//optimize color sampling 
 			vec3 cpos = pos.xyz - pos.w*norm.xyz;
 			
-			vec4 color; vec2 pbr;
-			scene_material(cpos, color, pbr);
+			vec4 color; vec2 pbr; vec3 emission;
+			scene_material(cpos, color, pbr, emission);
 			return lighting(color, pbr, pos, dir, norm, vec3(0), vec3(0), direct, vec3(k)); 
 		}
 	}
@@ -352,7 +449,6 @@ vec3 shading_simple(in vec4 pos, in vec4 dir, float fov, vec3 direct, float k)
 	}
 }
 
-
 vec3 render_ray(in vec4 pos, in vec4 dir, float fov, float k)
 {
 	vec4 var = vec4(0,0,0,1);
@@ -361,7 +457,7 @@ vec3 render_ray(in vec4 pos, in vec4 dir, float fov, float k)
 	return shading_simple(pos, dir, fov, direct, k);
 }
 
-vec3 shading(in vec4 pos, in vec4 dir, float fov, vec3 direct, vec3 GI)
+vec3 shading(in vec4 pos, in vec4 dir, float fov, layout (rgba32f) image2D  illuminationDirect, layout (rgba32f) image2D  illuminationGI,  layout (rgba32f) image2D  normals, vec3 RR)
 {
 	if(pos.w < max(2*fovray*dir.w, MIN_DIST))
 	{
@@ -369,6 +465,10 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, vec3 direct, vec3 GI)
 		float error = 0.5*fov*dir.w;
 		vec4 norm = calcNormal(pos.xyz, max(MIN_DIST, error)); 
 		norm.xyz = normalize(norm.xyz);
+		
+		vec3 direct = bilinear_surface_enhance(illuminationDirect, normals, dir.w, RR.z, 0., norm.xyz, RR.xy).xyz;
+		vec3 GI = bilinear_surface_enhance(illuminationGI, normals, dir.w, RR.z, 0.2, norm.xyz, RR.xy).xyz;
+	
 		if(norm.w < -error)
 		{
 			return COL(pos.xyz).xyz;
@@ -377,8 +477,8 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, vec3 direct, vec3 GI)
 		{
 			//optimize color sampling 
 			vec3 cpos = pos.xyz - norm.w*norm.xyz;
-			vec4 color; vec2 pbr;
-			scene_material(cpos, color, pbr);
+			vec4 color; vec2 pbr; vec3 emission;
+			scene_material(cpos, color, pbr, emission);
 			vec3 refl = vec3(0);
 			vec3 refr = vec3(0);
 			if(color.w>0.5) // if marble

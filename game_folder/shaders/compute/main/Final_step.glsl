@@ -8,8 +8,10 @@ layout(rgba32f, binding = 0) uniform image2D bloom;
 layout(rgba8, binding = 1) uniform image2D final_color; 
 layout(rgba32f, binding = 2) uniform image2D DE_input; 
 layout(rgba32f, binding = 3) uniform image2D color_HDR0; 
-layout(rgba32f, binding = 4) uniform image2D prevDE; 
+//layout(rgba32f, binding = 4) uniform image2D prevDE; 
 layout(rgba32f, binding = 5) uniform image2D color_HDR1; 
+layout(rgba32f, binding = 6) uniform image2D GIdata0; 
+layout(rgba32f, binding = 7) uniform image2D GIdata1; 
 
 //??
 shared vec4 de_sph[1][1]; 
@@ -70,6 +72,7 @@ void main() {
 	vec3 bloom_color = interp(bloom, vec2(global_pos)*res_ratio).xyz;
 	
 	imageStore(color_HDR0, global_pos, imageLoad(color_HDR1, global_pos));
+	imageStore(GIdata0, global_pos, imageLoad(GIdata1, global_pos));
 	#ifdef DOF
 		vec3 fin_color = dof(vec2(global_pos)) + bloom_color;
 	#else

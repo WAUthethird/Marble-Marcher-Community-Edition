@@ -6,7 +6,10 @@ layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D global_illum; 
 layout(rgba32f, binding = 1) uniform image2D normals; 
 layout(rgba32f, binding = 2) uniform image2D DE_input; 
-layout(rgba32f, binding = 3) uniform image2D color_HDR; //calculate final color
+layout(rgba32f, binding = 3) uniform image2D color_HDR; //final color
+layout(rgba32f, binding = 4) uniform image2D prevDE; 
+layout(rgba32f, binding = 5) uniform image2D color_HDR1; 
+layout(rgba32f, binding = 6) uniform image2D GIdata;  
 
 //make all the local distance estimator spheres shared
 shared vec4 de_sph[group_size][group_size]; 
@@ -28,7 +31,7 @@ void main() {
 	
 	ivec2 prev_pos = min(ivec2((vec2(global_pos)/step_scale) + 0.5),ivec2(pimg_size)-1);
 	
-	ray rr = get_ray(vec2(global_pos)/img_size);
+	ray rr = get_ray(vec2(global_pos)/img_size, 1./step_scale.x);
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = vec4(0);
@@ -44,13 +47,9 @@ void main() {
 	if(pos.w < max(2*fovray*td, MIN_DIST) && SHADOWS_ENABLED)
 	{
 		//marching towards a point at a distance = to the pixel cone radius from the object
-		float pix_cone_rad = 2.*fovray*td/step_scale.x;
-		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
-		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
-		pos.xyz += (DE(pos.xyz) - pix_cone_rad)*dir.xyz;
-		norm = calcNormal(pos.xyz, pix_cone_rad);
+		norm = calcNormal(pos.xyz, 4.*td*fovray);
 		float seed = dot(global_pos,vec2(1., SQRT3)) + float(iFrame%1000)*123.5;
-		illum.xyz = path_march(pos, dir, vec4(80,0,0,0), fovray/step_scale.x, seed);
+		illum.xyz = path_march(pos, dir, vec4(80,0,0,0), 0.25*fovray, seed);
 	}
 	illum.w = td;
 	imageStore(global_illum, global_pos, illum);	 

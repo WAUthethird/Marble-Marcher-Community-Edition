@@ -198,11 +198,11 @@ vec4 col_scene(vec3 pos)
 	}
 	return vec4(min(col.xyz,1), 0.0);
 }
-
-void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr)
+void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emission)
 {
 	//DE_count = DE_count+1;
 	vec4 p = vec4(pos,1.f);
+	emission = vec3(0.);
 	
 	color = col_fractal(p);
 	vec4 color_f = col_flag(p);
@@ -215,6 +215,7 @@ void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr)
 	{ 
 		color = color_f; 
 		pbr = vec2(0.2,0.35);
+		emission = vec3(1.);
 	}
 	
 	if (color_m.w < color.w) 
@@ -222,11 +223,11 @@ void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr)
 		color = color_m; 
 		if(MARBLE_MODE <= 1)
 		{
-			pbr = vec2(1,0.2);
+			pbr = vec2(1,0.1);
 		}
 		else
 		{
-			pbr = vec2(0,0.2);
+			pbr = vec2(0,0.1);
 		}
 		
 		reflection = 1;

@@ -69,7 +69,7 @@ void main() {
 	vec3 antialiased = vec3(0.);
 	antialiased = lastColor.xyz;
 	
-    float mixRate = min(lastColor.w, 0.95);
+    float mixRate = min(lastColor.w, 0.6);
     
     ivec3 off = ivec3(-1, 0, 1);
     vec3 in0 = imageLoad(color_input, global_pos).xyz;
