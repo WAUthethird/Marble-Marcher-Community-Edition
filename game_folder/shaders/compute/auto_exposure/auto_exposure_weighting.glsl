@@ -9,6 +9,8 @@ layout(rgba8, binding = 0) uniform image2D final_color;
 layout(rgba32f, binding = 1) uniform image2D DE_input; 
 layout(rgba32f, binding = 2) uniform image2D output_w; 
 
+#include<utility/definitions.glsl>
+#include<utility/uniforms.glsl>
 #include<utility/camera.glsl>
 
 void main() {

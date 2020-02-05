@@ -959,8 +959,8 @@ void TakeScreenshot()
 	renderer_ptr->camera.SetMotionBlur(0);
 	
 	//a few rendering steps to converge the TXAA
-	for(int i = 0; i < 15; i++) 	renderer_ptr->Render();
-
+	for(int i = 0; i < SETTINGS.stg.screenshot_samples; i++) 	renderer_ptr->Render();
+	window -> resetGLStates();
 	screenshot_txt->copyToImage().saveToFile((std::string)"screenshots/screenshot" + (std::string)num2str(time(NULL)) + ".jpg");
 
 	scene_ptr->SetResolution(rendering_resolution.x, rendering_resolution.y);

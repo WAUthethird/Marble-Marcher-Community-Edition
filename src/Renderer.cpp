@@ -291,9 +291,10 @@ void Renderer::Render()
 		}
 
 		//input textures
+		int inp_tex = 0;
 		for (auto &extr_text : input_textures)
 		{
-			glBindImageTexture(tex_id++, extr_text.getNativeHandle(), 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+			shader_pipeline[i].setUniform(inp_tex++, extr_text.getNativeHandle());
 		}
 
 		glBindImageTexture(tex_id++, illumination_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);

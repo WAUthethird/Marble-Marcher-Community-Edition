@@ -40,7 +40,25 @@ float fovray;
 
 
 
-ray get_ray(vec2 screen_pos)
+ray get_ray(glcamera cam, vec2 screen_pos)
+{
+	float delta = 0;
+	if(cam.cross_eye)
+	{
+		delta = cam.eye_separation*(2.f*floor(2.f*screen_pos.x)-1.f);
+		screen_pos.x = 0.5*(mod(2*screen_pos.x,1.f)+0.5);
+	}	
+	
+	vec2 shift = cam.FOV*(2.f*screen_pos - 1.f)*vec2(cam.aspect_ratio, -1.f);
+	ray cray;
+	cray.pos = cam.position + (cam.cross_eye?(cam.dirx*delta):(cam.size*(cam.dirx*(shift.x) + cam.diry*shift.y)));
+	cray.dir = normalize(cam.dirx*shift.x + cam.diry*shift.y + cam.dirz);
+	float aspect_ratio_ratio = cam.aspect_ratio/(cam.resolution.x/cam.resolution.y);
+	fovray = 1.41*cam.FOV*max(1.f/aspect_ratio_ratio, aspect_ratio_ratio)/cam.resolution.x; //pixel FOV
+	return cray;
+}
+
+float getTD(vec3 pos, vec2 screen_pos)
 {
 	float delta = 0;
 	if(Camera.cross_eye)
@@ -50,38 +68,20 @@ ray get_ray(vec2 screen_pos)
 	}	
 	
 	vec2 shift = Camera.FOV*(2.f*screen_pos - 1.f)*vec2(Camera.aspect_ratio, -1.f);
-	ray cray;
-	cray.pos = Camera.position + (Camera.cross_eye?(Camera.dirx*delta):(Camera.size*(Camera.dirx*(shift.x) + Camera.diry*shift.y)));
-	cray.dir = normalize(Camera.dirx*shift.x + Camera.diry*shift.y + Camera.dirz);
-	float aspect_ratio_ratio = Camera.aspect_ratio/(Camera.resolution.x/Camera.resolution.y);
-	fovray = 1.41*Camera.FOV*max(1.f/aspect_ratio_ratio, aspect_ratio_ratio)/Camera.resolution.x; //pixel FOV
-	return cray;
+	return length(Camera.position + (Camera.cross_eye?(Camera.dirx*delta):(Camera.size*(Camera.dirx*(shift.x) + Camera.diry*shift.y))) - pos);
 }
 
-ray get_prevray(vec2 screen_pos)
+ray get_ray(vec2 screen_pos)
 {
-	float delta = 0;
-	if(PrevCamera.cross_eye)
-	{
-		delta = PrevCamera.eye_separation*(2.f*floor(2.f*screen_pos.x)-1.f);
-		screen_pos.x = 0.5*(mod(2*screen_pos.x,1.f)+0.5);
-	}	
-	
-	vec2 shift = PrevCamera.FOV*(2.f*screen_pos - 1.f)*vec2(PrevCamera.aspect_ratio, -1.f);
-	ray cray;
-	cray.pos = PrevCamera.position + (PrevCamera.cross_eye?(PrevCamera.dirx*delta):(PrevCamera.size*(PrevCamera.dirx*(shift.x) + PrevCamera.diry*shift.y)));
-	cray.dir = normalize(PrevCamera.dirx*shift.x + PrevCamera.diry*shift.y + PrevCamera.dirz);
-	float aspect_ratio_ratio = PrevCamera.aspect_ratio/(PrevCamera.resolution.x/PrevCamera.resolution.y);
-	fovray = 1.41*PrevCamera.FOV*max(1.f/aspect_ratio_ratio, aspect_ratio_ratio)/PrevCamera.resolution.x; //pixel FOV
-	return cray;
+	return get_ray(Camera, screen_pos);
 }
 
-vec2 reproject_step(vec3 point, vec2 UV)
+vec2 reproject_step(glcamera cam, vec3 point, vec2 UV)
 {
-	ray guess = get_prevray(UV);
+	ray guess = get_ray(cam, UV);
 	vec3 a = normalize(point - guess.pos);
-	UV = vec2(dot(a,normalize(PrevCamera.dirx))/Camera.aspect_ratio,-dot(a,normalize(PrevCamera.diry)))/(2.*PrevCamera.FOV*dot(a,normalize(PrevCamera.dirz))) + 0.5;
-	if(PrevCamera.cross_eye)
+	UV = vec2(dot(a,normalize(cam.dirx))/cam.aspect_ratio,-dot(a,normalize(cam.diry)))/(2.*cam.FOV*dot(a,normalize(cam.dirz))) + 0.5;
+	if(cam.cross_eye)
 	{
 		UV.x *= 0.5;
 	}
@@ -93,12 +93,23 @@ vec2 reproject(vec3 point, vec2 UV)
 {
 	for(int i = 0; i < 5; i++)
 	{
-		UV = reproject_step(point, UV);
+		UV = reproject_step(PrevCamera, point, UV);
 	}
 	return UV*PrevCamera.resolution.xy;
 }
 
-ray get_ray(vec2 screen_pos, float noise)
+//find the uv coordinate for a point in space
+vec2 project(vec3 point, vec2 UV)
 {
-	return get_ray(screen_pos + noise*(hash22(screen_pos + float(iFrame%10000))-0.5)/Camera.resolution.x);
+	for(int i = 0; i < 5; i++)
+	{
+		UV = reproject_step(Camera, point, UV);
+	}
+	return UV*Camera.resolution.xy;
+}
+
+ray get_ray(inout vec2 screen_pos, float noise)
+{
+	screen_pos += noise*(hash22(screen_pos + float(iFrame%10000))-0.5)/Camera.resolution;
+	return get_ray(screen_pos);
 }

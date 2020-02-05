@@ -1,20 +1,15 @@
-#version 430
-//4*4 ray bundle
-#define group_size 8
-#define block_size 64
-#define RBM1 0
+#include<utility/compute_shader_header.glsl>
 
-layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D DE_input; 
 layout(rgba32f, binding = 1) uniform image2D DE2_input;
 layout(rgba32f, binding = 2) uniform image2D var_input; 
 layout(rgba32f, binding = 3) uniform image2D DE_output; //calculate final DE spheres
-layout(rgba32f, binding = 4) uniform image2D HDR; 
-layout(rgba32f, binding = 5) uniform image2D prevDE; //previous 
+layout(rgba32f, binding = 4) uniform image2D DE_previus; //previous 
+layout(rgba32f, binding = 5) uniform image2D normals; 
 
-//make all the local distance estimator spheres shared
-shared vec4 de_sph[group_size][group_size]; 
 
+#include<utility/definitions.glsl>
+#include<utility/uniforms.glsl>
 #include<utility/camera.glsl>
 #include<utility/shading.glsl>
 
@@ -38,7 +33,8 @@ void main() {
 		memoryBarrierShared(); 
 	#endif
 	
-	ray rr = get_ray(vec2(global_pos)/img_size, 2.);
+	vec2 uv = vec2(global_pos)/img_size;
+	ray rr = get_ray(uv, 1.);
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
 	vec4 var = imageLoad(var_input, prev_pos);
@@ -48,20 +44,18 @@ void main() {
 	//first order, MRRM
 	pos.xyz += dir.xyz*td;//move local ray beginning inside the DE sphere	
 	dir.w += td; 
-	
-	//calculate new best pos, second order, MRRBM
-	#if(RBM1)
-		barrier();
-		pos.w = find_furthest_intersection(dir.xyz, pos.xyz, local_indx);
-	#else
-		pos.w = 0.5*sphere_intersection(dir.xyz, pos.xyz, sph);
-		//pos.w = max(pos.w, sphere_intersection(dir.xyz, pos.xyz, sph_norm));
-	#endif
-	
+
+	pos.w = 0.5*sphere_intersection(dir.xyz, pos.xyz, sph);
+	//pos.w = max(pos.w, sphere_intersection(dir.xyz, pos.xyz, sph_norm));
 	
 	ray_march_continue(pos, dir, var, fovray);
 	
 	//save the DE spheres
-	imageStore(prevDE, global_pos, imageLoad(DE_output, global_pos));
-	imageStore(DE_output, global_pos, pos);	 	
+	imageStore(DE_previus, global_pos, imageLoad(DE_output, global_pos));
+	
+	vec4 normal = calcNormal(pos.xyz, max(MIN_DIST, 0.5*dir.w*fovray));
+	//pos.xyz += normalize(normal.xyz)*DE(pos.xyz);
+	imageStore(DE_output, global_pos, pos);	 
+	
+	imageStore(normals, global_pos, vec4(normalize(normal.xyz), dir.w));	 	
 }

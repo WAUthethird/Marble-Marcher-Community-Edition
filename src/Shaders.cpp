@@ -1,6 +1,13 @@
 #include "Shaders.h"
 bool initialized = false;
 
+std::string int2str(const int n)
+{
+	std::ostringstream stm;
+	stm << n;
+	return stm.str();
+}
+
 ComputeShader::ComputeShader()
 {
 
@@ -138,6 +145,14 @@ void ComputeShader::setUniform(std::string name, glm::vec2 X)
 	glUniform2fv(A, 1, glm::value_ptr(X));
 }
 
+void ComputeShader::setUniform(int i, GLuint tid)
+{
+	glUseProgram(ProgramID);
+	GLuint A = glGetUniformLocation(ProgramID, ("iTexture" + int2str(i)).c_str());
+	glActiveTexture(GL_TEXTURE0 + i);
+	glBindTexture(GL_TEXTURE_2D, tid);
+	glUniform1i(A, i);
+}
 
 void ComputeShader::setCameraObj(std::string name, gl_camera cam)
 {

@@ -1,17 +1,13 @@
-#version 430
-#define group_size 8
-#define block_size 64
+#include<utility/compute_shader_header.glsl>
 
-layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D DE_output; //calculate final DE spheres
 layout(rgba32f, binding = 1) uniform image2D DE2_output;
 layout(rgba32f, binding = 2) uniform image2D var_output; 
 layout(rgba32f, binding = 3) uniform image2D DE_input; 
 layout(rgba32f, binding = 4) uniform image2D color_HDR; //calculate final color
 
-//make all the local distance estimator spheres shared
-shared vec4 de_sph[group_size][group_size]; 
-
+#include<utility/definitions.glsl>
+#include<utility/uniforms.glsl>
 #include<utility/camera.glsl>
 #include<utility/ray_marching.glsl>
 
@@ -31,8 +27,7 @@ void main() {
 	float res_ratio = float(imageSize(color_HDR).x/imageSize(DE_output).x);
 	fovray *= res_ratio;
 	dir.w = 4*Camera.size;
-	ray_march_limited(pos, dir, var, 2.3*fovray);
-	
+	ray_march_limited(pos, dir, var, 2.4*fovray);
 	vec4 pos1 = pos;
 	
 	normarch(pos1);

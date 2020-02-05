@@ -8,12 +8,16 @@ layout(rgba32f, binding = 0) uniform image2D blurred_hor1;
 layout(rgba32f, binding = 1) uniform image2D blurred_hor2; 
 layout(rgba32f, binding = 2) uniform image2D bloom; 
 layout(rgba32f, binding = 3) uniform image2D DE_input; 
-layout(rgba32f, binding = 4) uniform image2D color_HDR; 
+layout(rgba32f, binding = 4) uniform image2D DE_previous; //calculate final color
+
+#include<utility/definitions.glsl>
+#include<utility/uniforms.glsl>
+#include<utility/camera.glsl>
+#include<utility/shading.glsl>
+#include<utility/bloom.glsl>
 
 shared vec3 color_buffer_hoz1[buffer_size];
 shared vec3 color_buffer_hoz2[buffer_size];
-
-#include<utility/camera.glsl>
 
 int safe_coord(int y, vec2 img_size)
 {

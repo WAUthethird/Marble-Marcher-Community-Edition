@@ -8,9 +8,12 @@ layout(rgba32f, binding = 0) uniform image2D color_input; //calculate bloom
 layout(rgba32f, binding = 1) uniform image2D blurred_hor1; //calculate bloom
 layout(rgba32f, binding = 2) uniform image2D blurred_hor2; //calculate bloom
 layout(rgba32f, binding = 3) uniform image2D DE_input; 
-layout(rgba32f, binding = 4) uniform image2D color_HDR; //calculate final color
+layout(rgba32f, binding = 4) uniform image2D DE_previous; //calculate final color
 
+#include<utility/definitions.glsl>
+#include<utility/uniforms.glsl>
 #include<utility/camera.glsl>
+#include<utility/shading.glsl>
 #include<utility/bloom.glsl>
 
 shared vec3 color_buffer[buffer_size];

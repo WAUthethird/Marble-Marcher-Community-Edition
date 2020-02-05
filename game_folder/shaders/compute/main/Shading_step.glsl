@@ -1,28 +1,26 @@
 #version 430
-//4*4 ray bundle
 #define group_size 8
 #define block_size 64
 
 layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D illuminationDirect; 
-layout(rgba32f, binding = 1) uniform image2D illuminationGI; 
-layout(rgba32f, binding = 2) uniform image2D inputnormals; 
-layout(rgba32f, binding = 3) uniform image2D color_output; 
-layout(rgba32f, binding = 4) uniform image2D DE_input; 
-layout(rgba32f, binding = 5) uniform image2D color_HDR; //calculate final color
-//layout(rgba32f, binding = 6) uniform image2D prevDE; //calculate final color
-layout(rgba32f, binding = 7) uniform image2D color_HDR1; //calculate final color
+layout(rgba32f, binding = 1) uniform image2D color_output; 
+layout(rgba32f, binding = 2) uniform image2D DE_input; 
+layout(rgba32f, binding = 3) uniform image2D DE_previous; //calculate final color
+layout(rgba32f, binding = 4) uniform image2D normals; //final color
+layout(rgba32f, binding = 5) uniform image2D color_HDR0;  
+layout(rgba32f, binding = 6) uniform image2D color_HDR1; 
+//layout(rgba32f, binding = 6) uniform image2D GI; 
 
-//make all the local distance estimator spheres shared
-shared vec4 de_sph[group_size][group_size]; 
-
+#include<utility/definitions.glsl>
+#include<utility/uniforms.glsl>
 #include<utility/camera.glsl>
 #include<utility/shading.glsl>
 
 void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);
-	vec2 img_size = vec2(imageSize(color_HDR));
+	vec2 img_size = vec2(imageSize(color_HDR0));
 	float res_ratio = imageSize(illuminationDirect).x/img_size.x;
 	vec4 sph = imageLoad(DE_input, global_pos);
 	
@@ -36,7 +34,7 @@ void main() {
 	pos = sph;
 	dir.w += td; 
 	
-	vec3 color = shading(pos, dir, fovray, illuminationDirect, illuminationGI, inputnormals, vec3(vec2(global_pos)*res_ratio, 2.*td*fovray/res_ratio));
+	vec3 color = shading(pos, dir, fovray, illuminationDirect, vec3(vec2(global_pos)*res_ratio, 2.*td*fovray/res_ratio));
 
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))
 	{

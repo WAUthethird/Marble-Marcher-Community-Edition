@@ -49,6 +49,7 @@ public:
 	void setUniform(std::string name, glm::mat3 X, bool transpose);
 	void setUniform(std::string name, glm::vec3 X);
 	void setUniform(std::string name, glm::vec2 X);
+	void setUniform(int i, GLuint tid);
 	void setCameraObj(std::string name, gl_camera cam);
 	void setCamera(gl_camera cam);
 

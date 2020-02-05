@@ -126,8 +126,8 @@ vec3 shading_simple_orig(in vec4 pos, in vec4 dir, float fov, float shadow)
 			//cpos = cpos - DE(cpos)*norm.xyz;
 			//cpos = cpos - DE(cpos)*norm.xyz;
 			
-			vec4 color; vec2 pbr;
-			scene_material(cpos, color, pbr);
+			vec4 color; vec2 pbr; vec3 emission;
+			scene_material(cpos, color, pbr, emission);
 			return lighting_original(color, pbr, pos, dir, norm, vec3(0), vec3(0), shadow); 
 		}
 	}
@@ -162,8 +162,8 @@ vec3 shading_orig(in vec4 pos, in vec4 dir, float fov, float shadow)
 		{
 			//optimize color sampling 
 			vec3 cpos = pos.xyz - norm.w*norm.xyz;
-			vec4 color; vec2 pbr;
-			scene_material(cpos, color, pbr);
+			vec4 color; vec2 pbr; vec3 emission;
+			scene_material(cpos, color, pbr, emission);
 			vec3 refl = vec3(0);
 			vec3 refr = vec3(0);
 			if(color.w>0.5) // if marble

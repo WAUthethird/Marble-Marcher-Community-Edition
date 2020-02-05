@@ -6,9 +6,8 @@
 layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba8, binding = 0) uniform image2D final_color;
 
-//make all the local distance estimator spheres shared
-shared vec4 de_sph[group_size][group_size]; 
-
+#include<utility/definitions.glsl>
+#include<utility/uniforms.glsl>
 #include<utility/camera.glsl>
 #include<utility/shading.glsl>
 

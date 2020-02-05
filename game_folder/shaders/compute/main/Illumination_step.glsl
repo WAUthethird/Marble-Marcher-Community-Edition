@@ -4,13 +4,15 @@
 
 layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(rgba32f, binding = 0) uniform image2D illuminationDirect; 
-layout(rgba32f, binding = 1) uniform image2D illuminationGI; 
-layout(rgba32f, binding = 2) uniform image2D DE_input; 
-layout(rgba32f, binding = 3) uniform image2D color_HDR; //calculate final color
+layout(rgba32f, binding = 1) uniform image2D DE_input; 
+layout(rgba32f, binding = 2) uniform image2D DE_previous; //calculate final color
+layout(rgba32f, binding = 3) uniform image2D normals; //final color
+layout(rgba32f, binding = 4) uniform image2D color_HDR0;  
+layout(rgba32f, binding = 5) uniform image2D color_HDR1; 
+//layout(rgba32f, binding = 6) uniform image2D GI; 
 
-//make all the local distance estimator spheres shared
-shared vec4 de_sph[group_size][group_size]; 
-
+#include<utility/definitions.glsl>
+#include<utility/uniforms.glsl>
 #include<utility/camera.glsl>
 #include<utility/shading.glsl>
 
@@ -39,7 +41,6 @@ void main() {
 	dir.w += td; 
 	
 	vec4 illumDIR = vec4(0);
-	vec4 illumGI = vec4(1.);
 	
 	if(pos.w < max(2*fovray*td, MIN_DIST) && SHADOWS_ENABLED)
 	{
@@ -52,8 +53,6 @@ void main() {
 		illumDIR.xyz = sky_color(LIGHT_DIRECTION)*shadow_march(pos, normalize(vec4(LIGHT_DIRECTION,0)), MAX_DIST, LIGHT_ANGLE);
 	}
 	illumDIR.w = td;
-	illumGI.w = td;
 	
-	imageStore(illuminationDirect, global_pos, illumDIR);
-	imageStore(illuminationGI, global_pos, illumGI);	
+	imageStore(illuminationDirect, global_pos, illumDIR);	
 }

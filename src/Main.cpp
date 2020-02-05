@@ -156,6 +156,7 @@ int main(int argc, char *argv[]) {
 	//Main loop
 	while (window.isOpen())
 	{
+		
 		sf::Event event;
 		window.clear(sf::Color::White);
 		float mouse_wheel = 0.0f;
@@ -680,7 +681,7 @@ int main(int argc, char *argv[]) {
 					rend.SetOutputTexture(main_txt);
 					//Draw to the render texture
 					rend.Render();
-
+					window.resetGLStates();
 					//Draw render texture to main window
 					sf::Sprite sprite(main_txt);
 					sprite.setScale(float(window.getSize().x) / float(rend.variables["width"]),

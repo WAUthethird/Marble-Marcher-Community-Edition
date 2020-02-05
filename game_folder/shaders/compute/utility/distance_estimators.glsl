@@ -1,23 +1,5 @@
-#define COL col_scene
-#define DE de_scene
-
-uniform float iFracScale;
-uniform float iFracAng1;
-uniform float iFracAng2;
-uniform vec3 iFracShift;
-uniform vec3 iFracCol;
-uniform vec3 iMarblePos;
-uniform float iMarbleRad;
-uniform float iFlagScale;
-uniform vec3 iFlagPos;
-uniform int FRACTAL_ITER;
-uniform int MARBLE_MODE;
-uniform float time;
-
-uniform float PBR_METALLIC;
-uniform float PBR_ROUGHNESS;
-
-layout(rgba8, binding = 7) uniform image2D color_flag; 
+uniform sampler2D iTexture0;
+uniform sampler2D iTexture1;
 
 ///Original MM distance estimators
 
@@ -168,9 +150,8 @@ vec4 col_flag(vec4 p)
 	float d1 = de_box(d_pos, fsize);
 	float d2 = de_capsule(p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0), iMarbleRad*2.4, iMarbleRad*0.18);
 	if (d1 < d2) {
-		vec2 color_flag_s = vec2(imageSize(color_flag));
 		vec2 texture_coord = d_pos.xy*vec2(0.5,-0.48)/fsize.xy + vec2(0.5,0.5) - 0.5*vec2(0,caps_pos.x*(0.02+ caps_pos.x* 0.5))/fsize.xy;
-		vec3 flagcolor = imageLoad(color_flag, ivec2(texture_coord*color_flag_s)).xyz;
+		vec3 flagcolor = texture(iTexture0, texture_coord).xyz;
 		return vec4(flagcolor, d1);
 	} else {
 		return vec4(0.9, 0.9, 0.1, d2);
@@ -210,24 +191,32 @@ void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emiss
 	
 	pbr = vec2(PBR_METALLIC, PBR_ROUGHNESS);
 	float reflection = 0;
+
+	#ifdef FRACTAL_GLOW
+		vec3 hfcol = 0.5*sin(vec3(3.,4.,5.)*color.xyz)+0.5;
+		emission += 20.*color.xyz*exp(-50.*clamp(pow(abs(length(hfcol-vec3(0.2,0.5,0.75))),2.),0.,1.));
+	#endif
 	
 	if (color_f.w < color.w) 
 	{ 
 		color = color_f; 
 		pbr = vec2(0.2,0.35);
-		emission = vec3(1.);
+		#ifdef FLAG_GLOW
+			emission = 10.*color_f.xyz;
+		#endif
 	}
 	
 	if (color_m.w < color.w) 
 	{ 
 		color = color_m; 
+		color.w = 1.;
 		if(MARBLE_MODE <= 1)
 		{
-			pbr = vec2(1,0.1);
+			pbr = vec2(1,0.35);
 		}
 		else
 		{
-			pbr = vec2(0,0.1);
+			pbr = vec2(0.,0.35);
 		}
 		
 		reflection = 1;
