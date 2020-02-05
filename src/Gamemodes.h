@@ -1,5 +1,6 @@
 #pragma once
 
+#include<config.h>
 #include<Overlays.h>
 #include<Scene.h>
 #include<Localization.h>

@@ -26,7 +26,7 @@ void main() {
 	vec2 pimg_size = vec2(imageSize(DE_input));
 	vec2 step_scale = img_size/pimg_size;
 	
-	vec2 uv = (vec2(global_pos)+hash22(vec2(global_pos))-0.5)/img_size;
+	vec2 uv = (vec2(global_pos)+0.5*(hash22(vec2(global_pos))-0.5))/img_size;
 	ray rr = get_ray(uv);
 	ivec2 prev_pos = min(ivec2(round(uv*pimg_size)),ivec2(pimg_size)-1);
 	vec4 pos = vec4(rr.pos,0);
@@ -64,7 +64,11 @@ void main() {
 	pill *= removeK;
 	pdir *= removeK;
 	
-	if(pos.w < max(2*fovray*td, MIN_DIST))
+	if(pos.w < -max(2*fovray*td, MIN_DIST))
+	{
+		pill = vec4(0.,0.,0.,1.);
+	}
+	else if(pos.w < max(2*fovray*td, MIN_DIST))
 	{
 		float seed = dot(global_pos,vec2(1., SQRT3)) + float(iFrame%1000)*123.5;
 		

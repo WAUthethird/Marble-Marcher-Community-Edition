@@ -163,7 +163,7 @@ void OpenMainMenu(Scene * scene, Overlays * overlays)
 	exitbtn.AddObject(&button6, Object::Allign::CENTER);
 	mainmenu.AddObject(&exitbtn, Object::Allign::LEFT);
 
-	Text about(LOCAL["About"], LOCAL("mono"), 30, sf::Color::White);
+	Text about(utf8_to_wstring(YEAR + std::string(" ") + PROJECT_VER + std::string(" ")) + LOCAL["About"], LOCAL("mono"), 30, sf::Color::White);
 	about.SetBorderColor(sf::Color::Black);
 	about.SetBorderWidth(3);
 	mainmenu.AddObject(&about, Object::Allign::LEFT);

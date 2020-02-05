@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.0)
-project(MarbleMarcher)
+cmake_minimum_required(VERSION 3.8)
+project(MarbleMarcher VERSION "1.4.3")
 set(CMAKE_CXX_STANDARD 17)
-set(MM_VERSION 1.4.1)
+
+configure_file(src/config.h.in config.h)
+
 if (WIN32)
 	#CHECK THE BITNESS
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -52,9 +54,12 @@ target_include_directories(MarbleMarcherSources PUBLIC
   ${GLEW_INCLUDE_DIRS}
   ${OpenGL_INCLUDE_DIRS}
   ${GLM_INCLUDE_DIR}
+  ${PROJECT_BINARY_DIR}
 )
 
+include_directories(${PROJECT_BINARY_DIR})
 include_directories(${GLM_INCLUDE_DIR})
+
 if(WIN32)
 	target_include_directories(MarbleMarcherSources PUBLIC
 	  ${SFML_INCLUDE_DIR}

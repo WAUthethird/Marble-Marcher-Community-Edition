@@ -102,7 +102,7 @@ static const MainSettings default_settings =
 { 
 	6, 10, 6, 3, 5, 0, true, true, true, 0.08, 9, 2.2, 70, 20, 20, 0.005, 0.2, false,
 	0.005, 0.45, 0, false, true, 0, true, 0.5, 0.75, 2.2, false, -0.02, 0.2, 0.55, 
-	false, default_control_mapping, true, 60, true, 1.f, 0.1f, 4.5f, 4.5f, 30, false, true
+	false, default_control_mapping, true, 60, true, 1.f, 0.1f, 22.f, 4.5f, 30, false, true
 };
 
 

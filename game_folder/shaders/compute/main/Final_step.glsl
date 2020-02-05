@@ -17,7 +17,7 @@ layout(rgba32f, binding = 6) uniform image2D color_HDR1;
 #define DOF_samples 50
 #define DOF
 
-#define RA 5.
+#define RA 5
 const float GA = 2.399; 
 const mat2 rot = mat2(cos(GA),sin(GA),-sin(GA),cos(GA));
 
@@ -36,11 +36,11 @@ float convol_kernel(float w1, float w2, float rad)
     return pow(r2,-0.5)*(this_p*cent_p+step(r1,r2)*step(w2,w1)*this_p);
 }
 
-vec4 loadDOFsample(ivec2 c)
+vec4 loadDOFsample(ivec2 c, vec2 imgs)
 {
-	float td = getTD(imageLoad(DE_input, c).xyz, c);
+	c = clamp(c, ivec2(0), ivec2(imgs)-1);
 	vec4 colorsamp = imageLoad(color_HDR1, c);
-	return vec4(colorsamp.xyz/colorsamp.w, td);
+	return vec4(colorsamp.xyz/colorsamp.w, getTD(imageLoad(DE_input, c).xyz, vec2(c)/imgs));
 }
 
 vec3 dof(vec2 uv)
@@ -49,7 +49,7 @@ vec3 dof(vec2 uv)
 	vec2 img_size = vec2(imageSize(color_HDR1));
     vec2 pixel=vec2(img_size.x)*0.001, angle=vec2(0,rad);
     vec4 acc=vec4(0);
-    vec4 center = loadDOFsample(ivec2(uv+pixel*(rad-1.)*angle));
+    vec4 center = loadDOFsample(ivec2(uv+pixel*(rad-1.)*angle), img_size);
     acc += convol_kernel(center.w, center.w, rad)*vec4(center.xyz,1.);
     rad=1.;
 	if(Camera.bokeh > 0.1) for (int j=0;j<DOF_samples;j++)
@@ -57,7 +57,7 @@ vec3 dof(vec2 uv)
         rad += 1./rad;
 	    angle *= rot;
         
-        vec4 col = loadDOFsample(ivec2(uv+pixel*(rad-1.)*angle));
+        vec4 col = loadDOFsample(ivec2(uv+pixel*(rad-1.)*angle),img_size);
 
         acc += convol_kernel(center.w, col.w, rad)*vec4(col.xyz,1.);  
     }
