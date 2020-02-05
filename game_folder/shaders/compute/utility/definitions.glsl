@@ -16,13 +16,15 @@
 #define overrelax 1.25
 
 //world
-#define FRACTAL_GLOW
-#define FLAG_GLOW
 
 //path tracing 
 #define MAX_BOUNCE 4.
 #define GI_SCALE 8
+//to get a better path traced result comment this
 #define LIGHT_FIELD_DENOISE
+//and make this 0.0001
+#define TXAAstr 0.5
+
 
 //ambient occlusion
 #define AMBIENT_MARCHES 4

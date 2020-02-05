@@ -1016,6 +1016,8 @@ void Scene::WriteShader(ComputeShader& shader)
 	shader.setUniform("FRACTAL_ITER", level_copy.FractalIter);
 	shader.setUniform("REFL_REFR_ENABLED", Refl_Refr_Enabled);
 	shader.setUniform("MARBLE_MODE", MarbleType);
+	shader.setUniform("FRACTAL_GLOW", SETTINGS.stg.fractal_glow);
+	shader.setUniform("FLAG_GLOW", SETTINGS.stg.flag_glow);
 
 	shader.setUniform("gamma_material", gamma_material);
 	shader.setUniform("gamma_sky", gamma_sky);

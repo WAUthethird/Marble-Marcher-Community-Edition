@@ -179,6 +179,7 @@ vec4 col_scene(vec3 pos)
 	}
 	return vec4(min(col.xyz,1), 0.0);
 }
+
 void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emission)
 {
 	//DE_count = DE_count+1;
@@ -192,18 +193,20 @@ void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emiss
 	pbr = vec2(PBR_METALLIC, PBR_ROUGHNESS);
 	float reflection = 0;
 
-	#ifdef FRACTAL_GLOW
+	if(FRACTAL_GLOW)
+	{
 		vec3 hfcol = 0.5*sin(vec3(3.,4.,5.)*color.xyz)+0.5;
-		emission += 20.*color.xyz*exp(-50.*clamp(pow(abs(length(hfcol-vec3(0.2,0.5,0.75))),2.),0.,1.));
-	#endif
+		emission = 20.*color.xyz*exp(-50.*clamp(pow(abs(length(hfcol-vec3(0.2,0.5,0.75))),2.),0.,1.));
+	}
 	
 	if (color_f.w < color.w) 
 	{ 
 		color = color_f; 
 		pbr = vec2(0.2,0.35);
-		#ifdef FLAG_GLOW
+		if(FLAG_GLOW)
+		{
 			emission = 10.*color_f.xyz;
-		#endif
+		}
 	}
 	
 	if (color_m.w < color.w) 

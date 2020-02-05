@@ -16,6 +16,8 @@ layout(rgba32f, binding = 5) uniform image2D GI;
 
 /// 1/6 resolution path tracing 
 
+#define PT_SAMPLES 1
+
 void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);
@@ -24,8 +26,8 @@ void main() {
 	vec2 pimg_size = vec2(imageSize(DE_input));
 	vec2 step_scale = img_size/pimg_size;
 	
-	vec2 uv = vec2(global_pos)/img_size;
-	ray rr = get_ray(uv, 0./step_scale.x);
+	vec2 uv = (vec2(global_pos)+hash22(vec2(global_pos))-0.5)/img_size;
+	ray rr = get_ray(uv);
 	ivec2 prev_pos = min(ivec2(round(uv*pimg_size)),ivec2(pimg_size)-1);
 	vec4 pos = vec4(rr.pos,0);
 	vec4 dir = vec4(rr.dir,0);
@@ -44,37 +46,47 @@ void main() {
 	vec3 illum = vec3(0);
 	
 	//light field reprojection
-	vec2 lastCoord = reproject(pos.xyz, vec2(global_pos+0.5)/img_size)*step_scale;
+	vec2 lastCoord = reproject(pos.xyz, uv)*step_scale;
 	vec4 pdir = subInterp(GI, lastCoord, ivec2(0,1), ivec2(img_size));
 	vec4 ppos = subInterp(GI, lastCoord, ivec2(1,1), ivec2(img_size));
 	vec4 pill = subInterp(GI, lastCoord, ivec2(2,1), ivec2(img_size));
 	vec4 pnorm = subInterp(GI, lastCoord, ivec2(3,1), ivec2(img_size));
 	
 	vec4 lastPos = interp(DE_previous, round(lastCoord/step_scale));
-	vec2 lastUV = project(lastPos.xyz, vec2(global_pos)/img_size);
-	float delta = pimg_size.x*length(lastUV/pimg_size - vec2(global_pos)/img_size);
+	vec2 lastUV = project(lastPos.xyz, uv);
+	float delta = pimg_size.x*length(lastUV/pimg_size - uv);
 	float dp = length(ppos.xyz - pos.xyz)*step_scale.x/(td*fovray);
+	
+	float removeK = exp(-0.001*pow(delta, 2.));//remove prev data based on relative pixel distance
+	removeK *= exp(-0.005*pow(dp, 2.));
+	float trshd = 0.5*tanh(0.2*(pill.w - 8)) + 0.5; //dont remove if theres not enough samples - minimizes visible noise
+	removeK = 1. - trshd + trshd*removeK;
+	pill *= removeK;
+	pdir *= removeK;
+	
 	if(pos.w < max(2*fovray*td, MIN_DIST))
 	{
 		float seed = dot(global_pos,vec2(1., SQRT3)) + float(iFrame%1000)*123.5;
-		illum = path_march(pos, dir, vec4(120,0,0,0), step_scale.x*fovray, seed, 1, 1);
+		
+		for(int i = 0; i < PT_SAMPLES; i++)
+		{
+			vec4 ddir = dir; 
+			illum = path_march(pos, ddir, vec4(120,0,0,0), step_scale.x*fovray, seed, 1, 1);
+			#ifdef LIGHT_FIELD_DENOISE
+				pill.xyz = pill.xyz + illum;
+				pill.w += 1.;
+				pdir.xyz = pdir.xyz + ddir.xyz*length(illum.xyz);
+				pdir.w += 1.;
+			#else
+				pill.xyz = illum;
+				pill.w = 1.;
+				pdir.xyz =  ddir.xyz;
+				pdir.w = 1.;
+			#endif
+		}
 	}
 	
-	if(iFrame > 1)
-	{
-		float removeK = exp(-0.01*pow(delta, 2.));//remove prev data based on relative pixel distance
-		removeK *= exp(-0.001*pow(dp, 2.));
-		float trshd = 0.5*tanh(0.2*(pill.w - 8)) + 0.5; //dont remove if theres not enough samples - minimizes visible noise
-		removeK = 1. - trshd + trshd*removeK;
-		pill *= removeK;
-		pdir *= removeK;
-		
-		pill.xyz = pill.xyz + illum;
-		pill.w += 1.;
-		pdir.xyz = pdir.xyz + dir.xyz*length(illum.xyz);
-		pdir.w += 1.;
-	}
-	else
+	if(iFrame < 1)
 	{
 		pill.xyz = illum;
 		pill.w = 1.;
@@ -82,7 +94,7 @@ void main() {
 	}
 	
 	if(isnan(pdir.x) || isnan(pdir.y) || isnan(pdir.z)) pdir = vec4(1.,0.,0.,1.);
-	
+	if(isnan(pill.x) || isnan(pill.y) || isnan(pill.z)) pill = vec4(0);
 	
 	ppos.xyz = pos.xyz;
 	pnorm.xyz = norm.xyz;

@@ -1263,8 +1263,9 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Screenshot preview", TW_TYPE_BOOLCPP, &SETTINGS.stg.screenshot_preview, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Screenshot preview time", TW_TYPE_FLOAT, &SETTINGS.stg.preview_time, "min=0 step=0.01 max=5 group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Screenshot samples", TW_TYPE_INT32, &SETTINGS.stg.screenshot_samples, "min=1 max=300 group='Rendering settings' help='Multiple samples to converge the TXAA and GI'");
 	TwAddVarRW(overlays_ptr->settings, "Shader configuration", Configurations, &SETTINGS.stg.shader_config, "group='Rendering settings'");
-	TwAddVarRW(overlays_ptr->settings, "Multi Resolution Ray Marching scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings' help='Don't touch this'");
+	TwAddVarRW(overlays_ptr->settings, "Multi Resolution Ray Marching scaling", TW_TYPE_INT32, &SETTINGS.stg.MRRM_scale, "min=2 max=8 group='Rendering settings' help='Dont touch this'");
 	TwAddVarRW(overlays_ptr->settings, "Shadow downscaling", TW_TYPE_INT32, &SETTINGS.stg.shadow_resolution, "min=1 max=8 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom downscaling", TW_TYPE_INT32, &SETTINGS.stg.bloom_resolution, "min=1 max=8 group='Rendering settings'");
 	TwAddButton(overlays_ptr->settings, "Apply1", ApplySettings, NULL, "group='Rendering settings' label='Apply settings'  ");
@@ -1275,7 +1276,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "VSYNC", TW_TYPE_BOOLCPP, &SETTINGS.stg.VSYNC, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Shadows", TW_TYPE_BOOLCPP, &SETTINGS.stg.shadows, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Reflection and Refraction", TW_TYPE_BOOLCPP, &SETTINGS.stg.refl_refr, "group='Graphics settings'");
-	TwAddVarRW(overlays_ptr->settings, "Volumetric fog(TODO)", TW_TYPE_BOOLCPP, &SETTINGS.stg.fog, "group='Graphics settings'");
+	//TwAddVarRW(overlays_ptr->settings, "Volumetric fog(TODO)", TW_TYPE_BOOLCPP, &SETTINGS.stg.fog, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Blur", TW_TYPE_FLOAT, &SETTINGS.stg.motion_blur, "min=0 step=0.001 max=0.75 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Exposure", TW_TYPE_FLOAT, &SETTINGS.stg.exposure, "min=0 max=5 step=0.001 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Bloom Intensity", TW_TYPE_FLOAT, &SETTINGS.stg.bloom_intensity, "min=0 max=5 step=0.001 group='Graphics settings'");
@@ -1285,6 +1286,8 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Material gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_material, "min=0 max=4 step=0.1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Sky gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_sky, "min=0 max=4 step=0.1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_camera, "min=0 max=4 step=0.1 group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Fractal glow", TW_TYPE_BOOLCPP, &SETTINGS.stg.fractal_glow, "group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Flag glow", TW_TYPE_BOOLCPP, &SETTINGS.stg.flag_glow, "group='Graphics settings'");
 	TwAddButton(overlays_ptr->settings, "Apply2", ApplySettings, NULL, "group='Graphics settings' label='Apply settings'  ");
 
 	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &SETTINGS.stg.language, "group='Gameplay settings'");

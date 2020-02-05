@@ -23,3 +23,6 @@ uniform bool SHADOWS_ENABLED;
 uniform float gamma_material;
 uniform float gamma_sky;
 uniform float gamma_camera;
+
+uniform bool FRACTAL_GLOW;
+uniform bool FLAG_GLOW;

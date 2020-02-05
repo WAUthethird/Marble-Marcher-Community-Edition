@@ -76,11 +76,11 @@ void main() {
 	}
 	else if(pos.w < max(2*fovray*td, MIN_DIST))
 	{
-		float k = 0.00001;
+		float k = 0.0001;
 		vec3 cpos = pos.xyz - pos.w*norm.xyz;
 		vec4 albedo; vec2 pbr; vec3 emission;
 		scene_material(cpos, albedo, pbr, emission);
-		pixsize *= 1/(abs(dot(norm.xyz, dir.xyz)) + 0.0001);
+		pixsize = min(pixsize/(abs(dot(norm.xyz, dir.xyz)) + 0.1), 4.*td*fovray*step_scale.x);
 		vec3 GILo = vec3(0.);
 		//computing the irradiance probe using the stored PT samples, pretty slow 
 		for(int i = 0; i<group_size*group_size; i++)
