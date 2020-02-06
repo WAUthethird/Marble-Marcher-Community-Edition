@@ -2,7 +2,7 @@
 
 ### Version 1.4.3
 
-![Logo](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/LOGO.PNG)
+![Logo](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/doc/LOGO.PNG)
 
 This is the community edition of Marble Marcher, a procedurally rendered fractal physics marble game in which you must get to the flag in each level as fast as you can. With 24 levels to unlock and an active [speedrunning community](https://www.speedrun.com/marblemarcher), along with a fully-featured level editor, there's always new features being developed. If you complete all levels, you can use cheats to create and enhance a more exploratory experience.
 
