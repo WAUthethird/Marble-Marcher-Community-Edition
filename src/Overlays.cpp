@@ -278,6 +278,7 @@ void Overlays::SetAntTweakBar(int Width, int Height)
 	//TW interface
 	TwInit(TW_OPENGL, NULL);
 	TwWindowSize(Width, Height);
+
 }
 
 void Overlays::DrawAntTweakBar()
