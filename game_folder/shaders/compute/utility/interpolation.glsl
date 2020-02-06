@@ -179,14 +179,14 @@ vec4 subImage(layout (rgba32f) image2D T, ivec2 coord, ivec2 sub, ivec2 subsize)
 {
 	ivec2 imgsize = imageSize(T);
 	ivec2 subnum = imgsize/subsize;
-	return imageLoad(T, clamp(coord, ivec2(0), subsize-1) + sub*subsize);
+	return imageLoad(T, clamp(coord, ivec2(1), subsize-1) + sub*subsize);
 }
 
 void storeSub(layout (rgba32f) image2D T, vec4 val, ivec2 coord, ivec2 sub, ivec2 subsize)
 {
 	ivec2 imgsize = imageSize(T);
 	ivec2 subnum = imgsize/subsize;
-	imageStore(T, clamp(coord, ivec2(0), subsize-1) + sub*subsize, val);
+	imageStore(T, clamp(coord, ivec2(1), subsize-1) + sub*subsize, val);
 }
 
 vec4 subInterp(layout (rgba32f) image2D T, vec2 coord, ivec2 sub, ivec2 subsize)
