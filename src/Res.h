@@ -18,8 +18,9 @@
 #include <string>
 
 static const int num_level_music = 4;
-static const char vert_glsl[] = "shaders/vert.glsl";
-static const char frag_glsl[] = "shaders/frag.glsl";
+static const char settings_bin[] = "assets/settings.bin";
+static const char main_config[] = "shaders/compute/MAIN.cfg";
+static const char textures_folder[] = "shaders/textures/";
 static const char Orbitron_Bold_ttf[] = "assets/Orbitron-Bold.ttf";
 static const char Inconsolata_Bold_ttf[] = "assets/Inconsolata-Bold.ttf";
 static const char menu_ogg[] = "sound/music/menu.ogg";
@@ -39,7 +40,10 @@ static const char bounce1_wav[] = "sound/fx/bounce1.wav";
 static const char bounce2_wav[] = "sound/fx/bounce2.wav";
 static const char bounce3_wav[] = "sound/fx/bounce3.wav";
 static const char shatter_wav[] = "sound/fx/shatter.wav";
+static const char screenshot_wav[] = "sound/fx/screenshot.wav";
 
 static const char level_folder[] = "levels";
+static const char recordings_folder[] = "levels/best_runs";
 static const char music_folder[] = "sound/music";
+static std::string compute_folder = "shaders/compute";
 static std::string local_folder = "locals";

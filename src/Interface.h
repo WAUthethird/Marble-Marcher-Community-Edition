@@ -21,7 +21,8 @@ extern sf::Color default_main_color;
 extern sf::Color default_hover_main_color;
 extern sf::Color default_active_main_color;
 extern float default_margin;
-extern sf::View default_view ;
+extern sf::Vector2f default_size;
+extern sf::View default_view;
 
 extern float animation_sharpness;
 extern float action_dt;
@@ -33,6 +34,13 @@ static const std::string priority_png = "images/priority.png";
 static const std::string done_png = "images/done.png";
 extern int focused;
 
+template < typename T > std::string num2str(const T& n)
+{
+	std::ostringstream stm;
+	if (n < 10) stm << "0";
+	stm << n;
+	return stm.str();
+}
 
 struct ColorFloat
 {
@@ -51,10 +59,11 @@ ColorFloat operator*(ColorFloat a, float b);
 sf::Color ToColor(ColorFloat a);
 ColorFloat ToColorF(sf::Color a);
 
-
 struct InputState
 {
+	bool isKeyPressed;
 	bool keys[sf::Keyboard::KeyCount] = { false };
+	bool key_press[sf::Keyboard::KeyCount] = { false };
 	bool mouse[3] = { false };
 	bool mouse_press[3] = { false };
 	float wheel = 0.f;
@@ -63,11 +72,16 @@ struct InputState
 	sf::Vector2f mouse_speed = sf::Vector2f(0, 0);
 	sf::Vector2f window_size = sf::Vector2f(0, 0);
 	float time = 0, dt = 0;
+	bool axis_moved[sf::Joystick::AxisCount] = { false };
+	float axis_value[sf::Joystick::AxisCount] = { 0.f };
+	bool  buttons[sf::Joystick::ButtonCount] = { false };
+	bool  button_pressed[sf::Joystick::ButtonCount] = { false };
 
 	InputState();
 	InputState(bool keys[sf::Keyboard::KeyCount], bool mouse[3], sf::Vector2f mouse_pos, sf::Vector2f mouse_speed);
 };
 
+typedef std::function<void(sf::RenderWindow * window, InputState & state)> call_func;
 
 //the object parameters
 struct State
@@ -118,9 +132,16 @@ public:
 	void Move(sf::Vector2f dx);
 
 	void SetDefaultFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
-	void SetCallbackFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun, bool limit_repeat = false);
+	void SetCallbackFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun, bool limit_repeat = true);
 	void SetHoverFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
+	
+	void SetMainDefaultFunction(call_func fun);
+	void SetMainCallbackFunction(call_func fun, bool limit_repeat = true);
+	void SetMainHoverFunction(call_func fun);
 
+	void ClearDefaultFunctions();
+	void ClearCallbackFunctions();
+	void ClearHoverFunctions();
 
 	bool RunCallback(sf::RenderWindow * window, InputState& state);
 	void clone_states();
@@ -154,7 +175,8 @@ public:
 
 	sf::View used_view;
 	
-	std::function<void(sf::RenderWindow * window, InputState & state)> callback, hoverfn, defaultfn;
+	//multiple callbacks
+	std::vector<std::function<void(sf::RenderWindow * window, InputState & state)>> callback, hoverfn, defaultfn;
 
 	//objects inside this object
 	std::vector<std::unique_ptr<Object>> objects;
@@ -174,6 +196,8 @@ public:
 void UpdateAspectRatio(float width, float heigth);
 int AddGlobalObject(Object & a);
 Object& get_glob_obj(int id);
+bool NoObjects();
+int NumberOfObjects();
 void RemoveGlobalObject(int id);
 void RemoveAllObjects();
 void Add2DeleteQueue(int id);
@@ -186,11 +210,13 @@ public:
 	void Draw(sf::RenderWindow *window, InputState& state);
 
 	Box(float x, float y,  float dx, float dy,  sf::Color color_main = default_main_color);
-	Box(float dx, float dy);
+	Box(float dx, float dy, sf::Color color_main = default_main_color);
 	Box();
 
 	Box(Box& A);
 	Box(Box&& A);
+
+	void SetAutoSize(bool b);
 
 	void operator=(Box& A);
 	void operator=(Box&& A);
@@ -198,32 +224,16 @@ public:
 	virtual Object* GetCopy();
 
 	~Box();
+
+protected:
+	bool auto_size;
+
 private:
 	sf::Texture image;
 	sf::RectangleShape rect;
 	sf::View boxView;
 };
 
-
-class Text: public Object
-{
-public:
-	sf::Text text;
-
-	void Draw(sf::RenderWindow *window, InputState& state);
-
-	template<class T>
-	Text(T str, sf::Font &f, float size, sf::Color col);
-	Text(sf::Text t);
-
-	Text(Text& A);
-	Text(Text&& A);
-
-	void operator=(Text& A);
-	void operator=(Text&& A);
-
-	virtual Object* GetCopy();
-};
 
 
 class MenuBox : public Box
@@ -240,7 +250,7 @@ public:
 	void ScrollBy(float dx);
 	void ScrollTo(float scroll);
 
-	MenuBox(float dx, float dy, float x = 0, float y = 0, sf::Color color_main = sf::Color(0, 0, 0, 0));
+	MenuBox(float dx, float dy, bool auto_y = false, float x = 0, float y = 0, sf::Color color_main = sf::Color(0, 0, 0, 0));
 
 	MenuBox(MenuBox& A);
 	MenuBox(MenuBox&& A);
@@ -262,7 +272,7 @@ public:
 	void Add(Object * something, Allign a = LEFT);
 
 	template<class T>
-	Window(float x, float y, float dx, float dy, sf::Color color_main, T title, sf::Font & font);
+	Window(float x, float y, float dx, float dy, sf::Color color_main = default_main_color, T title = LOCAL["Window"], sf::Font & font = LOCAL("default"));
 
 	Window(Window& A);
 	Window(Window&& A);
@@ -276,20 +286,130 @@ public:
 };
 
 
+class Text : public Object
+{
+public:
+	std::unique_ptr<sf::Text> text;
+
+	void Draw(sf::RenderWindow *window, InputState& state);
+
+	template<class T>
+	Text(T str, sf::Font &f, float size, sf::Color col = sf::Color::White);
+	Text(sf::Text t);
+
+	Text(Text& A);
+	Text(Text&& A);
+
+	template<class T>
+	void SetString(T str);
+
+	void operator=(Text& A);
+	void operator=(Text&& A);
+
+	virtual Object* GetCopy();
+};
+
+
+//a button
+class Button: public Box
+{
+public:
+	template<class T>
+	Button(T text, float w, float h, std::function<void(sf::RenderWindow * window, InputState & state)> fun, sf::Color color_hover = default_hover_main_color, sf::Color color_main = default_main_color);
+
+	Button(Button& A);
+	Button(Button&& A);
+
+	void operator=(Button& A);
+	void operator=(Button&& A);
+
+	virtual Object* GetCopy();
+
+	~Button();
+};
+
+class Image : public Box
+{
+public:
+	Image(sf::Texture image, float w, float h, sf::Color color_hover);
+	Image(std::string image, float w = 0, float h = 0, sf::Color color_hover = sf::Color::White);
+
+	Image(Image& A);
+	Image(Image&& A);
+
+	void operator=(Image& A);
+	void operator=(Image&& A);
+
+	virtual Object* GetCopy();
+
+	~Image();
+};
+
+
+std::string key_name(sf::Keyboard::Key& key);
+
+//basic object for control mapping
+class KeyMapper : public Box
+{
+public:
+	enum MapperType {
+		KEYBOARD, JOYSTICK_AXIS, JOYSTICK_KEYS
+	};
+
+	template<class T>
+	KeyMapper(T label, T act_label, int* key, float w, float h, MapperType type, sf::Color color_active = sf::Color::Blue, sf::Color color_hover = default_hover_main_color, sf::Color color_main = default_main_color);
+
+	KeyMapper(KeyMapper& A);
+	KeyMapper(KeyMapper&& A);
+
+	void operator=(KeyMapper& A);
+	void operator=(KeyMapper&& A);
+
+	void CreateCallbacks();
+	void SetKeyString();
+
+	virtual Object* GetCopy();
+
+	MapperType this_type;
+	int *key_ptr;
+	bool waiting;
+	std::wstring wait_text;
+};
+
 template<class T>
-inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main = default_main_color, T title = LOCAL["Window"], sf::Font & font = LOCAL("default"))
+inline KeyMapper::KeyMapper(T label, T act_label, int * key, float w, float h, MapperType type, sf::Color color_active, sf::Color color_hover, sf::Color color_main): waiting(false), this_type(type), wait_text(act_label)
+{
+	SetSize(w, h);
+	SetBackgroundColor(color_main);
+	Box LeftBox(0, 0, float(w * 0.5f), h-defaultstate.margin*2.f, sf::Color(0, 100, 200, 0)),
+		RightBox(0, 0, float(w * 0.33f), h - defaultstate.margin * 2.f, sf::Color(0, 100, 200, 128));
+	LeftBox.AddObject(new Text(label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::LEFT);
+	RightBox.AddObject(new Text(act_label, LOCAL("default"), h*0.7f, sf::Color::White), Allign::CENTER);
+	RightBox.activestate.color_main = color_active;
+	hoverstate.color_main = color_hover;
+	this->AddObject(&LeftBox,Allign::LEFT);
+	this->AddObject(&RightBox, Allign::RIGHT);
+	key_ptr = key;
+	SetKeyString();
+}
+
+template<class T>
+inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main, T title, sf::Font & font)
 {
 	defaultstate.position.x = x;
 	defaultstate.position.y = y;
 	defaultstate.size.x = dx;
 	defaultstate.size.y = dy;
+
+	this->SetAutoSize(true);
 	defaultstate.color_main = ToColorF(color_main);
 	clone_states();
+	SetMargin(0);
 
 	Box Bar(0, 0, dx, 30, sf::Color(0, 100, 200, 128)),
 		CloseBx(0, 0, 30, 30, sf::Color(255, 255, 255, 255));
 	Text Title(title, font, 25, sf::Color::White);
-
+	Bar.SetMargin(0);
 	CloseBx.hoverstate.color_main = sf::Color(255, 0, 0, 255);
 
 	sf::Image close; close.loadFromFile(close_png);
@@ -300,7 +420,8 @@ inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main
 	Bar.AddObject(&Title, Box::LEFT);
 	Bar.AddObject(&CloseBx, Box::RIGHT);
 
-	MenuBox Inside(dx, dy - 30);
+	MenuBox Inside(dx, dy - 30, true);
+
 
 	this->AddObject(&Bar, Box::CENTER);
 	this->AddObject(&Inside, Box::LEFT);
@@ -309,12 +430,32 @@ inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main
 }
 
 template<class T>
+inline Button::Button(T text, float w, float h, std::function<void(sf::RenderWindow*window, InputState&state)> fun, sf::Color color_hover, sf::Color color_main)
+{
+	SetSize(w, h);
+	SetBackgroundColor(color_main);
+	Text button_text(text, LOCAL("default"), h*0.8f, sf::Color::White);
+	button_text.SetBorderColor(sf::Color::Black);
+	hoverstate.color_main = color_hover;
+	SetCallbackFunction(fun, true);
+	this->AddObject(&button_text,Object::Allign::CENTER);
+}
+
+
+
+template<class T>
 inline Text::Text(T str, sf::Font & f, float size, sf::Color col)
 {
-	text.setString(str);
-	text.setFont(f);
+	text.reset(new sf::Text(str, f, size));
 	defaultstate.font_size = size;
 	defaultstate.color_main = col;
-
+	SetBorderColor(sf::Color::Black);
+	SetBorderWidth(2);
 	clone_states();
+}
+
+template<class T>
+inline void Text::SetString(T str)
+{
+	text.get()->setString(str);
 }

@@ -36,10 +36,158 @@ static const int frame_orbit = 600;
 static const int frame_deorbit = 800;
 static const int frame_countdown = frame_deorbit + 3*60;
 static const float default_zoom = 15.0f;
-static const int fractal_iters = 16;
 static const float ground_ratio = 1.15f;
 static const int mus_switches[num_level_music] = {9, 15, 21, 24};
 static const int num_levels_midpoint = 15;
+
+int cur_frame = 0;
+bool recording = false;
+bool replay = false;
+
+std::vector<InputRecord> recording_data;
+std::fstream input_recording;
+
+int* GetReplayFrame()
+{
+	return &cur_frame;
+}
+
+void StartRecording()
+{
+	if (!replay)
+	{
+		recording_data.clear();
+		recording = true;
+	}
+}
+
+void StopRecording2File(std::string path, bool save)
+{
+	if (recording)
+	{
+		recording = false;
+		if (save)
+		{
+			input_recording.open(path, std::ios::out | std::ios::binary | std::ios::trunc);
+
+			if (!input_recording.is_open())
+			{
+				//DisplayError("Error opening record file");
+			}
+			else
+			{
+				for (auto &input : recording_data)
+				{
+					input_recording.write((char*)&input, sizeof(InputRecord));
+				}
+			}
+
+			input_recording.close();
+		}
+
+		recording_data.clear();
+	}
+}
+
+void StartReplayFromFile(std::string path)
+{
+	if (!recording)
+	{
+		recording_data.clear();
+		replay = true;
+		input_recording.open(path, std::ios::in | std::ios::binary);
+
+		if (!input_recording.is_open())
+		{
+			replay = false;
+			//DisplayError("Error opening record file");
+		}
+		else
+		{
+			input_recording.seekg(0, input_recording.beg);
+			InputRecord rec;
+			while (input_recording)
+			{
+				input_recording.read((char*)&rec, sizeof(InputRecord));
+				recording_data.push_back(rec);
+			}
+			cur_frame = 0;
+		}
+
+		input_recording.close();
+	}
+}
+
+void StopReplay()
+{
+	if (!recording)
+	{
+		replay = false;
+		recording_data.clear();
+	}
+}
+
+
+void SaveRecord(float mx, float my, float vx, float vy, float cz, bool mc)
+{
+	if (recording && !replay)
+	{
+		InputRecord rec;
+		rec.move_x = mx;
+		rec.move_y = my;
+		rec.view_x = vx;
+		rec.view_y = vy;
+		rec.cam_z = cz;
+		rec.mouse_clicked = mc;
+
+		recording_data.push_back(rec);
+	}
+}
+
+void AddResetPadding()
+{
+	for (int i = 0; i < frame_deorbit; i++)
+	{
+		SaveRecord(0, 0, 0, 0, 0, 0);
+	}
+}
+
+InputRecord GetRecord()
+{
+	if (replay)
+	{
+		if (cur_frame >= recording_data.size())
+		{
+			cur_frame = 0;
+			replay = false;
+			recording_data.clear();
+			return InputRecord();
+		}
+		return recording_data[cur_frame++];
+	}
+	return InputRecord();
+}
+
+
+
+sf::Music *current_music = nullptr;
+
+void Scene::SetCurrentMusic(sf::Music *new_music)
+{
+	if (current_music != new_music)
+	{
+		StopMusic();
+		current_music = new_music;
+		current_music->play();
+		current_music->setVolume(SETTINGS.stg.music_volume);
+	}
+}
+
+void Scene::StopMusic()
+{
+	if (current_music != nullptr)
+		current_music->stop();
+}
 
 static void ModPi(float& a, float b) {
   if (a - b > PI) {
@@ -78,10 +226,11 @@ Scene::Scene(sf::Music* level_music) :
     LIGHT_DIRECTION(Eigen::Vector3f(-0.36, 0.8, 0.48)),
 	PBR_METALLIC(0.5),
 	PBR_ROUGHNESS(0.4),
-	camera_size(0.035),
+	camera_size(0.075),
 	cur_ed_mode(DEFAULT),
 	level_editor(false),
-	gravity(0.005f)
+	gravity(0.005f),
+	time(0.f)
 {
   ResetCheats();
   frac_params.setOnes();
@@ -126,6 +275,7 @@ void Scene::SetFlag(float x, float y, float z) {
 void Scene::SetLevel(int level) {
   cur_level = level;    
   level_copy = levels.GetLevel(level);
+  SetCurrentMusic(levels.GetLevelMusic(level));
 }
 
 void Scene::SetMode(CamMode mode) {
@@ -139,12 +289,10 @@ void Scene::SetMode(CamMode mode) {
   cam_mode = mode;
 }
 
-void Scene::SetResolution(sf::Shader& shader, int x, int y)
+void Scene::SetResolution(int x, int y)
 {
 	ResX = x;
 	ResY = y;
-	const sf::Glsl::Vec2 window_res((float)ResX, (float)ResY);
-	shader.setUniform("iResolution", window_res);
 }
 
 void Scene::SetWindowResolution(int x, int y)
@@ -204,16 +352,28 @@ void Scene::StartNewGame() {
   sum_time = 0;
   play_single = false;
   ResetCheats();
+  is_fullrun = true;
   SetLevel(0);
- // is_fullrun = high_scores.HasCompleted(num_levels - 1);
   HideObjects();
+  StartRecording();
   SetMode(ORBIT);
 }
 
 void Scene::StartNextLevel() {
   if (play_single) {
     cam_mode = MARBLE;
-    ResetLevel();
+	if (PlayNext && levels.LevelExists(level_copy.link_level))
+	{
+		SetLevel(level_copy.link_level);
+		HideObjects();
+		SetMode(ORBIT);
+		StartRecording();
+	}
+	else
+	{
+		ResetLevel();
+	}
+    
   } else if (cur_level + 1 == num_levels_midpoint && cam_mode != MIDPOINT) {
     cam_mode = MIDPOINT;
   } else if (cur_level + 1 >= num_levels) {
@@ -222,13 +382,20 @@ void Scene::StartNextLevel() {
     SetLevel(cur_level + 1);
     HideObjects();
     SetMode(ORBIT);
-    for (int i = 0; i < num_level_music; ++i) {
-      if (cur_level == mus_switches[i]) {
-        StopAllMusic();
-        GetCurMusic().play();
-      }
-    }
+	StartRecording();
   }
+}
+
+void Scene::ReplayLevel(int level)
+{
+	StopRecording2File("", 0);
+	play_single = true;
+	is_fullrun = false;
+	ResetCheats();
+	SetLevel(level);
+	StartReplayFromFile(std::string(recordings_folder) + "/" + ConvertSpaces2_(level_copy.txt) + ".bin");
+	HideObjects();
+	SetMode(ORBIT);
 }
 
 void Scene::StartSingle(int level) {
@@ -236,6 +403,7 @@ void Scene::StartSingle(int level) {
   is_fullrun = false;
   ResetCheats();
   SetLevel(level);
+  StartRecording();
   HideObjects();
   SetMode(ORBIT);
 }
@@ -264,6 +432,13 @@ void Scene::StartLevelEditor(int level)
 	free_camera = true;
 }
 
+void Scene::ResetCamera()
+{
+	SetMode(DEORBIT);
+	timer = frame_deorbit;
+	free_camera_speed = 1.f;
+}
+
 void Scene::StartDefault()
 {
 	cur_level = -1;
@@ -272,6 +447,9 @@ void Scene::StartDefault()
 
 void Scene::ResetLevel() {
   if (cam_mode == MARBLE || play_single) {
+    StopRecording2File("", false);
+	StartRecording();
+	AddResetPadding();
     SetMode(DEORBIT);
     timer = frame_deorbit;
     frac_params = level_copy.params;
@@ -311,7 +489,8 @@ void Scene::Synchronize()
 }
 
 void Scene::UpdateCamera(float dx, float dy, float dz, bool speedup) {
-  //Camera update depends on current mode
+	time += 1.f / 60.f;
+	//Camera update depends on current mode
   gravity = level_copy.gravity;
   const int iters = speedup ? 5 : 1;
   if (cam_mode == INTRO) {
@@ -385,7 +564,7 @@ void Scene::UpdateMarble(float dx, float dy) {
     } else if (bounce_delta_v > 0.25f) {
       sound_bounce2.play();
     } else if (bounce_delta_v > 0.1f) {
-      sound_bounce3.setVolume(100.0f * (bounce_delta_v / 0.25f));
+      sound_bounce3.setVolume(SETTINGS.stg.fx_volume * (bounce_delta_v / 0.25f));
       sound_bounce3.play();
     }
 
@@ -419,9 +598,11 @@ void Scene::UpdateMarble(float dx, float dy) {
       const float fz = marble_pos.z() - flag_pos.z();
       if (fx*fx + fz*fz < 6 * marble_rad*marble_rad) {
         final_time = timer;
+		bool best = false;
         if (!enable_cheats) {
-          levels.UpdateScore(cur_level, final_time/60.f);
+			best = levels.UpdateScore(cur_level, final_time/60.f);
         }
+		StopRecording2File(std::string(recordings_folder) + "/" + ConvertSpaces2_(level_copy.txt) + ".bin", best);
         SetMode(GOAL);
         sound_goal.play();
       }
@@ -756,7 +937,7 @@ void Scene::Write(sf::Shader& shader) const {
 
   shader.setUniform("SHADOWS_ENABLED", Shadows_Enabled);
   shader.setUniform("CAMERA_SIZE", camera_size*level_copy.marble_rad/0.035f);
-  shader.setUniform("FRACTAL_ITER", Fractal_Iterations);
+  shader.setUniform("FRACTAL_ITER", level_copy.FractalIter);
   shader.setUniform("REFL_REFR_ENABLED", Refl_Refr_Enabled);
   shader.setUniform("MARBLE_MODE", MarbleType);
 }
@@ -775,7 +956,7 @@ void Scene::WriteRenderer(Renderer & rd)
 	rd.camera.SetDirY(diry);
 	rd.camera.SetDirZ(dirz);
 	rd.camera.SetCameraSize(camera_size*level_copy.marble_rad / 0.035f);
-
+	rd.camera.eye_separation = SETTINGS.stg.eye_separation*level_copy.marble_rad / 0.035f;
 	//write all the uniform values to the rendering pipeline
 	for (auto &shader : rd.shader_pipeline)
 	{
@@ -822,7 +1003,6 @@ void Scene::WriteShader(ComputeShader& shader)
 	shader.setUniform("LIGHT_COLOR", vec3(level_copy.light_col[0], level_copy.light_col[1], level_copy.light_col[2]));
 
 	shader.setUniform("iMarbleRad", level_copy.marble_rad);
-
 	shader.setUniform("iFlagScale", level_copy.planet ? -level_copy.marble_rad : level_copy.marble_rad);
 
 	shader.setUniform("iFracScale", frac_params_smooth[0]);
@@ -831,14 +1011,19 @@ void Scene::WriteShader(ComputeShader& shader)
 	shader.setUniform("iFracShift", vec3(frac_params_smooth[3], frac_params_smooth[4], frac_params_smooth[5]));
 	shader.setUniform("iFracCol", vec3(frac_params_smooth[6], frac_params_smooth[7], frac_params_smooth[8]));
 
-	shader.setUniform("iExposure", exposure);
-
-
 	shader.setUniform("SHADOWS_ENABLED", Shadows_Enabled);
-	shader.setUniform("CAMERA_SIZE", camera_size*level_copy.marble_rad / 0.035f);
-	shader.setUniform("FRACTAL_ITER", Fractal_Iterations);
+	shader.setUniform("FOG_ENABLED", Fog_Enabled);
+	shader.setUniform("FRACTAL_ITER", level_copy.FractalIter);
 	shader.setUniform("REFL_REFR_ENABLED", Refl_Refr_Enabled);
 	shader.setUniform("MARBLE_MODE", MarbleType);
+	shader.setUniform("FRACTAL_GLOW", SETTINGS.stg.fractal_glow);
+	shader.setUniform("FLAG_GLOW", SETTINGS.stg.flag_glow);
+
+	shader.setUniform("gamma_material", gamma_material);
+	shader.setUniform("gamma_sky", gamma_sky);
+	shader.setUniform("gamma_camera", gamma_camera);
+
+	shader.setUniform("time", time);
 }
 
 //Hard-coded to match the fractal
@@ -852,7 +1037,7 @@ float Scene::DE(const Eigen::Vector3f& pt) const {
 
   Eigen::Vector4f p;
   p << pt, 1.0f;
-  for (int i = 0; i < fractal_iters; ++i) {
+  for (int i = 0; i < level_copy.FractalIter; ++i) {
     //absFold
     p.segment<3>(0) = p.segment<3>(0).cwiseAbs();
     //rotZ
@@ -896,7 +1081,7 @@ Eigen::Vector3f Scene::NP(const Eigen::Vector3f& pt) const {
   Eigen::Vector4f p;
   p << pt, 1.0f;
   //Fold the point, keeping history
-  for (int i = 0; i < fractal_iters; ++i) {
+  for (int i = 0; i < level_copy.FractalIter; ++i) {
     //absFold
     p_hist.push_back(p);
     p.segment<3>(0) = p.segment<3>(0).cwiseAbs();
@@ -927,7 +1112,7 @@ Eigen::Vector3f Scene::NP(const Eigen::Vector3f& pt) const {
   //Get the nearest point
   Eigen::Vector3f n = p.segment<3>(0).cwiseMax(-6.0f).cwiseMin(6.0f);
   //Then unfold the nearest point (reverse order)
-  for (int i = 0; i < fractal_iters; ++i) {
+  for (int i = 0; i < level_copy.FractalIter; ++i) {
     //scaleTrans
     n.segment<3>(0) -= frac_shift;
     n /= frac_scale;
@@ -1038,6 +1223,7 @@ void Scene::Cheat_Param(int param) {
 
 void Scene::ExitEditor()
 {
+	levels.StopAllMusic();
 	level_editor = false;
 }
 

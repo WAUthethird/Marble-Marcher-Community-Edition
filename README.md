@@ -4,10 +4,16 @@
 
 ![Logo](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/LOGO.PNG)
 
-This is the community edition of Marble Marcher, a procedurally rendered fractal physics marble game in which you must get to the flag in each level as fast as you can. With 24 levels to unlock and an active [speedrunning community](https://www.speedrun.com/marblemarcher), along with a rudimentary level editor, there's always new features being developed. If you complete all levels, you can use cheats to create and enhance a more exploratory experience.
+This is the community edition of Marble Marcher, a procedurally rendered fractal physics marble game in which you must get to the flag in each level as fast as you can. With 24 levels to unlock and an active [speedrunning community](https://www.speedrun.com/marblemarcher), along with a fully-featured level editor, there's always new features being developed. If you complete all levels, you can use cheats to create and enhance a more exploratory experience.
 
-Because version 1.1.0 was the last feature update of Marble Marcher, we (the Marble Marcher Speedrunning Community) opted to create a community edition to keep the community around the game alive and continuously improve the experience.
-Currently this is maintained mainly by members of the [Marble Marcher Speedrunning Community on Discord](https://discord.gg/r3XrJxH), in addition to the members of the [subreddit](https://www.reddit.com/r/marblemarcher) and anyone else who has contributed.
+Because version 1.1.0 was the last feature update of Marble Marcher, we (the Marble Marcher Community) opted to create a community edition to keep the community around the game alive and continuously improve the experience.
+Currently this is maintained mainly by members of the [Marble Marcher Community on Discord](https://discord.gg/r3XrJxH), in addition to the members of the [subreddit](https://www.reddit.com/r/marblemarcher) and anyone else who has contributed.
+
+Marble Marcher: Community Edition comes with a wealth of new features and improvements, including performance improvements and graphical enhancements.
+
+If you have suggestions, issues, or would like to contribute, feel free to submit issues and pull requests. After all, this is a community project!
+
+Note: This project requires a mid-range dedicated graphics card (non-integrated) to run in HD (1920x1080) at a good FPS. Anything higher and you'll likely need a higher-range card. However, if no HD isn't an issue, you can lower the resolution or settings to run on something like a laptop or budget computer, in which case the game will run just fine.
 
 All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade](https://www.youtube.com/channel/UCrv269YwJzuZL3dH5PCgxUw)) for the [original game](https://github.com/HackerPoet/MarbleMarcher).
 
@@ -39,52 +45,61 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
   - [Shortcuts](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#shortcuts)
 
 ## Changes
-- numerous miscellaneous fixes have been applied
-- easier compilation for macOS
-- feasible Windows compilation
+- Numerous miscellaneous fixes have been applied
+- Easier compilation for macOS
+- Feasible Windows and Linux compilation
 - README.md overhaul
-- new rendering engine
-- ingame statistics added (marble speed, ground/air state, ...). Press `o` to toggle.
+- New rendering engine
+- Ingame statistics added (marble speed, ground/air state, ...). Press `o` to toggle.
 - AntTweakBar editor added. Press `F4` to toggle.
+- Confirmation, exit buttons in end screens
+- Change "controls" menu to "settings" and have audio, controls, sensitivity and fullscreen options there, also allow custom input bindings
+- Added controller support (+deadzone)
+- Improved text rendering
+- Better layout
+- Anaglyph/stereoscopic mode
+- Screenshot mode (temporarily higher resolution and AA)
+- Metal marble skin
+- Added auto-exposure, aka adaptive brightness
+- Improved bloom
+- Improved shadow upscaling
+- Added DOF
+- Added original shaders as a new configuration
+- Added NEON shaders
+- Added a credits menu
+- New pause menu
+- New settings menu
+- Added a screenshot sound
+- Added several new levels
+- Added custom texture support to compute shaders
+- Ability to edit shaders in real-time
 - Level Editor and custom level support
-![Editor](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/EDITOR.PNG)
-![Levels](https://github.com/MichaelMoroz/MarbleMarcher/blob/master/doc/LEVELS.PNG)
-
+![Editor](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/development/doc/EDITOR.PNG)
+![Levels](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/development/doc/LEVELS.PNG)
+For more changes, please see the [release notes](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/releases).
 
 ## Proposed Changes
 Though Marble Marcher CE is a largely finished game, there are still several improvements we'd like to implement. Here are our proposed changes:
 
 - ### Fixes
-  - make sure game runs at the same speed everywhere
-  - mouse/camera speed is too fast while skipping cutscenes
-  - figure out why so many people get `Failed to compile vertex shader`
+  - Make sure game runs at the same speed everywhere
+  - Mouse/camera speed is too fast while skipping cutscenes
 - ### User Experience Improvements
-  - pre-built versions for the common operating systems and make them available as GitHub releases (in progress)
-  - make the fractal recoloring from cheats persistent
-  - more efficient anti-aliasing modes
-  - toggle to always activate fast cutscenes
-  - better autosplitter integration
-  - #### UI Redesign
-    - confirmation, exit buttons in end screens
-    - change "controls" menu to "settings" and have audio, controls, sensitivity and fullscreen options there, also allow custom input bindings
-    - improve text rendering
-    - better layout
+  - Pre-built versions for the common operating systems and make them available as GitHub releases (in progress)
+  - Make the fractal recoloring from cheats persistent
+  - More efficient anti-aliasing modes
+  - Toggle to always activate fast cutscenes
+  - Better autosplitter integration
 - ### New Features
-  - cheat: no drag
-  - anaglyph/stereoscopic mode
-  - screenshot mode (temporarily higher resolution and AA)
-  - native controller support (+deadzone)
-  - custom marble designs
-  - add a script to build for all platforms at once
-  - have MarbleMarcher added to package managers
+  - Cheat: no drag
+  - Custom marble designs
+  - Add a script to build for all platforms at once
+  - Have MarbleMarcher added to package managers
 - ### Currently WIP
-  - in-game level editor
-  - metal marble skin
-  - custom map support
-  - recording/replay functionality
-  - debug info screen
-  - cheat: unlock all levels
-  - add creation of macOS `.dmg` for easy distribution.
+  - Recording/replay functionality
+  - Debug info screen
+  - Cheat: unlock all levels
+  - Add creation of macOS `.dmg` for easy distribution.
 
 ## System Dependencies
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
@@ -94,6 +109,7 @@ Though Marble Marcher CE is a largely finished game, there are still several imp
 * [GLM](https://glm.g-truc.net/)
 * [CMake](https://cmake.org/)
 * [OpenAL](https://www.openal.org/) (in case you get an "OpenAL DLL not found" error while trying to run the software, seems to be Windows-specific)
+
 ### MacOS
 On macOS these can be conveniently installed using [HomeBrew](https://brew.sh):
 
@@ -139,6 +155,18 @@ Alternatively, one can use the platform-dependent build system, for example `Mak
 * `cd ..`
 * `cmake --build build`
 * `cp build/MarbleMarcher ./`
+
+### Ubuntu
+* Install packages
+`sudo apt-get install libanttweakbar-dev libanttweakbar1 libsfml-system2.4 libsfml-graphics2.4 libsfml-audio2.4 libsfml-window2.4 libglew-dev libeigen3-dev libglm-dev libsfml-dev`
+* `cd ~`
+* `git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git`
+* `cd Marble-Marcher-Community-Edition`
+* `mkdir build && cd build`
+* `cmake .. && cmake --build .`
+* Run the game 
+`./MarbleMarcher`
+* You can also build a package using this command `cpack`
 
 ### Compiling on Windows
 Windows compilation should work just fine now. It's relatively easy to do without help, but in case you'd like them, [here are some configuring and compiling instructions](https://www.reddit.com/r/Marblemarcher/comments/bamqyh/how_to_configure_and_compile_source_for_windows/). A [copy of the instructions](build_on_windows.md) is also in the root.

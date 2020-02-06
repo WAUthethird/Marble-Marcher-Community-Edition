@@ -20,11 +20,8 @@
 
 static const float PI = 3.14159265359f;
 static const int num_level_pages = 1 + (num_levels - 1) / Overlays::LEVELS_PER_PAGE;
-Settings game_settings;
 
-Overlays::Overlays(sf::Font* _font, sf::Font* _font_mono, Scene* scene) :
-  font(_font),
-  font_mono(_font_mono),
+Overlays::Overlays(Scene* scene) :
   draw_scale(1.0f),
   level_page(0),
   top_level(true),
@@ -39,6 +36,10 @@ Overlays::Overlays(sf::Font* _font, sf::Font* _font_mono, Scene* scene) :
   sound_count.setBuffer(buff_count);
   buff_go.loadFromFile(count_go_wav);
   sound_go.setBuffer(buff_go);
+
+  buff_screenshot.loadFromFile(screenshot_wav);
+  sound_screenshot.setBuffer(buff_screenshot);
+
   arrow_tex.loadFromFile(arrow_png);
   arrow_tex.setSmooth(true);
   arrow_spr.setTexture(arrow_tex);
@@ -46,6 +47,7 @@ Overlays::Overlays(sf::Font* _font, sf::Font* _font_mono, Scene* scene) :
 
   ReloadLevelMenu(scene);
 }
+
 
 void Overlays::ReloadLevelMenu(Scene* scene)
 {
@@ -63,33 +65,11 @@ Overlays::Texts Overlays::GetOption(Texts from, Texts to) {
 }
 
 void Overlays::UpdateMenu(float mouse_x, float mouse_y) {
-  //Update text boxes
-  //MakeText(LOCAL["Marble_Marcher"], 60, 20, 72, sf::Color::White, all_text[TITLE]);
- /* MakeText(LOCAL["Play"], 80, 230, 60, sf::Color::White, all_text[PLAY]);
-  MakeText(LOCAL["Levels"], 80, 300, 60, sf::Color::White, all_text[LEVELS]);
-  MakeText(LOCAL["Controls"], 80, 370, 60, sf::Color::White, all_text[CONTROLS]);
-  MakeText(LOCAL["Screen_Saver"], 80, 440, 60, sf::Color::White, all_text[SCREEN_SAVER]);
-  MakeText(LOCAL["Exit"], 80, 510, 60, sf::Color::White, all_text[EXIT]);
-  */
-  //MakeText(LOCAL["About"], 16, 652, 32, sf::Color::White, all_text[CREDITS], true);
- // all_text[TITLE].setLineSpacing(0.76f);
-  //all_text[CREDITS].setLineSpacing(0.9f);
-
-  //Check if mouse intersects anything
- // UpdateHover(PLAY, EXIT, mouse_x, mouse_y);
+  
 }
 
 void Overlays::UpdateControls(float mouse_x, float mouse_y) {
-  //Update text boxes
-  MakeText(LOCAL["DetailControls"], 40, 200, 46, sf::Color::White, all_text[CONTROLS_L]);
-  MakeText(LOCAL["Back"], 60, 550, 40, sf::Color::White, all_text[BACK]);
 
-  //A little extra vertical spacing
-  all_text[CONTROLS_L].setLineSpacing(1.1f);
-  all_text[CONTROLS_R].setLineSpacing(1.1f);
-
-  //Check if mouse intersects anything
-  UpdateHover(BACK, BACK, mouse_x, mouse_y);
 }
 
 void Overlays::UpdateLevels(float mouse_x, float mouse_y) {
@@ -102,46 +82,15 @@ void Overlays::UpdateLevelMenu(float mouse_x, float mouse_y, float scroll)
 }
 
 void Overlays::UpdatePaused(float mouse_x, float mouse_y) {
-  //Update text boxes
-  MakeText(LOCAL["Paused"], 540, 288, 54, sf::Color::White, all_text[PAUSED]);
-  MakeText(LOCAL["Continue"], 370, 356, 40, sf::Color::White, all_text[CONTINUE]);
-  MakeText(LOCAL["Restart"], 620, 356, 40, sf::Color::White, all_text[RESTART]);
-  MakeText(LOCAL["Quit"], 845, 356, 40, sf::Color::White, all_text[QUIT]);
 
-  //Update music setting
-  std::wstring music_txt = LOCAL["Music"] + L": " + std::wstring(game_settings.mute ? LOCAL["On"] : LOCAL["Off"]);
-  MakeText(music_txt, 410, 500, 40, sf::Color::White, all_text[MUSIC]);
-
-  //Update mouse sensitivity setting
-  std::wstring mouse_txt = LOCAL["Mouse_sensitivity"] + L": ";
-  if (game_settings.mouse_sensitivity == 1) 
-  {
-    mouse_txt += LOCAL["Medium"];
-  } 
-  else if (game_settings.mouse_sensitivity == 2) 
-  {
-	mouse_txt += LOCAL["Low"];
-  }	
-  else
-  {
-	mouse_txt += LOCAL["High"];
-  }
-  MakeText(mouse_txt, 410, 550, 40, sf::Color::White, all_text[MOUSE]);
-
-  //Check if mouse intersects anything
-  UpdateHover(CONTINUE, MOUSE, mouse_x, mouse_y);
 }
 
 void Overlays::DrawMenu(sf::RenderWindow& window) {
-  for (int i = TITLE; i <= CREDITS; ++i) {
-    window.draw(all_text[i]);
-  }
+  
 }
 
 void Overlays::DrawControls(sf::RenderWindow& window) {
-  for (int i = CONTROLS_L; i <= BACK; ++i) {
-    window.draw(all_text[i]);
-  }
+ 
 }
 
 void Overlays::DrawTimer(sf::RenderWindow& window, int t, bool is_high_score) {
@@ -232,7 +181,7 @@ void Overlays::DrawCredits(sf::RenderWindow& window, bool fullrun, int t) {
   std::wstring txt = LOCAL["CongratsEnd"];
   sf::Text text;
   MakeText(txt, 100, 100, 44, sf::Color::White, text);
-  text.setLineSpacing(1.3f);
+  //text.setLineSpacing(1.3f);
   window.draw(text);
 
   if (fullrun) {
@@ -248,7 +197,7 @@ void Overlays::DrawMidPoint(sf::RenderWindow& window, bool fullrun, int t) {
   std::wstring txt = LOCAL["CongratsMid"];
   sf::Text text;
   MakeText(txt, 205, 100, 44, sf::Color::White, text);
-  text.setLineSpacing(1.3f);
+  //text.setLineSpacing(1.3f);
   window.draw(text);
 
   if (fullrun) {
@@ -266,7 +215,7 @@ void Overlays::DrawLevels(sf::RenderWindow& window) {
 
 void Overlays::DrawSumTime(sf::RenderWindow& window, int t) {
   sf::Text text;
-  MakeTime(t, 10, 680, 32, sf::Color::White, text);
+  MakeTime(t, 10, 10, 32, sf::Color::White, text);
   window.draw(text);
 }
 
@@ -288,7 +237,7 @@ template<class T> void Overlays::MakeText(T str, float x, float y, float size, c
   text.setString(str);
   text.setFont(mono ? LOCAL("mono"): LOCAL("default"));
   text.setCharacterSize(int(size * draw_scale));
-  text.setLetterSpacing(0.8f);
+  //text.setLetterSpacing(0.8f);
   text.setPosition((x - 2.0f) * draw_scale, (y - 2.0f) * draw_scale);
   text.setFillColor(color);
   text.setOutlineThickness(3.0f * draw_scale);
@@ -324,198 +273,12 @@ void Overlays::UpdateHover(Texts from, Texts to, float mouse_x, float mouse_y) {
 }
 
 
-Scene *scene_ptr;
-
-extern bool confirmed = false;
-extern bool canceled = false;
-int music_id = 0;
-bool music_play = false;
-
-
-void TW_CALL Confirm(void *data)
-{
-	confirmed = true;
-}
-
-void TW_CALL Cancel(void *data)
-{
-	canceled = true;
-}
-
-void TW_CALL MarbleSet(void *data)
-{
-	scene_ptr->cur_ed_mode = Scene::EditorMode::PLACE_MARBLE;
-}
-
-void TW_CALL FlagSet(void *data)
-{
-	scene_ptr->cur_ed_mode = Scene::EditorMode::PLACE_FLAG;
-}
-
-void TW_CALL PlayMusic(void *data)
-{
-	scene_ptr->levels.StopAllMusic();
-	music_play = !music_play;
-	if (music_play)
-	{
-		scene_ptr->levels.GetMusicByID(music_id)->play();
-	}
-}
-
-void TW_CALL SaveLevel(void *data)
-{
-	Level* copy = &scene_ptr->level_copy;
-	int lvlid = scene_ptr->GetLevel();
-
-	std::vector<std::string> music_list = scene_ptr->levels.GetMusicNames();
-	std::vector<int> lvlnum = scene_ptr->levels.getLevelIds();
-	copy->use_music = music_list[music_id];
-	bool same_level = scene_ptr->original_level_name == copy->txt;
-	if (lvlid < 0 || !same_level)
-		lvlid = time(NULL);
-	copy->level_id = lvlid;
-	copy->SaveToFile(std::string(level_folder) + "/" + ConvertSpaces2_(copy->txt) + ".lvl", lvlid, copy->link_level);
-	scene_ptr->levels.ReloadLevels();
-	if (!(scene_ptr->GetLevel() >= 0 && same_level))
-	{
-		scene_ptr->WriteLVL(lvlid);
-		scene_ptr->original_level_name = copy->txt;
-	}
-}
-
-
-void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const std::string& sourceLibraryString)
-{
-	// Copy the content of souceString handled by the AntTweakBar library to destinationClientString handled by your application
-	destinationClientString = sourceLibraryString;
-}
-
-
-void Overlays::SetAntTweakBar(int Width, int Height, float &fps, Scene *scene, Renderer* rd, bool *vsync, float *mouse_sensitivity, float *wheel_sensitivity, float *music_vol, float *target_fps)
+void Overlays::SetAntTweakBar(int Width, int Height)
 {
 	//TW interface
 	TwInit(TW_OPENGL, NULL);
 	TwWindowSize(Width, Height);
-	scene_ptr = scene;
 
-	stats = TwNewBar("Statistics" );
-	TwDefine(" GLOBAL help='Marble Marcher: Community Edition. Work in progress.' ");
-
-	// Change bar position
-	int barPos[2] = { 16, 60 };
-	TwSetParam(stats, NULL, "position", TW_PARAM_INT32, 2, &barPos);
-	TwAddVarRO(stats, "FPS", TW_TYPE_FLOAT, &fps, " label='FPS' ");
-	TwAddVarRO(stats, "Marble velocity", TW_TYPE_DIR3F, scene->marble_vel.data(),  " ");
-	TwAddVarRO(stats, "Marble position", TW_TYPE_DIR3F, scene->marble_pos.data(), " ");
-	
-	settings = TwNewBar("Settings");
-
-	TwAddVarRW(settings, "VSYNC", TW_TYPE_BOOLCPP, vsync, "group='Graphics settings'");
-	TwAddVarRW(settings, "Shadows", TW_TYPE_BOOLCPP, &scene->Shadows_Enabled, "group='Graphics settings'");
-	//TwAddVarRW(settings, "Reflection and Refraction", TW_TYPE_BOOLCPP, &scene->Refl_Refr_Enabled, "group='Graphics settings'");
-	TwAddVarRW(settings, "Blur", TW_TYPE_FLOAT, &rd->camera.mblur, "min=0 step=0.001 max=0.75 group='Graphics settings'");
-	TwAddVarRW(settings, "Exposure", TW_TYPE_FLOAT, &rd->camera.exposure, "min=0 max=5 step=0.001 group='Graphics settings'");
-
-	TwEnumVal marble_type[] = { { 0, "Glass"  },
-								{ 1,  "Metal" } };
-
-	TwType Marble_type = TwDefineEnum("Marble type", marble_type, 2);
-	TwAddVarRW(settings, "Marble type", Marble_type, &scene->MarbleType, "group='Gameplay settings'");
-	TwAddVarRW(settings, "Mouse sensitivity", TW_TYPE_FLOAT, mouse_sensitivity, "min=0.001 max=0.02 step=0.001 group='Gameplay settings'");
-	TwAddVarRW(settings, "Wheel sensitivity", TW_TYPE_FLOAT, wheel_sensitivity, "min=0.01 max=0.5 step=0.01 group='Gameplay settings'");
-	TwAddVarRW(settings, "Music volume", TW_TYPE_FLOAT, music_vol, "min=0 max=100 step=1 group='Gameplay settings'");
-	TwAddVarRW(settings, "Target FPS", TW_TYPE_FLOAT, target_fps, "min=24 max=144 step=1 group='Gameplay settings'");
-	TwAddVarRW(settings, "Camera size", TW_TYPE_FLOAT, &scene->camera_size, "min=0 max=10 step=0.001 group='Gameplay settings'");
-	TwAddVarRW(settings, "Camera speed(Free mode)", TW_TYPE_FLOAT, &scene->free_camera_speed, "min=0 max=10 step=0.001 group='Gameplay settings'");
-
-	int barPos1[2] = { 16, 250 };
-
-	TwSetParam(settings, NULL, "position", TW_PARAM_INT32, 2, &barPos1);
-
-	TwCopyStdStringToClientFunc(CopyStdStringToClient);
-
-	level_editor = TwNewBar("LevelEditor");
-	Level *copy = &scene->level_copy;
-
-	TwAddVarRW(level_editor, "Level Name", TW_TYPE_STDSTRING, &copy->txt, "");
-	TwAddVarRW(level_editor, "Level Description", TW_TYPE_STDSTRING, &copy->desc, "");
-
-	TwAddButton(level_editor, "Save", SaveLevel, NULL,
-		" label='Save Level'  ");
-
-	TwAddButton(level_editor, "Set Marble", MarbleSet, NULL,
-		" label='Set Marble Position'  help='Click on the fractal to place' ");
-
-	TwAddButton(level_editor, "Set Flag", FlagSet, NULL,
-		" label='Set Flag Position'  help='Click on the fractal to place' ");
-
-	TwAddVarRW(level_editor, "Flag Position", TW_TYPE_DIR3F, copy->end_pos.data(), "");
-	TwAddVarRW(level_editor, "Marble Position", TW_TYPE_DIR3F, copy->start_pos.data(), "");
-	TwAddVarRW(level_editor, "Marble Radius(Scale)", TW_TYPE_FLOAT, &copy->marble_rad, "min=0 max=10 step=0.001 ");
-
-	std::vector<std::string> music_list = scene->levels.GetMusicNames();
-	TwEnumVal *music_enums = new TwEnumVal[music_list.size()];
-	for (int i = 0; i < music_list.size(); i++)
-	{
-		TwEnumVal enumval;
-		enumval.Label = music_list[i].c_str();
-		enumval.Value = i;
-		music_enums[i] = enumval;
-	}
-
-	TwType Level_music = TwDefineEnum("Level music", music_enums, music_list.size());
-	TwAddVarRW(level_editor, "Level music", Level_music, &music_id, "");
-
-	TwAddButton(level_editor, "Play", PlayMusic, NULL, " label='Play/Stop current music'  ");
-
-	std::map<int, std::string> level_list = scene->levels.getLevelNames();
-	TwEnumVal *level_enums = new TwEnumVal[level_list.size()+1];
-	TwEnumVal enumval;
-	enumval.Label = "None";
-	enumval.Value = -1;
-	level_enums[0] = enumval;
-	int i = 0;
-	for (auto &name:level_list)
-	{
-		enumval.Label = name.second.c_str();
-		enumval.Value = i;
-		level_enums[i+1] = enumval;
-		i++;
-	}
-
-	TwType Levels = TwDefineEnum("levels", level_enums, level_list.size()+1);
-	TwAddVarRW(level_editor, "Play level after finish(TODO)", Levels, &copy->link_level, "");
-
-	TwAddVarRW(level_editor, "Sun direction", TW_TYPE_DIR3F, copy->light_dir.data(), "group='Level parameters'");
-	TwAddVarRW(level_editor, "Sun color", TW_TYPE_DIR3F, copy->light_col.data(), "group='Level parameters'");
-	TwAddVarRW(level_editor, "Background color", TW_TYPE_DIR3F, copy->background_col.data(), "group='Level parameters'");
-	TwAddVarRW(level_editor, "Gravity strength", TW_TYPE_FLOAT, &copy->gravity, "min=0 max=0.5 step=0.0001 group='Level parameters'");
-	fractal_editor = TwNewBar("FractalEditor");
-
-	TwAddVarRW(fractal_editor, "PBR roughness", TW_TYPE_FLOAT, &copy->PBR_roughness, "min=0 max=1 step=0.001 ");
-	TwAddVarRW(fractal_editor, "PBR metallic", TW_TYPE_FLOAT, &copy->PBR_metal, "min=0 max=1 step=0.001");
-	float *p = copy->params.data();
-	TwAddVarRW(fractal_editor, "Fractal Iterations", TW_TYPE_INT32, &copy->FractalIter, "min=1 max=20 step=1");
-	TwAddVarRW(fractal_editor, "Fractal Scale", TW_TYPE_FLOAT, p, "min=0 max=5 step=0.0001");
-	TwAddVarRW(fractal_editor, "Fractal Angle1", TW_TYPE_FLOAT, p + 1, "min=-10 max=10 step=0.0001 ");
-	TwAddVarRW(fractal_editor, "Fractal Angle2", TW_TYPE_FLOAT, p + 2, "min=-10 max=10 step=0.0001  ");
-	TwAddVarRW(fractal_editor, "Fractal Shift", TW_TYPE_DIR3F, p + 3, "");
-	TwAddVarRW(fractal_editor, "Fractal Color", TW_TYPE_DIR3F, p + 6, "");
-
-	//TwAddButton(stats, "Info1.1", NULL, NULL, string);
-	
-	confirmation_box = TwNewBar("confirm");
-
-	TwAddVarRW(confirmation_box, "OK", TW_TYPE_BOOLCPP, &copy->txt, "");
-	TwAddVarRW(confirmation_box, "Cancel", TW_TYPE_BOOLCPP, &copy->desc, "");
-
-	TwDefine("confirm visible=false size='300 100' color='255 50 0' alpha=255 label='Are you sure?'");
-
-	TwDefine(" GLOBAL fontsize=3 ");
-	TwDefine("LevelEditor visible=false size='420 350' color='0 80 230' alpha=210 label='Level editor' valueswidth=200");
-	TwDefine("FractalEditor visible=false size='420 350' color='0 120 200' alpha=210 label='Fractal editor' valueswidth=200");
-	TwDefine("Settings color='255 128 0' alpha=210 size='420 350' valueswidth=200");
-	TwDefine("Statistics color='0 128 255' alpha=210 size='420 160' valueswidth=200");
 }
 
 void Overlays::DrawAntTweakBar()
@@ -525,6 +288,9 @@ void Overlays::DrawAntTweakBar()
 	{
 		TwRefreshBar(stats);
 		TwRefreshBar(settings);
+		TwRefreshBar(fractal_editor);
+		TwRefreshBar(level_editor);
+		TwRefreshBar(flaunch);
 		TwDraw();
 	}
 }

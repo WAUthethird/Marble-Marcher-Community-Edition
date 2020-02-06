@@ -4,6 +4,8 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <cstring>
+#include <cmath>
 
 bool replace(std::string& str, const std::string& from, const std::string& to);
 

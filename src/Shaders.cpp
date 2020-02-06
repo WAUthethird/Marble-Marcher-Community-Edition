@@ -1,12 +1,16 @@
 #include "Shaders.h"
+bool initialized = false;
+
+std::string int2str(const int n)
+{
+	std::ostringstream stm;
+	stm << n;
+	return stm.str();
+}
 
 ComputeShader::ComputeShader()
 {
-	int work_grp_cnt[3];
 
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
 }
 
 ComputeShader::ComputeShader(const std::string file_path)
@@ -32,12 +36,18 @@ std::string ComputeShader::LoadFileText(fs::path path)
 	return text;
 }
 
+void ComputeShader::Delete()
+{
+	glDeleteProgram(ProgramID);
+}
+
+
 void ComputeShader::LoadShader(const std::string file_path)
 {
 		// Create the shaders
 		GLuint ComputeShaderID = glCreateShader(GL_COMPUTE_SHADER);
 
-		// Read the Vertex Shader code from the file
+		// Read the Compute Shader code from the file
 		std::string ComputeShaderCode = PreprocessIncludes(fs::path(file_path));
 
 		GLint Result = GL_FALSE;
@@ -73,6 +83,10 @@ void ComputeShader::LoadShader(const std::string file_path)
 			glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
 			ERROR_MSG(("Compute program error. \n" + std::string(&ProgramErrorMessage[0])).c_str());
 		}
+
+		glDetachShader(ProgramID, ComputeShaderID);
+
+		glDeleteShader(ComputeShaderID);
 }
 
 void ComputeShader::Run(vec2 global)
@@ -131,23 +145,43 @@ void ComputeShader::setUniform(std::string name, glm::vec2 X)
 	glUniform2fv(A, 1, glm::value_ptr(X));
 }
 
+void ComputeShader::setUniform(int i, GLuint tid)
+{
+	glUseProgram(ProgramID);
+	GLuint A = glGetUniformLocation(ProgramID, ("iTexture" + int2str(i)).c_str());
+	glActiveTexture(GL_TEXTURE0 + i);
+	glBindTexture(GL_TEXTURE_2D, tid);
+	glUniform1i(A, i);
+}
+
+void ComputeShader::setCameraObj(std::string name, gl_camera cam)
+{
+	setUniform(name + ".position", cam.position);
+	setUniform(name + ".bokeh", cam.bokeh);
+	setUniform(name + ".dirx", cam.dirx);
+	setUniform(name + ".diry", cam.diry);
+	setUniform(name + ".dirz", cam.dirz);
+	setUniform(name + ".aspect_ratio", cam.aspect_ratio);
+	setUniform(name + ".exposure", cam.exposure);
+	setUniform(name + ".focus", cam.focus);
+	setUniform(name + ".FOV", cam.FOV);
+	setUniform(name + ".mblur", cam.mblur);
+	setUniform(name + ".position", cam.position);
+	setUniform(name + ".resolution", cam.resolution);
+	setUniform(name + ".size", cam.size);
+	setUniform(name + ".bloomradius", cam.bloomradius);
+	setUniform(name + ".bloomintensity", cam.bloomintensity);
+	setUniform(name + ".speckle", cam.speckle);
+	setUniform(name + ".cross_eye", cam.cross_eye);
+	setUniform(name + ".eye_separation", cam.eye_separation);
+	setUniform("iFrame", cam.iFrame);
+}
+
 void ComputeShader::setCamera(gl_camera cam)
 {
-	setUniform("Camera.position", cam.position);
-	setUniform("Camera.bokeh", cam.bokeh);
-	setUniform("Camera.dirx", cam.dirx);
-	setUniform("Camera.diry", cam.diry);
-	setUniform("Camera.dirz", cam.dirz);
-	setUniform("Camera.aspect_ratio", cam.aspect_ratio);
-	setUniform("Camera.exposure", cam.exposure);
-	setUniform("Camera.focus", cam.focus);
-	setUniform("Camera.FOV", cam.FOV);
-	setUniform("Camera.mblur", cam.mblur);
-	setUniform("Camera.position", cam.position);
-	setUniform("Camera.resolution", cam.resolution);
-	setUniform("Camera.size", cam.size);
-	setUniform("Camera.speckle", cam.speckle);
-	setUniform("Camera.stepN", cam.stepN);
+	setCameraObj("Camera", cam);
+	setCameraObj("PrevCamera", prev_camera);
+	prev_camera = cam;
 }
 
 GLuint ComputeShader::getNativeHandle()
@@ -157,10 +191,16 @@ GLuint ComputeShader::getNativeHandle()
 
 bool INIT()
 {
-	if (glewInit() != GLEW_OK) {
+	if (initialized)
+	{
+		return true;
+	}
+	if ( glewInit() != GLEW_OK) 
+	{
 		ERROR_MSG("Failed to initialize GLEW\n");
 		return false;
 	}
+	initialized = true;
 	return true;
 }
 
@@ -171,6 +211,7 @@ std::string ComputeShader::PreprocessIncludes(const fs::path& filename, int leve
 		ERROR_MSG("Header inclusion depth limit reached, might be caused by cyclic header inclusion");
 	using namespace std;
 
+	//match regular expression
 	static const regex re("^[ ]*#include\s*[\"<](.*)[\">].*");
 	stringstream input;
 	stringstream output;
@@ -183,7 +224,7 @@ std::string ComputeShader::PreprocessIncludes(const fs::path& filename, int leve
 		if (regex_search(line, matches, re))
 		{
 			//add the code from the included file
-			std::string include_file = filename.parent_path().string() + "/" + matches[1].str();
+			std::string include_file = compute_folder + "/" + matches[1].str();
 			output << PreprocessIncludes(include_file, level + 1) << endl;
 		}
 		else
