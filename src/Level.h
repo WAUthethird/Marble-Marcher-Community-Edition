@@ -175,6 +175,8 @@ public:
 
 	sf::Music * GetMusic(std::string music);
 
+	void RecreateMissing();
+
 	void ReloadLevels();
 
 	void LoadLevelFromFile(fs::path file);

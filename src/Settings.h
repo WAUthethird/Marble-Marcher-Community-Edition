@@ -131,6 +131,11 @@ public:
 		return false;
 	}
 
+	void RestoreDefaults()
+	{
+		stg = default_settings;
+	}
+
 	bool LoadFromFile(std::string settings_file)
 	{
 		filename = settings_file;

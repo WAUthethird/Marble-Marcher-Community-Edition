@@ -744,6 +744,7 @@ int main(int argc, char *argv[]) {
 		UpdateAllObjects(&window, io_state);
 		io_state.isKeyPressed = false;
 		window.setView(default_window_view);
+		UpdateUniforms();
 		
 		if (!skip_frame) {
 			if (overlays.TWBAR_ENABLED)

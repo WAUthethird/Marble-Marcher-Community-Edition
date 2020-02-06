@@ -512,7 +512,7 @@ void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene) {
 
 void OpenScreenSaver(Scene * scene, Overlays * overlays)
 {
-	SetCameraFocus(6.);
+	SetCameraFocus(8.);
 	RemoveAllObjects();
 	game_mode = SCREEN_SAVER;
 	scene->SetMode(Scene::SCREEN_SAVER);
@@ -970,6 +970,27 @@ void TakeScreenshot()
 	screenshot_clock.restart();
 }
 
+
+void UpdateUniforms()
+{
+	renderer_ptr->camera.bloomintensity = SETTINGS.stg.bloom_intensity;
+	renderer_ptr->camera.bloomradius = SETTINGS.stg.bloom_radius;
+	renderer_ptr->camera.auto_exposure_speed = SETTINGS.stg.auto_exposure_speed;
+	renderer_ptr->camera.auto_exposure_target = SETTINGS.stg.auto_exposure_target;
+	renderer_ptr->camera.SetMotionBlur(SETTINGS.stg.motion_blur);
+	renderer_ptr->camera.SetFOV(SETTINGS.stg.FOV);
+	renderer_ptr->camera.cross_eye = SETTINGS.stg.cross_eye;
+	renderer_ptr->camera.eye_separation = SETTINGS.stg.eye_separation;
+	renderer_ptr->camera.SetBokehRadius(SETTINGS.stg.DOF_max);
+
+	scene_ptr->Refl_Refr_Enabled = SETTINGS.stg.refl_refr;
+	scene_ptr->Shadows_Enabled = SETTINGS.stg.shadows;
+	scene_ptr->Fog_Enabled = SETTINGS.stg.fog;
+	scene_ptr->gamma_camera = SETTINGS.stg.gamma_camera;
+	scene_ptr->gamma_material = SETTINGS.stg.gamma_material;
+	scene_ptr->gamma_sky = SETTINGS.stg.gamma_sky;
+}
+
 void InitializeRendering(std::string config)
 {
 	sf::Vector2i rendering_resolution = getResolution(SETTINGS.stg.rendering_resolution);
@@ -981,29 +1002,15 @@ void InitializeRendering(std::string config)
 	scene_ptr->SetResolution(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->Initialize(rendering_resolution.x, rendering_resolution.y, renderer_ptr->GetConfigFolder() + "/" + config);
 	
-	renderer_ptr->camera.bloomintensity = SETTINGS.stg.bloom_intensity;
-	renderer_ptr->camera.bloomradius = SETTINGS.stg.bloom_radius;
-	renderer_ptr->camera.auto_exposure_speed = SETTINGS.stg.auto_exposure_speed;
-	renderer_ptr->camera.auto_exposure_target = SETTINGS.stg.auto_exposure_target;
-	renderer_ptr->camera.SetMotionBlur(SETTINGS.stg.motion_blur);
-	renderer_ptr->camera.SetFOV(SETTINGS.stg.FOV);
-	renderer_ptr->camera.cross_eye = SETTINGS.stg.cross_eye;
-	renderer_ptr->camera.eye_separation = SETTINGS.stg.eye_separation;
-	renderer_ptr->camera.SetExposure(SETTINGS.stg.exposure);
-	renderer_ptr->camera.SetBokehRadius(SETTINGS.stg.DOF_max);
+	UpdateUniforms();
 	renderer_ptr->camera.SetFocus(SETTINGS.stg.DOF_focus);
-
-	scene_ptr->Refl_Refr_Enabled = SETTINGS.stg.refl_refr;
-	scene_ptr->Shadows_Enabled = SETTINGS.stg.shadows;
-	scene_ptr->Fog_Enabled = SETTINGS.stg.fog;
-	scene_ptr->gamma_camera = SETTINGS.stg.gamma_camera;
-	scene_ptr->gamma_material = SETTINGS.stg.gamma_material;
-	scene_ptr->gamma_sky = SETTINGS.stg.gamma_sky;
-
+	renderer_ptr->camera.SetExposure(SETTINGS.stg.exposure);
+	
 	main_txt->create(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->SetOutputTexture(*main_txt);
 	screenshot_txt->create(screenshot_resolution.x, screenshot_resolution.y);
 }
+
 
 void SetCameraFocus(float f)
 {
@@ -1064,7 +1071,6 @@ void TW_CALL PlayThisLevel(void *data)
 		PlayLevel(scene_ptr, window, scene_ptr->GetLevel());
 	}
 }
-
 
 
 void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const std::string& sourceLibraryString)
@@ -1140,6 +1146,13 @@ void TW_CALL ApplySettings(void *data)
 	overlays_ptr->sound_count.setVolume(SETTINGS.stg.fx_volume);
 	overlays_ptr->sound_go.setVolume(SETTINGS.stg.fx_volume);
 	overlays_ptr->sound_screenshot.setVolume(SETTINGS.stg.fx_volume);
+}
+
+
+void TW_CALL RestoreSettings(void* data)
+{
+	SETTINGS.RestoreDefaults();
+	ApplySettings(data);
 }
 
 void TW_CALL InitialOK(void *data)
@@ -1310,6 +1323,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Gamepad deadzone", TW_TYPE_FLOAT, &SETTINGS.stg.gamepad_deadzone, "min=0.0 max=0.9 step=0.01 group='Control settings'");
 	TwAddVarRW(overlays_ptr->settings, "Windows touch controls(experimental)", TW_TYPE_BOOLCPP, &SETTINGS.stg.touch_mode, "group='Control settings' help='Use a touchscreen'");
 	TwAddButton(overlays_ptr->settings, "Apply4", ApplySettings, NULL, "group='Control settings' label='Apply settings'  ");
+	TwAddButton(overlays_ptr->settings, "Restore", RestoreSettings, NULL, "label='Restore default settings'  ");
 	int barPos1[2] = { 16, 250 };
 
 	TwSetParam(overlays_ptr->settings, NULL, "position", TW_PARAM_INT32, 2, &barPos1);

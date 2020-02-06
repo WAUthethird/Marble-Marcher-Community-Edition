@@ -78,6 +78,8 @@ void SetPointers(sf::RenderWindow * w, Scene * scene, Overlays * overlays, Rende
 sf::Vector2i getResolution(int i);
 void TakeScreenshot();
 
+void UpdateUniforms();
+
 void SetCameraFocus(float f);
 
 void TW_CALL ApplySettings(void * data);

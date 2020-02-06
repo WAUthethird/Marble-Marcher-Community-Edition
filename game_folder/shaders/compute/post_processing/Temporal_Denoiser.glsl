@@ -100,7 +100,7 @@ void main() {
 	vec3 avgColor = (in0 + in1 + in2 + in3 + in4 + in5 + in6 + in7 + in8)/9.;
 	vec3 colorRange = abs(maxColor - minColor) + 0.001;
 	vec3 dColor = (encodePalYuv(lastColor.xyz/lastColor.w) - avgColor)/colorRange;
-	lastColor *= 0.15 + 0.85*exp(-0.8*dot(dColor,dColor));
+	lastColor *= 0.15 + 0.85*exp(-TXAAstr*dot(dColor,dColor));
 	
 	//remove prev data based on relative pixel distance
 	lastColor *= exp(-pow(delta, 2.));

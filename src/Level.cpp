@@ -662,8 +662,21 @@ sf::Music* All_Levels::GetMusic(std::string music)
 	}
 }
 
+void All_Levels::RecreateMissing()
+{
+	for (int i = 0; i < 24; i++)
+	{
+		if (!LevelExists(i)) //if original level doesn't exist
+		{
+			all_levels[i].desc = "Official Level by Codeparade";
+			all_levels[i].SaveToFile(std::string(level_folder) + "/" + ConvertSpaces2_(all_levels[i].txt) + ".lvl", i, (i < 24) ? (i + 1) : -1);
+		}
+	}
+}
+
 void All_Levels::ReloadLevels()
 {
+	RecreateMissing();
 	level_map.clear();
 	level_id_map.clear();
 	level_names.clear();
@@ -758,6 +771,7 @@ void All_Levels::DeleteLevel(int lvl)
 {
 	std::string filename = lvl_folder + "/" + ConvertSpaces2_(level_names[lvl]) + ".lvl";
 	fs::remove(filename);
+	level_map.erase(lvl);
 	ReloadLevels();
 }
 
