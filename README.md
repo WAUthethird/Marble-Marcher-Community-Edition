@@ -15,7 +15,7 @@ If you have suggestions, issues, or would like to contribute, feel free to submi
 
 Note: This project requires a mid-range dedicated graphics card (non-integrated) to run in HD (1920x1080) at a good FPS. Anything higher and you'll likely need a higher-range card. However, if no HD isn't an issue, you can lower the resolution or settings to run on something like a laptop or budget computer, in which case the game will run just fine.
 
-Itch.io link: [https://michaelmoroz.itch.io/mmce](https://michaelmoroz.itch.io/mmce)
+itch.io link: [https://michaelmoroz.itch.io/mmce](https://michaelmoroz.itch.io/mmce)
 
 All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade](https://www.youtube.com/channel/UCrv269YwJzuZL3dH5PCgxUw)) for the [original game](https://github.com/HackerPoet/MarbleMarcher).
 
@@ -47,7 +47,7 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
   - [Shortcuts](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#shortcuts)
 
 ## Changes
-- Numerous miscellaneous fixes have been applied
+- Many, many fixes have been applied
 - Easier compilation for macOS
 - Feasible Windows and Linux compilation
 - README.md overhaul
@@ -68,10 +68,14 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 - Added DOF
 - Added original shaders as a new configuration
 - Added NEON shaders
+- Added simple shaders, for those with low-spec machines
+- Added experimental PTGI shaders
+- Added TXAA
 - Added a credits menu
 - New pause menu
 - New settings menu
 - Added a screenshot sound
+- Improved screensaver mode
 - Added several new levels
 - Added custom texture support to compute shaders
 - Ability to edit shaders in real-time
