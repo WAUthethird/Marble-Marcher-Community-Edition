@@ -61,14 +61,15 @@ void main() {
 	ray pr = get_ray(PrevCamera, clamp(lastCoord,vec2(0.),imageSize(DE_input)-1.)/imageSize(DE_input));
 	vec4 ppos = vec4(pr.pos,0);
 	vec4 pdir = vec4(pr.dir,0);
-	lastPos.xyz = ppos.xyz + length(lastPos.xyz - ppos.xyz)*pdir.xyz;
+	float tdprev = length(lastPos.xyz - ppos.xyz);//traveled distance
+	lastPos.xyz = ppos.xyz + tdprev*pdir.xyz;
 	
     vec3 in0 = imageLoad(color_input, global_pos).xyz;
 	
 	////rejecting some of the previous data
 	//the previous point UV coordinate in the current camera plane
 	vec2 lastUV = project(lastPos.xyz, vec2(global_pos)/img_size);
-	float delta = length(lastUV - global_pos);
+	float delta = length(lastUV - global_pos) + 3.*sqrt(abs(dot(dir.xyz, pr.pos.xyz - rr.pos.xyz))/td);
 	
 	//remove prev data based on color difference
 	ivec3 off = ivec3(-1, 0, 1);

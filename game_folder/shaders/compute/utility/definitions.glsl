@@ -23,7 +23,7 @@
 //to get a better path traced result comment this
 #define LIGHT_FIELD_DENOISE
 //and make this 0.0001
-#define TXAAstr 0.6
+#define TXAAstr 0.4
 
 
 //ambient occlusion
