@@ -207,5 +207,5 @@ The pipeline:
 - The Shading_step shader paints the fractal surface using a PBR BRDF using the previously computed shadows, plus marched AO
 - The Temporal_Denoiser shader uses the previous positions and the previous camera to reproject the previous frame color and blend it with the current one to remove noise, it is a custom implementation of TXAA.
 - The downsampling shader does what it is called
-- Bloom_horiz and Bloom_vertic are a 2 pass gaussian blur filter witch uses compute shader shared memory magic to accelerate the memory access, that explains the weird work-group sizes.
+- Bloom_horiz and Bloom_vertic are a 2 pass gaussian blur filter wich uses compute shader shared memory magic to accelerate the memory access, that explains the weird work-group sizes.
 - The last shader is mainly just post-processing and DOF.
