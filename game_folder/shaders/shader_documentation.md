@@ -2,7 +2,7 @@
 
 *Note: compared to other games MMCE uses only compute shaders to render the image, since they allow a higher degree of flexibility while dealing with the GPU.*
 
-##Simple shader configuration
+## Simple shader configuration
 
 MMCE has a shader configuration system, each shader configuration is written in a .cfg file in the compute folder.
 
@@ -68,8 +68,19 @@ void main() {
 }
 ```
 
-Compute shaders work by invoking so called work-groups, groups of GPU cores that have shared memory. The size of the work group is defined by `layout(local_size_x = group_size, local_size_y = group_size) in;`. The size of the workgroup can be whatever, but 8 by 8 is the default. It is recommended that the total number of GPU cores in a single workgroup is at least 64, otherwise you may get a slowdown. 
-The size of the work-group is what expains why the number of work-groups is divided by 8, or any other number. The total number of GPU core invocations needs to be equal or more than the rendering resolution you desire. To be precise the number of workgroups is exactly equal to `ceil(\expression in cfg\)`. So the number of GPU core invocations is exactly the number of workgroups times the number of GPU cores in a work-group.
+Compute shaders work by invoking so called work-groups, groups of GPU cores that have shared memory. The size of the work group is defined by `layout(local_size_x = group_size, local_size_y = group_size) in;`. The size of the workgroup can be whatever, but 8 by 8 is the default. 
+It is recommended that the total number of GPU cores in a single workgroup is at least 64, otherwise you may get a slowdown. 
+The size of the work-group is what expains why the number of work-groups is divided by 8, or any other number. The total number of GPU core invocations needs to be equal or more than the rendering resolution you desire. 
+To be precise the number of workgroups is exactly equal to `ceil(\expression in cfg\)`. So the number of GPU core invocations is exactly the number of workgroups times the number of GPU cores in a work-group.
+
+The next important point is the binding order of the images. In this simple example you only have the shader output image and the global images. In cases where the config has more than 1 shader you can only access the image output of the previous shader.
+The exact order of images is as follows:
+- First are the output images of the previous shader, if the number of previous images is zero then you skip this.
+- Next are the output images of this shader, in this case there is 1 image.
+- And last are the global images
+*Note: the FIRST output of the LAST shader has a type rgba8(output range from 0 to 1, 8 bit precition) everything else is in floats rgba32f*
+
+
 
 
 
