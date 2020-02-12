@@ -32,7 +32,7 @@ The first uncommented line describes the number of global images, which are avai
 The next line locates the shader code file(on shaders later).
 The next 2 lines define the number of workgroups the shader invocation will have. 
 And the 2 lines after define the resolution of the texture used for this shader invocation. 
-The last line difines the number of textures this shader stage will write to, you can not read from them, they are WRITE_ONLY.
+The last line defines the number of textures this shader stage will write to, you can not read from them, they are WRITE_ONLY.
 The lines with numbers can hold any expression, and it will be calculated after the shader confing is loaded. there are predefined constants available:
 - `width` and `height` hold the current rendering resolution chosen by the user.
 - `MRRM_scale` holds the downscaling factor of the first stage of Multi-res marching, aka Cone marching.
@@ -70,7 +70,7 @@ void main() {
 
 Compute shaders work by invoking so called work-groups, groups of GPU cores that have shared memory. The size of the work group is defined by `layout(local_size_x = group_size, local_size_y = group_size) in;`. The size of the workgroup can be whatever, but 8 by 8 is the default. 
 It is recommended that the total number of GPU cores in a single workgroup is at least 64, otherwise you may get a slowdown. 
-The size of the work-group is what expains why the number of work-groups is divided by 8, or any other number. The total number of GPU core invocations needs to be equal or more than the rendering resolution you desire. 
+The size of the work-group is what explains why the number of work-groups is divided by 8, or any other number. The total number of GPU core invocations needs to be equal or more than the rendering resolution you desire. 
 To be precise the number of workgroups is exactly equal to `ceil(\expression in cfg\)`. So the number of GPU core invocations is exactly the number of workgroups times the number of GPU cores in a work-group.
 
 The next important point is the binding order of the images. In this simple example you only have the shader output image and the global images. In cases where the config has more than 1 shader you can only access the image output of the previous shader.
@@ -88,4 +88,124 @@ In the shader code itself you can write and read from the images in any order by
 - `imageLoad(image2D imgname, ivec2 pixel)`
 - `imageStore(image2D imgname, ivec2 pixel, vec4 stored_value)`
 
+## Main shader configuration 
 
+Lets look at what each shader step does in this configuration.
+
+```
+#############MAIN SHADER PIPELINE###################
+#number of main textures(1 depth map, 2 HDR color) 
+#this should be first, at least 2 textures
+4
+####################################################
+#shader name 
+multires_marching/MRRM1.glsl
+#global work-group number
+width/(8*MRRM_scale)
+height/(8*MRRM_scale)
+#texture resolution
+width/MRRM_scale
+height/MRRM_scale
+#output texture number
+3
+####################################################
+#shader name
+multires_marching/MRRM2.glsl
+#global work-group number
+width/8
+height/8
+#texture resolution
+width
+height
+#output texture number
+0
+####################################################
+#shader name #half res shadows and AO
+main/Illumination_step.glsl
+#global work-group number
+width/(shadow_scale*8)
+height/(shadow_scale*8)
+#texture resolution
+width/shadow_scale
+height/shadow_scale
+#output texture number
+1
+####################################################
+#shader name
+main/Shading_step.glsl
+#global work-group number
+width/8
+height/8
+#texture resolution
+width
+height
+#output texture number
+1
+####################################################
+#shader name TEMPORAL ANTI-ALIASING
+post_processing/Temporal_Denoiser.glsl
+#global work-group number
+width/8
+height/8
+#texture resolution
+width
+height
+#output texture number
+1
+####################################################
+#shader name
+post_processing/downsampling.glsl
+#global work-group number
+width/(8*bloom_scale)
+height/(8*bloom_scale)
+#texture resolution
+width/bloom_scale
+height/bloom_scale
+#output texture number
+1
+####################################################
+#shader name
+post_processing/Bloom_horiz.glsl
+#global work-group number
+width/(bloom_scale*128)
+height/bloom_scale
+#texture resolution
+width/bloom_scale
+height/bloom_scale
+#output texture number
+2
+####################################################
+#shader name
+post_processing/Bloom_vertic.glsl
+#global work-group number
+width/bloom_scale
+height/(bloom_scale*128)
+#texture resolution
+width/bloom_scale
+height/bloom_scale
+#output texture number
+1
+####################################################
+#shader name
+main/Final_step.glsl
+#global work-group number
+width/8
+height/8
+#texture resolution
+width
+height
+#output texture number
+1
+####################################################
+```
+
+There are 4 global images, the fist one is the positions of the ray-marched points with the distace estimator value like this `vec4(pos, DE)`, second one stores the previous frame points, third one stores the normals, and the forth is for HDR linear space colors.
+ 
+The pipeline:
+- The first 2 shaders are the multi-res ray-marching, only 2 steps. Is is also known as cone marching http://www.fulcrum-demo.org/wp-content/uploads/2012/04/Cone_Marching_Mandelbox_by_Seven_Fulcrum_LongVersion.pdf
+- The Illumination_step shader computes soft ray-marched shadows.
+- The Shading_step shader paints the fractal surface using a PBR BRDF using the previously computed shadows, plus marched AO
+- The Temporal_Denoiser shader uses the previous positions and the previous camera to reproject the previous frame color and blend it with the current one to remove noise, it is a custom implementation of TXAA.
+- The downsampling shader does what it is called
+- Bloom_horiz and Bloom_vertic are a 2 pass gaussian blur filter witch uses compute shader shared memory magic to accelerate the memory access, that explains the weird work-group sizes.
+- The last shader is mainly just post-processing and DOF.
