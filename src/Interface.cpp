@@ -348,18 +348,18 @@ void Object::Move(sf::Vector2f dx)
 	}
 }
 
-void Object::SetDefaultFunction(std::function<void(sf::RenderWindow * window, InputState&state)> fun)
+void Object::SetDefaultFunction(call_func fun)
 {
 	defaultfn.push_back(fun);
 }
 
-void Object::SetCallbackFunction(std::function<void(sf::RenderWindow*window, InputState&state)> fun, bool limit_repeat)
+void Object::SetCallbackFunction(call_func fun, bool limit_repeat)
 {
 	callback.push_back(fun);
 	limiter = limit_repeat;
 }
 
-void Object::SetHoverFunction(std::function<void(sf::RenderWindow * window, InputState&state)> fun)
+void Object::SetHoverFunction(call_func fun)
 {
 	hoverfn.push_back(fun);
 }
@@ -493,7 +493,7 @@ void Object::UpdateAction(sf::RenderWindow * window, InputState & state)
 	state.mouse_speed = window->mapPixelToCoords(sf::Vector2i(state.mouse_pos.x, state.mouse_pos.y)) -
 						window->mapPixelToCoords(sf::Vector2i(state.mouse_prev.x, state.mouse_prev.y));
 
-	curmode = DEFAULT;
+	curmode = Object::DEFAULT;
 	//if mouse is inside the object 
 	if (obj.contains(worldPos))
 	{

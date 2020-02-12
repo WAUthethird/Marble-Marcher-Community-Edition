@@ -131,9 +131,9 @@ public:
 	void SetScroll(float x);
 	void Move(sf::Vector2f dx);
 
-	void SetDefaultFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
-	void SetCallbackFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun, bool limit_repeat = true);
-	void SetHoverFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
+	void SetDefaultFunction(call_func fun);
+	void SetCallbackFunction(call_func fun, bool limit_repeat = true);
+	void SetHoverFunction(call_func fun);
 	
 	void SetMainDefaultFunction(call_func fun);
 	void SetMainCallbackFunction(call_func fun, bool limit_repeat = true);
