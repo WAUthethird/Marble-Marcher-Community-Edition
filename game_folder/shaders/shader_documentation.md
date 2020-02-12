@@ -78,9 +78,14 @@ The exact order of images is as follows:
 - First are the output images of the previous shader, if the number of previous images is zero then you skip this.
 - Next are the output images of this shader, in this case there is 1 image.
 - And last are the global images
-*Note: the FIRST output of the LAST shader has a type rgba8(output range from 0 to 1, 8 bit precition) everything else is in floats rgba32f*
 
+*Note: the FIRST output of the LAST shader has a type rgba8(output range from 0 to 1, 8 bit precision) everything else is in floats rgba32f*
 
+As you can see from the code you can include code from other files, MMCE just loads them and inserts the code, so its a fake include, in fact.
+If the shader compilation produces errors MMCE will make an 'name'-error.txt file with the full code and the errors at the end.
 
+In the shader code itself you can write and read from the images in any order by using 
+- `imageLoad(image2D imgname, ivec2 pixel)`
+- `imageStore(image2D imgname, ivec2 pixel, vec4 stored_value)`
 
 
