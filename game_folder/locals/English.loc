@@ -60,7 +60,7 @@ Back To Main Menu
 #CreateNewLvl
 Create a new level
 #About
-©2019 Original by CodeParade, 1.4.0 beta, Community Edition
+Original by CodeParade, Community Edition
 Music by PettyTheft
 #DetailControls
 Roll      WASD or Arrows
@@ -186,3 +186,11 @@ Fractal Angle2
 Fractal Shift
 #Fractal_Color
 Fractal Color
+#Codeparade_descr
+The creator of the original game.
+#Michael_descr
+The main developer of Marble Marcher: Community Edition.
+#WAU_descr
+Manages the main Github repository of MMCE. Also ported MMCE to Linux. 
+#Bryce_descr
+Ported MMCE to MacOS.

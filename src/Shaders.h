@@ -5,7 +5,7 @@
 #include <GL/glew.h>
 #endif
 
-#include <glm\glm.hpp>
+#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
@@ -16,6 +16,7 @@
 #include <map>
 #include <algorithm>
 #include <sstream>
+#include <Res.h>
 
 namespace fs = std::filesystem;
 
@@ -23,6 +24,7 @@ namespace fs = std::filesystem;
 #include <Windows.h>
 #define ERROR_MSG(x) MessageBox(nullptr, TEXT(x), TEXT("ERROR"), MB_OK);
 #else
+#include<iostream>
 #define ERROR_MSG(x) std::cerr << x << std::endl;
 #endif
 
@@ -47,6 +49,8 @@ public:
 	void setUniform(std::string name, glm::mat3 X, bool transpose);
 	void setUniform(std::string name, glm::vec3 X);
 	void setUniform(std::string name, glm::vec2 X);
+	void setUniform(int i, GLuint tid);
+	void setCameraObj(std::string name, gl_camera cam);
 	void setCamera(gl_camera cam);
 
 	GLuint getNativeHandle();
@@ -56,4 +60,9 @@ public:
 	void SaveErrors(const fs::path & filename, std::string code, std::string errors);
 
 	std::string LoadFileText(fs::path path);
+
+	void Delete();
+
+private:
+	gl_camera prev_camera;
 };

@@ -13,9 +13,6 @@ add_library(MarbleMarcherSources
   Scores.cpp
   Scores.h
 
-  SelectRes.cpp
-  SelectRes.h
-
   Interface.h
   Interface.cpp
   
@@ -23,6 +20,7 @@ add_library(MarbleMarcherSources
   Localization.cpp
 
   Settings.h
+  Settings.cpp
 
   Gamemodes.h
   Gamemodes.cpp
@@ -38,4 +36,7 @@ add_library(MarbleMarcherSources
   
   ExprParser.h
   ExprParser.cpp
+  
+  SoundSystem.h
+  SoundSystem.cpp
 )

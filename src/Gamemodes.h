@@ -1,13 +1,17 @@
 #pragma once
 
+#include<config.h>
 #include<Overlays.h>
+#include<Scene.h>
 #include<Localization.h>
 #include<Interface.h>
-#include<Scene.h>
-#include<Settings.h>
+
 #include <AntTweakBar.h>
 
+#define DEBUG_MODE 1
+
 enum GameMode {
+	FIRST_START,
 	MAIN_MENU,
 	PLAYING,
 	PAUSED,
@@ -16,30 +20,40 @@ enum GameMode {
 	LEVELS,
 	LEVEL_EDITOR,
 	CREDITS,
-	MIDPOINT
+	MIDPOINT,
+	ABOUT,
+	MENU
 };
+
 
 //Global variables
 extern sf::Vector2i mouse_pos, mouse_prev_pos;
 extern bool all_keys[sf::Keyboard::KeyCount];
 extern bool mouse_clicked;
 extern bool show_cheats;
+extern bool taken_screenshot;
+extern sf::Clock screenshot_clock;
 extern InputState io_state;
 
 //Constants
-extern float mouse_sensitivity;
-extern float wheel_sensitivity;
-extern float music_vol;
 extern float target_fps;
 
 extern GameMode game_mode;
 
 void OpenMainMenu(Scene * scene, Overlays * overlays);
 
+void OpenCredits(Scene * scene, Overlays * overlays);
+
 void OpenEditor(Scene * scene, Overlays * overlays, int level);
 void PlayLevel(Scene * scene, sf::RenderWindow * window, int level);
 
+void RePlayBest(Scene * scene, sf::RenderWindow * window, int level);
+
 void OpenControlMenu(Scene * scene, Overlays * overlays);
+
+void ResumeGame(sf::RenderWindow &window);
+
+void OpenPauseMenu(Scene * scene, Overlays * overlays);
 
 void OpenScreenSaver(Scene * scene, Overlays * overlays);
 
@@ -51,23 +65,31 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays);
 void ConfirmLevelDeletion(int lvl, Scene* scene, Overlays* overlays);
 
 void ConfirmEditorExit(Scene * scene, Overlays * overlays);
-
-float GetVol();
+void ConfirmExit(Scene * scene, Overlays * overlays);
+void DisplayError(std::string error_text);
 void LockMouse(sf::RenderWindow& window);
 void UnlockMouse(sf::RenderWindow& window);
-void PauseGame(sf::RenderWindow& window, Scene& scene);
+void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene);
 int DirExists(const char *path);
 
-template < typename T > std::string num2str(const T& n)
-{
-	std::ostringstream stm;
-	if (n < 10) stm << "0";
-	stm << n;
-	return stm.str();
-}
+void FirstStart(Overlays* overlays);
+
+void SetPointers(sf::RenderWindow * w, Scene * scene, Overlays * overlays, Renderer * rd, sf::Texture * main, sf::Texture * screensht);
+sf::Vector2i getResolution(int i);
+void TakeScreenshot();
+
+void UpdateUniforms();
+
+void SetCameraFocus(float f);
+
+void TW_CALL ApplySettings(void * data);
+
+void SaveRecord(float mx, float my, float vx, float vy, float cz, bool mc);
+
+InputRecord GetRecord();
+
+void InitializeATBWindows(float * fps, float * target_fps);
 
 
-class Sounds
-{
 
-};
+
