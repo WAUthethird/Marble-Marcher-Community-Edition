@@ -130,7 +130,10 @@ Alternatively, [vcpkg](https://github.com/Microsoft/vcpkg) can be used though it
 
 It may also be possible to use MacPorts which is also unsupported and untested.
 ### Arch Linux
-`sudo pacman -S eigen sfml anttweakbar git cmake make`
+The packages `eigen`, `sfml`, `git`, `cmake` and `make` are on the core, extra and community repositories.
+`sudo pacman -S eigen sfml git cmake make`
+However, `anttweakbar` is on the AUR. Clone and build it yourself, or use and AUR Helper like [yay](https://github.com/Jguer/yay) :
+`yay -S anttweakbar`
 
 
 ## Building
