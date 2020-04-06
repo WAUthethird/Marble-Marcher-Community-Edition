@@ -30,21 +30,21 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 *Video Explanation: https://youtu.be/9U0XVdvQwAI*
 
 ## Table of Contents
-- [Changes](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#changes)
-- [Proposed changes](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#proposed-changes)
-- [System Dependencies](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#system-dependencies)
-  - [macOS](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#macos)
-  - [Arch Linux](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#arch-linux)
-- [Building](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#building)
-  - [macOS](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#macos-1)
-  - [Arch Linux](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#arch-linux-1)
-  - [Compiling on Windows](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#compiling-on-windows)
-  - [Cross-Compile for Windows (macOS)](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#cross-compile-for-windows-on-macos)
-- [Launching](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#launching)
-  - [macOS](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#macos-2)
-  - [Other OSes](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#windowslinuxanything-else)
-- [Other](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#other)
-  - [Shortcuts](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/README.md#shortcuts)
+- [Changes](#changes)
+- [Proposed changes](#proposed-changes)
+- [System Dependencies](#system-dependencies)
+  - [macOS](#macos)
+  - [Arch Linux](#arch-linux)
+- [Building](#building)
+  - [macOS](#macos-1)
+  - [Arch Linux](#arch-linux-1)
+  - [Ubuntu](#ubuntu)
+  - [Compiling on Windows](#compiling-on-windows)
+  - [Cross-Compile for Windows on macOS](#cross-compile-for-windows-on-macos)
+- [Launching](#launching)
+  - [macOS](#macos-2)
+  - [Other OSes](#windowslinuxanything-else)
+- [Special Controls](#special-controls)
 
 ## Changes
 - Many, many fixes have been applied
