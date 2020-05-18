@@ -5,8 +5,8 @@ NotoSansJP-Bold.otf
 #font_2
 NotoSansJP-Regular.otf
 #Marble_Marcher
-Marble
-Marcher
+マーブル
+マーチャー
 #Play
 プレイ
 #Levels
@@ -14,9 +14,9 @@ Marcher
 #Controls
 コントロール
 #Settings
-セッティング
+設定
 #Exit
-出口
+終了
 #OK
 OK
 #Yes
@@ -24,90 +24,92 @@ OK
 #No
 いいえ
 #Best_time
-Best time
+Best Time!
 #Edit
-Edit
+修正
 #Remove
-Remove
+削除
 #You_sure
-Are you sure?
+それは確かですか
 #Graphics
-Graphics
+グラフィック
 #MM_about_short
-Marble Marcher: Community Edition
+マーブルマーチャー：コミュニティーエディション (MMCE)
 #MM_about_long
-Marble Marcher: Community Edition.
-Original made by CodeParade. 
-Music by PettyTheft.
+マーブルマーチャー：コミュニティーエディション (MMCE)
+CodeParadeはマーブルマーチャーを作った。
+PettyTheftは曲を作った。
 
-Community Edition development team:
+MMCEの開発チーム:
 Michael Moroz(michael0884)
 WAUthethird
 Bryce AS202313
 Selicre
 
-Translators:
-KaMa2 - polish language
-Michael Moroz - english, ukrainian and russian languages
+翻訳:
+KaMa2 - ポーランド語
+Michael Moroz - 英語、ウクライナ語、ロシヤ語
+OrangeC7 - 日本語
 #Window
-Window
+ウィンドウ
 #Button
-Button
+ボタン
 #Screen_Saver
 スクリーンセーバー
 #Back2Main
-Back To Main Menu
+メニューに戻る
 #CreateNewLvl
-Create a new level
+新レベルが作る
 #About
-Original by CodeParade, Community Edition
-Music by PettyTheft
+マーブルマーチャー：コミュニティーエディション (MMCE)
+CodeParadeはマーブルマーチャーを作った。
+PettyTheftは曲を作った。
 #DetailControls
-Roll      WASD or Arrows
-Camera    Mouse
-Zoom      Scroll Wheel
-Restart   R or Right-Click
-Pause     Esc
+転がる      「WASD」や矢印キー
+カメラ       マウス
+ズーム      スクロールホイル
+再開する    「R」や右クリク
+停止する    「Esc」
 #Back
-Back
+戻る
 #Paused
-Paused
+停止しました
 #Continue
-Continue
+続く
 #Restart
-Restart
+再開する
 #Quit
-Quit
+戻る
 #Music
-Music
+曲
 #On
-On
+オン
 #Off
-Off
+オフ
 #High
-High
+高
 #Medium
-Medium
+中
 #Low
-Low
+低
 #CongratsEnd
-Congratulations, you beat all the levels!
+おめでとう、全てのレベルが完了しました！
 
 
 
-As a reward, cheats have been unlocked!
-Activate them with the F1 key during gameplay.
-Thanks for playing!
+あなたの賞はCheatsです。
+Cheatsを活性化するために、「F1」のキーを押す。
+ありがとうございます！
 #CongratsMid
-You've done well so far.
+これまでは頑張った
 
 
 
-But this is only the beginning.
-If you need a quick break, take it now.
-The challenge levels are coming up...
+でも、これは前編ですよ。
+休憩は必要であれば、今休憩する。
+挑戦レベルが近くですよ。。。
 #CheatsON
-Cheats Enabled
+Cheatsはオンです
 #CheatsInfo
 [ C ] Color change
 [ F ] Free camera
@@ -119,25 +121,25 @@ Cheats Enabled
 [ Z ] Zoom to scale
 [ 1 - 9 ] Scroll fractal parameter
 #Statistics
-Statistics
+統計
 #Marble_velocity
 Marble velocity
 #Marble_position
 Marble position
 #Settings
-Settings
+設定
 #Sun_direction
-Sun direction
+太陽の方向
 #Shadows
-Shadows
+影
 #Reflection_Refraction
 Reflection and Refraction
 #Glass
-Glass
+玻璃
 #Metal
-Metal
+金属
 #Marble_type
-Marble type
+Marbleの外観
 #Mouse_sensitivity
 Mouse sensitivity
 #Wheel_sensitivity
@@ -151,15 +153,15 @@ Camera size
 #Camera_speed_free
 Camera speed(Free mode)
 #Level_Name
-Level Name
+レベレの名
 #Level_Description
-Level Description
+レベルの細部
 #Save
-Save Level
+レベルを保存
 #Set_Marble
 Set Marble Position
 #Set_Marble_help
-Click on the fractal to place
+Marbleを置くようにFractalにクリクする
 #Set_Flag
 Set Flag Position
 #Flag_Position
@@ -169,11 +171,11 @@ Marble Position
 #Marble_scale
 Marble Radius(Scale)
 #Level_music
-Level music
+レベルの曲
 #Play_Music
-Play/Stop current music
+この曲の再生を始める/やめる
 #None
-None
+なし
 #Fractal_Iterations
 Fractal Iterations
 #Fractal_Scale
@@ -185,4 +187,12 @@ Fractal Angle2
 #Fractal_Shift
 Fractal Shift
 #Fractal_Color
-Fractal Color
+Fractalの色
+#Codeparade_descr
+元のゲームの開発者
+#Michael_descr
+MMCEの主な開発者
+#WAU_descr
+MMCEの主なGithubレポジトリーを管理しています。 MMCEをLinuxに移植した。
+#Bryce_descr
+MMCEをMacOSに移植した。
