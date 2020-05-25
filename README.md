@@ -192,13 +192,13 @@ _make_ should create `libAntTweakBar.a` and `libAntTweakBar.so` in your
 `AntTweakBar/lib` folder.  You may want to move those to a better
 location, e.g. into `$HOME/lib`.
 
-The basic installation can be done with commands
+This installation can be done with commands
 ```
 cd AntTweakBar/src
 make
 ```
 
-The next task is to download (or clone)
+The next task is to clone (or download)
 [Marble
 Marcher](https://github.com/otoomet/Marble-Marcher-Community-Edition).
 In the following examples we assume you have downloaded
@@ -209,7 +209,7 @@ for the following compilation step you
 also have to specify the location of
 `AntTweakBar.h` and
 `libAntTweakBar.a` files using the `CPATH` and `LIBRARY_PATH`
-environment variables.  You can proceed as follows:
+environment variables.  You can do this as follows:
 ```
 cd ~/Downloads
 git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git
@@ -245,8 +245,8 @@ sudo apt-get install libsfml-dev libglm-dev libeigen3-dev \
      libglew-dev cmake libglu1-mesa-dev mesa-common-dev
 sudo apt-get install gcc-8
 ```
-Next, as the default gcc is still version 7, we have to explicitly
-tell that we we want gcc 8 instead.
+Next, as the default gcc is still version 7, we have to tell _cmake_ explicitly
+that we we want gcc 8 instead.
 
 Open `AntTweakBar/src/Makefile` in a text editor (e.g. _gedit_), 
 and set the _make_ variables `CXX` and
@@ -266,8 +266,8 @@ make
 
 Cloning _Marble Marcher_ on Ubuntu 18.04 works exactly as on Ubuntu 20.04.
 But now, when creating cmake environment, we tell _cmake_ that we use
-gcc-8 instead by setting `CC` and `CXX` environment variables.
-Besides of that, we follow exactly the steps for
+gcc-8 by setting `CC` and `CXX` environment variables.
+Otherwise we follow exactly the steps for
 Ubuntu 20.04.  So on 18.04 you can do
 ```
 cd ~/Downloads
