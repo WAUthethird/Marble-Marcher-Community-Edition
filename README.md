@@ -250,10 +250,11 @@ that we we want gcc 8 instead.
 
 Open `AntTweakBar/src/Makefile` in a text editor (e.g. _gedit_), 
 and set the _make_ variables `CXX` and
-`LINK` (see lines 18 and 21) to `g++-8`.  So the relevant lines should
+`LINK` (see lines 18 and 21) to `gcc-8` and `g++-8`.  
+So the relevant lines should
 look like
 ```
-CXX      	= g++-8
+CXX      	= gcc-8
 CXXFLAGS 	= $(CXXCFG) -Wall -fPIC -fno-strict-aliasing -D_UNIX -D__PLACEMENT_NEW_INLINE
 INCPATH  	= -I../include -I/usr/local/include -I/usr/X11R6/include -I/usr/include
 LINK     	= g++-8
@@ -274,6 +275,7 @@ cd ~/Downloads
 git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git
 cd Marble-Marcher-Community-Edition
 mkdir build
+cd build             
 CC=/usr/bin/gcc-8 CXX=/usr/bin/g++-8 cmake ..
 CPATH="$HOME/Downloads/AntTweakBar/include/" LIBRARY_PATH="$HOME/Downloads/AntTweakBar/lib" cmake --build .
 ```
