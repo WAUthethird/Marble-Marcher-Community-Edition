@@ -166,16 +166,130 @@ Alternatively, one can use the platform-dependent build system, for example `Mak
 * `cp build/MarbleMarcher ./`
 
 ### Ubuntu
-* Install packages
-`sudo apt-get install libanttweakbar-dev libanttweakbar1 libsfml-system2.4 libsfml-graphics2.4 libsfml-audio2.4 libsfml-window2.4 libglew-dev libeigen3-dev libglm-dev libsfml-dev`
-* `cd ~`
-* `git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git`
-* `cd Marble-Marcher-Community-Edition`
-* `mkdir build && cd build`
-* `cmake .. && cmake --build .`
-* Run the game 
-`./MarbleMarcher`
-* You can also build a package using this command `cpack`
+
+The main problem with the installation is the dependency 
+_AntTweakBar_, a C++ library with no Ubuntu package.
+
+But the
+first and easy step is to ensure that the following development
+tools and
+libraries are installed: `libsfml-dev`, `libglm-dev`, `libeigen3-dev`,
+`libglew-dev`, `cmake`, `libglu1-mesa-dev` and `mesa-common-dev`.  You
+can get it done with
+```
+sudo apt-get install libsfml-dev libglm-dev libeigen3-dev \
+     libglew-dev cmake libglu1-mesa-dev mesa-common-dev
+```
+You may need to install more (or fewer) libraries, depending on what
+do you already have on your system.
+
+#### How to Install on Ubuntu 20.04
+
+The first step is
+to download and install
+[_AntTweakBar_](http://anttweakbar.sourceforge.net/doc/) library.  I
+assume you have unpacked it into _Downloads_ folder.  The
+installation
+is as easy as running `make` in `AntTwekBar/src` folder.  As a result,
+_make_ should create `libAntTweakBar.a` and `libAntTweakBar.so` in your
+`AntTweakBar/lib` folder.  You may want to move those to a better
+location, e.g. into `$HOME/lib`.
+
+This installation can be done with commands
+```
+cd ~/Downloads/AntTweakBar/src
+make
+```
+
+The next task is to clone (or download)
+[Marble
+Marcher](https://github.com/otoomet/Marble-Marcher-Community-Edition).
+In the following examples we assume you have downloaded
+_Marble Marcher_ into _Downloads_-folder as well.
+First you create an empty folder _build_ in the _Marble Marcher_
+folder, and run _cmake_ from there.  However, and this is important,
+for the following compilation step you
+also have to specify the location of
+`AntTweakBar.h` and
+`libAntTweakBar.a` files using the `CPATH` and `LIBRARY_PATH`
+environment variables.  You can do all these steps as follows:
+```
+cd ~/Downloads
+git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git
+cd Marble-Marcher-Community-Edition
+mkdir build
+cd build
+cmake ..
+CPATH="$HOME/Downloads/AntTweakBar/include/" LIBRARY_PATH="$HOME/Downloads/AntTweakBar/lib" cmake --build .
+```
+This should create an executable file `MarbleMarcher` in the current
+`src` folder.
+
+The executable needs `libAntTweakBar.so` run-time library for running.
+So when executing it, you have to tell it where the library is by
+using `LD_LIBRARY_PATH` environment
+variable.  Hence you run the game as
+```
+LD_LIBRARY_PATH="$HOME/Downloads/AntTweakBar/lib" ./MarbleMarcher
+```
+Consider moving `libAntTweakBar.so` into a dedicated location for
+run-time libraries and configuring your `LD_LIBRARY_PATH`.
+
+Enjoy!
+
+#### Installing on Ubuntu 18.04
+
+Compiling on Ubuntu 18.04 works mostly in the same way as on Ubuntu
+20.04.  However, the default _gcc 7.5.0_ is too old for the source
+code.  You have to use _gcc 8.4.0_, provided in the package _gcc-8_.  First,
+install all the packages required for Ubuntu 20.04.  Thereafter also
+install gcc-8:
+```
+sudo apt-get install libsfml-dev libglm-dev libeigen3-dev \
+     libglew-dev cmake libglu1-mesa-dev mesa-common-dev
+sudo apt-get install gcc-8
+```
+Next, as the default gcc is still version 7, we have to tell _make_
+and _cmake_ explicitly
+that we we want gcc 8 instead.
+
+Open `AntTweakBar/src/Makefile` in a text editor (e.g. _gedit_), 
+and set the _make_ variables `CXX` and
+`LINK` (see lines 18 and 21) to `gcc-8` and `g++-8`.  
+So the relevant lines should
+look like
+```
+CXX      	= gcc-8
+CXXFLAGS 	= $(CXXCFG) -Wall -fPIC -fno-strict-aliasing -D_UNIX -D__PLACEMENT_NEW_INLINE
+INCPATH  	= -I../include -I/usr/local/include -I/usr/X11R6/include -I/usr/include
+LINK     	= g++-8
+```
+Now run `make` in the _src_-folder as in case of Ubuntu 20.04:
+```
+cd AntTweakBar/src
+make
+```
+
+Cloning _Marble Marcher_ on Ubuntu 18.04 works exactly as on Ubuntu 20.04.
+But now, when creating cmake environment, we tell _cmake_ that we use
+gcc-8 by setting `CC` and `CXX` environment variables.
+Otherwise we follow exactly the steps for
+Ubuntu 20.04.  So on 18.04 you can do
+```
+cd ~/Downloads
+git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git
+cd Marble-Marcher-Community-Edition
+mkdir build
+cd build             
+CC=/usr/bin/gcc-8 CXX=/usr/bin/g++-8 cmake ..
+CPATH="$HOME/Downloads/AntTweakBar/include/" LIBRARY_PATH="$HOME/Downloads/AntTweakBar/lib" cmake --build .
+```
+As above, your should see the executable _MarbleMarcher_
+that can be started with
+```             
+LD_LIBRARY_PATH="$HOME/Downloads/AntTweakBar/lib" ./MarbleMarcher
+```
+
 
 ### Compiling on Windows
 Windows compilation should work just fine now. It's relatively easy to do without help, but in case you'd like them, [here are some configuring and compiling instructions](https://www.reddit.com/r/Marblemarcher/comments/bamqyh/how_to_configure_and_compile_source_for_windows/). A [copy of the instructions](build_on_windows.md) is also in the root.
