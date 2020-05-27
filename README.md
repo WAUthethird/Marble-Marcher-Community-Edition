@@ -190,7 +190,7 @@ to download and install
 [_AntTweakBar_](http://anttweakbar.sourceforge.net/doc/) library.  I
 assume you have unpacked it into _Downloads_ folder.  The
 installation
-is as easy as running `make` in `AntTwekBar/src` folder.  As a result,
+is as easy as running `make` in `AntTweakBar/src` folder.  As a result,
 _make_ should create `libAntTweakBar.a` and `libAntTweakBar.so` in your
 `AntTweakBar/lib` folder.  You may want to move those to a better
 location, e.g. into `$HOME/lib`.
@@ -203,7 +203,7 @@ make
 
 The next task is to clone (or download)
 [Marble
-Marcher](https://github.com/otoomet/Marble-Marcher-Community-Edition).
+Marcher](https://github.com/WAUthethird/Marble-Marcher-Community-Edition).
 In the following examples we assume you have downloaded
 _Marble Marcher_ into _Downloads_-folder as well.
 First you create an empty folder _build_ in the _Marble Marcher_
