@@ -544,7 +544,7 @@ void Object::UpdateAction(sf::RenderWindow * window, InputState & state)
 }
 
 
-Object::Object() : callback(NULL), hoverfn(NULL), defaultfn(NULL), curmode(DEFAULT), action_time(0.2), obj_allign(LEFT), static_object(false), limiter(false)
+Object::Object() : callback({}), hoverfn({}), defaultfn({}), curmode(DEFAULT), action_time(0.2), obj_allign(LEFT), static_object(false), limiter(false)
 {
 	curstate.color_main = default_main_color;
 	activestate.color_main = default_active_main_color;

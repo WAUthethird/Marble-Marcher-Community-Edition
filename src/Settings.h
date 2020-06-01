@@ -158,6 +158,7 @@ public:
 		cfg_file.read(reinterpret_cast<char *>(&stg), sizeof(MainSettings));
 
 		cfg_file.close();
+		return true;
 	}
 
 	void SaveToFile(std::string settings_file)

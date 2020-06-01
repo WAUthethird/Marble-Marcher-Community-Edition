@@ -874,7 +874,7 @@ void FirstStart(Overlays* overlays)
 	RemoveAllObjects();
 
 	sf::VideoMode fs_size = sf::VideoMode::getDesktopMode();
-	int barPos[2] = { (fs_size.width - 600)/2 , (fs_size.height - 100.f - 200) / 2 };
+	unsigned int barPos[2] = { (fs_size.width - 600)/2 , (fs_size.height - 300) / 2 };
 	TwSetParam(overlays_ptr->flaunch, NULL, "position", TW_PARAM_INT32, 2, barPos); 
 
 	sf::Vector2f wsize = default_size;
@@ -940,6 +940,8 @@ sf::Vector2i getResolution(int i)
 		return sf::Vector2i(10240, 4320);
 	case 14:
 		return sf::Vector2i(240, 140);
+	default:
+		return sf::Vector2i(1280, 720); //Good default resolution
 	}
 }
 

@@ -652,6 +652,7 @@ sf::Music* All_Levels::GetLevelMusic(int ID)
 	{
 		return music_map[level_map[ID].use_music];
 	}
+	return nullptr;
 }
 
 sf::Music* All_Levels::GetMusic(std::string music)
@@ -660,6 +661,7 @@ sf::Music* All_Levels::GetMusic(std::string music)
 	{
 		return music_map[music];
 	}
+	return nullptr;
 }
 
 void All_Levels::RecreateMissing()
