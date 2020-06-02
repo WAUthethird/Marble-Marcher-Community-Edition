@@ -23,6 +23,13 @@
 #include <AntTweakBar.h>
 namespace fs = std::filesystem;
 
+#if defined(unix) || defined(__unix__) || defined(__unix)
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#endif
+
 const int num_of_keys = 20;
 enum KEYS {
 	UP, DOWN, LEFT, RIGHT, VIEWUP, VIEWDOWN, VIEWLEFT, VIEWRIGHT, 
@@ -105,7 +112,6 @@ static const MainSettings default_settings =
 	false, default_control_mapping, true, 60, true, 1.f, 0.1f, 22.f, 4.5f, 30, false, true
 };
 
-
 class AllSettings
 {
 public:
@@ -168,6 +174,24 @@ public:
 		cfg_file.write(reinterpret_cast<char *>(&stg), sizeof(MainSettings));
 
 		cfg_file.close();
+	}
+
+	//Returns relative path or if on unix, returns config directory
+	std::string GetConfigPath(){
+		#if defined(__APPLE__)
+			return "assets"
+		#elif defined(unix) || defined(__unix__) || defined(__unix)
+			char* userdir;
+			if ((userdir = getenv("HOME")) == NULL) {
+				userdir = getpwuid(getuid())->pw_dir;
+			}
+			std::string path = std::string(userdir) + "/.config/marblemarcher";
+			mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+			return path;
+			delete userdir;
+		#else
+			return "assets"
+		#endif
 	}
 
 	MainSettings stg;

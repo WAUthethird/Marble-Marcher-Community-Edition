@@ -43,6 +43,8 @@
 bool TOUCH_MODE = false;
 bool DEBUG_BAR = false;
 
+std::string configPath;
+
 #if defined(_WIN32)
 int WinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR lpCmdLine, int nCmdShow) {
 #else
@@ -65,7 +67,8 @@ int main(int argc, char *argv[]) {
 	credits_music.openFromFile(credits_ogg);
 	credits_music.setLoop(true);
 
-	bool first_start = SETTINGS.Load(settings_bin);
+	configPath = SETTINGS.GetConfigPath();
+	bool first_start = SETTINGS.Load(configPath + "/settings.bin");
 
 	//all of the fonts
 	Fonts fonts;
@@ -93,6 +96,7 @@ int main(int argc, char *argv[]) {
 
 	scene.levels.LoadLevelsFromFolder(level_folder);
 	scene.levels.LoadMusicFromFolder(music_folder);
+	scene.levels.LoadScoresFromFile(configPath + "/scores.bin");
 
 	InitializeATBWindows(&smooth_fps, &target_fps);
 
@@ -784,7 +788,7 @@ int main(int argc, char *argv[]) {
 
 	RemoveAllObjects();
 	scene.StopMusic();
-	scene.levels.SaveScoresToFile();
+	scene.levels.SaveScoresToFile(configPath + "/scores.bin");
 	TwTerminate();
 	return 0;
 }

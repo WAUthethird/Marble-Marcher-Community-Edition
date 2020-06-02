@@ -182,7 +182,7 @@ public:
 	void LoadLevelFromFile(fs::path file);
 	void LoadScoresFromFile(std::string file);
 	float GetBest(int lvl);
-	void SaveScoresToFile();
+	void SaveScoresToFile(const std::string& file);
 
 	bool UpdateScore(int lvl, float time);
 	void DeleteLevel(int lvl);

@@ -591,8 +591,6 @@ void All_Levels::LoadLevelsFromFolder(std::string folder)
 	{
 		LoadLevelFromFile(files[i]);
 	}
-
-	LoadScoresFromFile(folder + "/scores.bin");
 }
 
 void All_Levels::LoadMusicFromFolder(std::string folder)
@@ -734,9 +732,9 @@ float All_Levels::GetBest(int lvl)
 }
 
 
-void All_Levels::SaveScoresToFile()
+void All_Levels::SaveScoresToFile(const std::string& file)
 {
-	std::ofstream score_file(lvl_folder + "/scores.bin", ios_base::trunc | ios_base::binary);
+	std::ofstream score_file(file, ios_base::trunc | ios_base::binary);
 
 	for (auto &score : score_map)
 	{ 
