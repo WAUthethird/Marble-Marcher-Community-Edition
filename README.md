@@ -156,7 +156,16 @@ Alternatively, one can use the platform-dependent build system, for example `Mak
 * `make -C build`
 
 ### Arch Linux
-Install the AUR package at [marblemarcher-git](https://aur.archlinux.org/packages/marblemarcher-git/) using your prefferred AUR Helper.
+* `cd ~`
+* `git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git`
+* `cd Marble-Marcher-Community-Edition`
+* `mkdir build && cd build`
+* `cmake ..`
+* `cd ..`
+* `cmake --build build`
+* `cp build/MarbleMarcher ./`
+
+Alternatively, you can install the AUR package at [marblemarcher-git](https://aur.archlinux.org/packages/marblemarcher-git/) using your preferred AUR Helper.
 * `yay -S marblemarcher-git`
 
 ### Ubuntu
