@@ -1,0 +1,196 @@
+#French
+Français
+#font_1
+Orbitron-Bold.ttf
+#font_2
+Inconsolata-Bold.ttf
+#Marble_Marcher
+Marble
+Marcher
+#Play
+Jouer
+#Levels
+Niveaux
+#Controls
+Contrôles
+#Settings
+Réglages
+#Exit
+Quitter
+#OK
+OK
+#Yes
+Oui
+#No
+Non
+#Best_time
+Meilleurs temps
+#Edit
+Édition
+#Remove
+Supprimer
+#You_sure
+Êtes-vous sûr?
+#Graphics
+Graphiques
+#MM_about_short
+Marble Marcher: Community Edition
+#MM_about_long
+Marble Marcher: Community Edition.
+Idée originale de CodeParade. 
+Musique de PettyTheft.
+
+Équipe de developpement Community Edition:
+Michael Moroz(michael0884)
+WAUthethird
+Bryce AS202313
+Selicre
+
+Traducteurs:
+KaMa2 - polish language
+Michael Moroz - english, ukrainian and russian languages
+#Window
+Fenêtre
+#Button
+Bouton
+#Screen_Saver
+Écran de veille
+#Back2Main
+Retour au menu
+#CreateNewLvl
+Créer un nouveau niveau
+#About
+Original by CodeParade, Community Edition
+Music by PettyTheft
+#DetailControls
+Rouler        WASD ou Flèches
+Camera        Souris
+Zoom          Molette
+Recommencer   R ou Clique droit
+Pause         Esc
+#Back
+Retour
+#Paused
+En pause
+#Continue
+Continuer
+#Restart
+Recommencer
+#Quit
+Quitter
+#Music
+Musique
+#On
+On
+#Off
+Off
+#High
+Haut
+#Medium
+Moyen
+#Low
+Faible
+#CongratsEnd
+Félicitation, vous avez réussi tous les niveaux!
+
+
+
+Comme recompense, vous avez débloqué le mode triche!
+Activez-le en appuyant sur F1 durant la partie.
+Merci d'avoir jouer!
+#CongratsMid
+Vous avez bien joué jusque ici.
+
+
+
+Mais ce n'est que le commencement.
+Si vous devez faire une pause, prenez-la maintenant.
+Les niveaux difficiles arrivent...
+#CheatsON
+Triche activée
+#CheatsInfo
+[ C ] Changer la couleur
+[ F ] Libérer la caméra
+[ G ] Force de gravité
+[ H ] Basculement de l'hypervitesse
+[ I ] Ignorer l'objectif
+[ M ] Désactiver le mouvement
+[ P ] Désactiver la planète
+[ Z ] Zoom à l'échelle
+[ 1 - 9 ] Paramètre de défilement fractal
+#Statistics
+Statistiques
+#Marble_velocity
+Vitesse de la bille
+#Marble_position
+Position de la bille
+#Settings
+Réglages
+#Sun_direction
+Direction du soleil
+#Shadows
+Ombres
+#Reflection_Refraction
+Réflection et Réfraction
+#Glass
+Verre
+#Metal
+Métal
+#Marble_type
+Type de bille
+#Mouse_sensitivity
+Sensibilité de la souris
+#Wheel_sensitivity
+Sensibilité de la molette
+#Music_volume
+Volume de la musique
+#Target_FPS
+Nombre de FPS
+#Camera_size
+Taille de caméra
+#Camera_speed_free
+Vitesse de la caméra
+#Level_Name
+Nom du niveau
+#Level_Description
+Description du niveau
+#Save
+Enregistrer le niveau
+#Set_Marble
+Positionner la bille
+#Set_Marble_help
+Cliquez sur la fractale pour la placer
+#Set_Flag
+Positionner le drapeau
+#Flag_Position
+Position du drapeau
+#Marble_Position
+Position de la bille
+#Marble_scale
+Rayon de la bille
+#Level_music
+Musique du niveau
+#Play_Music
+Jouer/Arrêter la musique
+#None
+Aucun
+#Fractal_Iterations
+Itération fractale
+#Fractal_Scale
+Taille du fractal
+#Fractal_Angle1
+Angle Fractal 1
+#Fractal_Angle2
+Angle Fractal 2
+#Fractal_Shift
+Translation du fractal
+#Fractal_Color
+Couleur du fractal
+#Codeparade_descr
+Le créateur du jeu original.
+#Michael_descr
+Le développeur principal de Marble Marcher: Community Edition.
+#WAU_descr
+Gère le principal dépôt Github de MMCE. A également porté MMCE sur Linux. 
+#Bryce_descr
+Portage de MMCE pour MacOS.
