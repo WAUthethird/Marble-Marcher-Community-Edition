@@ -1,6 +1,6 @@
 This is a short and easy tutorial for building Marble Marcher: Community Edition on Windows. The online version of the tutorial can be found [here](https://www.reddit.com/r/Marblemarcher/comments/bamqyh/how_to_configure_and_compile_source_for_windows/). (both this and the one on Reddit are kept up-to-date with each other) This tutorial (the command line parts) can also be followed with Git Bash, though you'll need a developer CMD in administrator mode for at least one process.
 
-1. Make sure you have [CMake x64](https://cmake.org/), [OpenAL](https://www.openal.org/), and [Visual Studio 2019](https://visualstudio.microsoft.com/vs/) (in addition to the 2015 and/or 2017 VS build tools, if one does not work, try installing the other) installed.
+1. Make sure you have [CMake x64](https://cmake.org/download/), [OpenAL](https://www.openal.org/), and [Visual Studio 2019](https://visualstudio.microsoft.com/vs/) (in addition to the 2015 and/or 2017 VS build tools, if one does not work, try installing the other) installed.
 
 2. Download the CE edition to a folder of your choice and unzip it: [https://github.com/WAUthethird/Marble-Marcher-Community-Edition](https://github.com/WAUthethird/Marble-Marcher-Community-Edition) or `git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git`.
 
