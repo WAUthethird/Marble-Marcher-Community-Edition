@@ -179,7 +179,7 @@ public:
 	//Returns relative path or if on unix, returns config directory
 	std::string GetConfigPath(){
 		#if defined(__APPLE__)
-			return "assets"
+		return "assets";
 		#elif defined(unix) || defined(__unix__) || defined(__unix)
 			char* userdir;
 			if ((userdir = getenv("HOME")) == NULL) {
@@ -190,7 +190,7 @@ public:
 			return path;
 			delete userdir;
 		#else
-			return "assets"
+		return "assets";
 		#endif
 	}
 
