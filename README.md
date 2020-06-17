@@ -130,8 +130,8 @@ Alternatively, [vcpkg](https://github.com/Microsoft/vcpkg) can be used though it
 
 It may also be possible to use MacPorts which is also unsupported and untested.
 ### Arch Linux
-The packages `eigen`, `sfml`, `git`, `cmake` and `make` are on the core, extra and community repositories.
-`sudo pacman -S eigen sfml git cmake make`
+The packages `eigen`, `sfml`, `glm`, `git`, `cmake` and `make` are on the core, extra and community repositories.
+`sudo pacman -S eigen sfml glm git cmake make`
 However, `anttweakbar` is on the AUR. Clone and build it yourself, or use and AUR Helper like [yay](https://github.com/Jguer/yay) :
 `yay -S anttweakbar`
 
@@ -164,6 +164,9 @@ Alternatively, one can use the platform-dependent build system, for example `Mak
 * `cd ..`
 * `cmake --build build`
 * `cp build/MarbleMarcher ./`
+
+Alternatively, you can install the AUR package at [marblemarcher-git](https://aur.archlinux.org/packages/marblemarcher-git/) using your preferred AUR Helper.
+* `yay -S marblemarcher-git`
 
 ### Ubuntu
 
