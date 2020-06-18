@@ -45,6 +45,7 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
   - [macOS](#macos-2)
   - [Other OSes](#windowslinuxanything-else)
 - [Special Controls](#special-controls)
+- [Troubleshooting/FAQ](#troubleshooting/faq)
 
 ## Changes
 - Many, many fixes have been applied
@@ -321,3 +322,6 @@ Launching should be self-explanatory for these systems, just run the excecutable
 * Press `F5` to take a screenshot.
 * Press `F4` to open AntTweakBar.
 
+## Troubleshooting/FAQ
+* Why am I getting compute shader compilation errors?
+  - If you are running a release binary fully tested by us to be functional, such as those found in the Releases tab, it is most likely a graphics card or driver issue. Try updating your graphics drivers, and if that doesn't fix the problem, take a look at the card itself. If you are a Radeon user, compute shaders are either unsupported or not fully supported on cards before the HD 7000 series. If this is the case, you will need to upgrade if you would like to play the game. Otherwise, if you compiled it yourself, whether by our official instructions or for a non-supported operating system, please open an issue and post the error logs.
