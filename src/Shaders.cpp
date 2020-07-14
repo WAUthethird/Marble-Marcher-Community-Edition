@@ -212,7 +212,7 @@ std::string ComputeShader::PreprocessIncludes(const fs::path& filename, int leve
 	using namespace std;
 
 	//match regular expression
-	static const regex re("^[ ]*#include\s*[\"<](.*)[\">].*");
+	static const regex re("^[ ]*#include\\s*[\"<](.*)[\">].*");
 	stringstream input;
 	stringstream output;
 	input << LoadFileText(filename);
