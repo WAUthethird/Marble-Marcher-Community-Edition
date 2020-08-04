@@ -1,0 +1,197 @@
+#Chinese
+中文
+#font_1
+NotoSansSC-Bold.otf
+#font_2
+NotoSansSC-Regular.otf
+#Marble_Marcher
+弹珠
+穿越
+#Play
+游玩
+#Levels
+关卡
+#Controls
+控制
+#Settings
+设置
+#Exit
+退出
+#OK
+确定
+#Yes
+确定
+#No
+取消
+#Best_time
+最佳时间
+#Edit
+编辑
+#Remove
+去除
+#You_sure
+你确定吗？
+#Graphics
+画面
+#MM_about_short
+弹珠穿越: 社区版
+#MM_about_long
+弹珠穿越
+原版作者：CodeParade
+音乐：PettyTheft
+
+社区版本开发团队:
+Michael Moroz(michael0884)
+WAUthethird
+Bryce AS202313
+Selicre
+
+翻译:
+KaMa2 - 波兰语
+Michael Moroz - 英语，乌克兰语和俄语
+B-Core - 中文
+#Window
+窗口
+#Button
+按键
+#Screen_Saver
+屏保
+#Back2Main
+回到主页
+#CreateNewLvl
+创建新关卡
+#About
+原版：CodeParade, 社区版本
+音乐：PettyTheft
+#DetailControls
+滚动      WASD 或 ↑↓←→
+视角      鼠标
+缩放      鼠标滚轮
+重置   R 或 右键
+暂停     Esc
+#Back
+返回
+#Paused
+暂停
+#Continue
+继续
+#Restart
+重新开始
+#Quit
+退出
+#Music
+音乐
+#On
+开
+#Off
+关
+#High
+高
+#Medium
+中
+#Low
+低
+#CongratsEnd
+恭喜你！你完成了全部关卡
+
+
+
+作为奖励，作弊已开启！
+在游戏中按F1启动
+感谢游玩！
+#CongratsMid
+不错不错
+
+
+
+不过这只是开始
+如果你需要休息一下，最好趁现在...
+真正的挑战才刚刚开始...
+#CheatsON
+作弊启动
+#CheatsInfo
+[ C ] 改变颜色
+[ F ] 自由视角
+[ G ] 引力强度
+[ H ] 快进
+[ I ] 忽略结束
+[ M ] 地形变化开关
+[ P ] 星球引力开关
+[ Z ] 缩放到地图尺寸
+[ 1 - 9 ] 分形参数
+#Statistics
+统计
+#Marble_velocity
+弹珠速度
+#Marble_position
+弹珠位置
+#Settings
+设置
+#Sun_direction
+太阳位置
+#Shadows
+阴影
+#Reflection_Refraction
+反射与折射
+#Glass
+玻璃
+#Metal
+铁
+#Marble_type
+弹珠材质
+#Mouse_sensitivity
+鼠标灵敏度
+#Wheel_sensitivity
+滚轮灵敏度
+#Music_volume
+音乐音量
+#Target_FPS
+目标FPS
+#Camera_size
+相机大小
+#Camera_speed_free
+相机速度(自由模式)
+#Level_Name
+关卡名称
+#Level_Description
+关卡描述
+#Save
+保存关卡
+#Set_Marble
+设置弹珠位置
+#Set_Marble_help
+点击以放置
+#Set_Flag
+设置终点位置
+#Flag_Position
+终点位置
+#Marble_Position
+弹珠位置
+#Marble_scale
+弹珠半径（大小）
+#Level_music
+关卡音乐
+#Play_Music
+开始/暂停当前音乐
+#None
+无
+#Fractal_Iterations
+分形迭代
+#Fractal_Scale
+分形大小
+#Fractal_Angle1
+分形角度1
+#Fractal_Angle2
+分形角度2
+#Fractal_Shift
+分形位移
+#Fractal_Color
+分形颜色
+#Codeparade_descr
+原游戏创作者
+#Michael_descr
+社区版本的主要创作者
+#WAU_descr
+管理MMCE的主Github存储库，还将MMCE移植到Linux
+#Bryce_descr
+将MMCE移植到MacOS
