@@ -120,7 +120,7 @@ Though Marble Marcher CE is a largely finished game, there are still several imp
 ### MacOS
 On macOS these can be conveniently installed using [HomeBrew](https://brew.sh):
 
-`brew install cmake eigen sfml anttweakbar`
+`brew install cmake eigen sfml anttweakbar glew gml`
 
 The version of SFML required is 2.5.1 or newer. It has come to my attention that HomeBrew does now have this version (unlike when these instructions where first written) so installing via HomeBrew should work but you can still [download manually](https://www.sfml-dev.org/download/sfml/2.5.1/) if you wish and install using [these instructions](https://www.sfml-dev.org/tutorials/2.5/start-osx.php). You must install the Frameworks option not the dylib option or the build script may fail.
 **Note that if HomeBrew installed a version of SFML older than 2.5.1 for some reason or you wish to install manually, you must remove the version of SFML that Brew installed using `brew remove sfml`.**
@@ -141,7 +141,7 @@ However, `anttweakbar` is on the AUR. Clone and build it yourself, or use and AU
 ### MacOS
 #### Build Script
 **Note for the current version: the macOS build is not yet entirely working properly so revert to the previous prerelease as required. SFML is properly included but as of yet, AntTweakBar is not so this executable will not work on machines without it installed.**
-Simply run `./macOSBuild.sh`. This will generate the full Application bundle that can be used like any other application. It can even be used on systems without SFML as SFML is included in the bundle and the binary is relinked to these versions. Currently the script will only do the relinking part properly if you use SFML 2.5.1 specifically however it is planned to allow for any version. If you have another version, the script will still work, the app just won't work on a machine without SFML.
+Simply run `./macOSBuildExec.sh` ( You can alternatively use macOSBuildBundle which is the old version of the script, which will generate a full .app file instead of a normal unix executable). This will generate the MarbleMarcher executable that can be used like any other application. It can even be used on systems without SFML as SFML is included in the bundle and the binary is relinked to these versions (As stated above it currently does not work on systems without AntTweakBar installed). Currently the script will only do the relinking part properly if you use SFML 2.5.1 specifically however it is planned to allow for any version. If you have another version, the script will still work, the app just won't work on a machine without SFML.
 #### Manual
 * `mkdir build && cd build`
 * `cmake ..`
@@ -150,7 +150,7 @@ Simply run `./macOSBuild.sh`. This will generate the full Application bundle tha
 * `cd ..`
 * `cmake --build build`
 
-Note that this just builds a binary and not an Application bundle like you might be used to seeing. To run properly, you must move the binary (which, after building, is `build/MarbleMarcher`) to the same folder as the assets folder. It is not recommended to build the Application bundle manually so no instructions for that are provided however you may peek in `macOSBuild.sh` to see how it is done.
+Note that this just builds a binary and not an Application bundle like you might be used to seeing. To run properly, you must move the binary (which, after building, is `build/MarbleMarcher`). It is not recommended to build the Application bundle manually so no instructions for that are provided however you may peek in `macOSBuildBundle.sh` to see how it is done.
 
 Alternatively, one can use the platform-dependent build system, for example `Make`:
 
