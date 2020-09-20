@@ -120,7 +120,7 @@ Though Marble Marcher CE is a largely finished game, there are still several imp
 ### MacOS
 On macOS these can be conveniently installed using [HomeBrew](https://brew.sh):
 
-`brew install cmake eigen sfml anttweakbar glew gml`
+`brew install cmake eigen sfml anttweakbar glew glm`
 
 The version of SFML required is 2.5.1 or newer. It has come to my attention that HomeBrew does now have this version (unlike when these instructions where first written) so installing via HomeBrew should work but you can still [download manually](https://www.sfml-dev.org/download/sfml/2.5.1/) if you wish and install using [these instructions](https://www.sfml-dev.org/tutorials/2.5/start-osx.php). You must install the Frameworks option not the dylib option or the build script may fail.
 **Note that if HomeBrew installed a version of SFML older than 2.5.1 for some reason or you wish to install manually, you must remove the version of SFML that Brew installed using `brew remove sfml`.**
