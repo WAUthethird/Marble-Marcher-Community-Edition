@@ -143,7 +143,7 @@ However, `anttweakbar` is on the AUR. Clone and build it yourself, or use and AU
 **Note for the current version: the macOS build is not yet entirely working properly so revert to the previous prerelease as required. SFML is properly included but as of yet, AntTweakBar is not so this executable will not work on machines without it installed.**
 Simply run `./macOSBuildExec.sh` ( You can alternatively use macOSBuildBundle which is the old version of the script, which will generate a full .app file instead of a normal unix executable). This will generate the MarbleMarcher executable that can be used like any other application. It can even be used on systems without SFML as SFML is included in the bundle and the binary is relinked to these versions (As stated above it currently does not work on systems without AntTweakBar installed). Currently the script will only do the relinking part properly if you use SFML 2.5.1 specifically however it is planned to allow for any version. If you have another version, the script will still work, the app just won't work on a machine without SFML.
 #### Manual
-Due to macOS being unable to find GLM_INCLUDE_DIR it is now assumed to be ./glm . In order for this method to work, GML should now be manually installed into that directory.
+Due to macOS being unable to find GLM_INCLUDE_DIR it is now assumed to be ./glm . In order for this method to work, GLM should now be manually installed into that directory.
 * `wget https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip`
 * `unzip ./glm-0.9.9.8.zip`
 * `mkdir build && cd build`
