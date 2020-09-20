@@ -37,7 +37,8 @@ if (WIN32)
 
 	find_package(SFML 2.5 COMPONENTS system window graphics audio REQUIRED)
 
-elseif(UNIX)	
+elseif(UNIX)
+	LINK_DIRECTORIES(/usr/local/lib)	
 	set(SFML_STATIC_LIBRARIES FALSE)
 	find_package(GLEW REQUIRED)
 	find_package(OpenGL REQUIRED)
@@ -53,7 +54,11 @@ target_include_directories(MarbleMarcherSources PUBLIC
   ${EIGEN3_INCLUDE_DIR}
   ${GLEW_INCLUDE_DIRS}
   ${OpenGL_INCLUDE_DIRS}
-  ${GLM_INCLUDE_DIR}
+  if (UNIX)
+	./glm
+  else()
+  	${GLM_INCLUDE_DIR}
+  endif()
   ${PROJECT_BINARY_DIR}
 )
 
@@ -122,7 +127,8 @@ elseif(UNIX)
 		${OPENGL_LIBRARIES}
 		libAntTweakBar.so	
 		${GLEW_LIBRARIES}
-		stdc++fs
+		glew
+		stdc++
 		libsfml-system.so
 		libsfml-window.so
 		libsfml-graphics.so

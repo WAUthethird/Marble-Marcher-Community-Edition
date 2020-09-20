@@ -1,26 +1,25 @@
-#! /bin/bash
+echo This script will install brew and various libraries required for the build. Wait 5 seconds if you allow us to install files into your computer.
+sleep 5
 
-mkdir -p build && cd build
+which -s brew
+if [[ $? != 0 ]] ; then
+	brewinstalled=0
+	ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+fi
+
+brew install cmake eigen sfml anttweakbar glm glew
+
+cd "$(dirname "$0")"
+wget https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip
+unzip glm-0.9.9.8.zip
+
+mkdir build && cd build
 cmake ..
+cmake -DCMAKE_CXX_FLAGS="-I/usr/local/include" ..
 cd ..
 cmake --build build
 
-rm -R -f MarbleMarcher.app
-cp -R macOS/template MarbleMarcher.app
-cp macOS/MarbleMarcher.icns MarbleMarcher.app/Contents/Resources/
-cp -R assets MarbleMarcher.app/Contents/Resources/
-mv build/MarbleMarcher MarbleMarcher.app/Contents/Resources/
-cp -R game_folder/* MarbleMarcher.app/Contents/Resources
-cp build/AntTweakBar.dll MarbleMarcher.app/Contents/Resources/
-cp -R build/assets MarbleMarcher.app/Contents/Resources
-cp -R build/images MarbleMarcher.app/Contents/Resources
-cp -R build/screenshots MarbleMarcher.app/Contents/Resources
-cp -R build/shaders MarbleMarcher.app/Contents/Resources
-cp -R build/sound MarbleMarcher.app/Contents/Resources
-
-
-cd MarbleMarcher.app/Contents/Resources
-install_name_tool -change @rpath/sfml-graphics.framework/Versions/2.5.1/sfml-graphics @executable_path/sfml-graphics MarbleMarcher
-install_name_tool -change @rpath/sfml-audio.framework/Versions/2.5.1/sfml-audio @executable_path/sfml-audio MarbleMarcher
-install_name_tool -change @rpath/sfml-window.framework/Versions/2.5.1/sfml-window @executable_path/sfml-window MarbleMarcher
-install_name_tool -change @rpath/sfml-system.framework/Versions/2.5.1/sfml-system @executable_path/sfml-system MarbleMarcher
+cd build
+echo cd "$(dirname "$0")" > MarbleMarcher.sh
+echo ./MarbleMarcher >> MarbleMarcher.sh
+./MarbleMarcher
