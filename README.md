@@ -16,6 +16,7 @@ If you have suggestions, issues, or would like to contribute, feel free to submi
 Note: This project requires a mid-range dedicated graphics card (non-integrated) to run in HD (1920x1080) at a good FPS. Anything higher and you'll likely need a higher-range card. However, if no HD isn't an issue, you can lower the resolution or settings to run on something like a laptop or budget computer, in which case the game will run just fine.
 
 itch.io link: [https://michaelmoroz.itch.io/mmce](https://michaelmoroz.itch.io/mmce)
+Web port: [https://www.shadertoy.com/view/3lKyDR](https://www.shadertoy.com/view/3lKyDR)
 
 All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade](https://www.youtube.com/channel/UCrv269YwJzuZL3dH5PCgxUw)) for the [original game](https://github.com/HackerPoet/MarbleMarcher).
 
