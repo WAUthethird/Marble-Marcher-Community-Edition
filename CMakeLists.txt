@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(MarbleMarcher VERSION "1.4.3")
+project(MarbleMarcher VERSION "1.4.5")
 set(CMAKE_CXX_STANDARD 17)
 
 configure_file(src/config.h.in config.h)
