@@ -4,7 +4,7 @@
 
 ![Logo](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/doc/LOGO.PNG)
 
-This is the community edition of Marble Marcher, a procedurally rendered fractal physics marble game in which you must get to the flag in each level as fast as you can. With 24 levels to unlock and an active [speedrunning community](https://www.speedrun.com/marblemarcher), along with a fully-featured level editor, there's always new features being developed. If you complete all levels, you can use cheats to create and enhance a more exploratory experience.
+This is the community edition of Marble Marcher, a procedurally rendered fractal physics marble game in which you must get to the flag in each level as fast as you can. If you complete all 24 original levels, cheats are unlocked for extra fun!
 
 Because version 1.1.0 was the last feature update of Marble Marcher, we (the Marble Marcher Community) opted to create a community edition to keep the community around the game alive and continuously improve the experience.
 Currently this is maintained mainly by members of the [Marble Marcher Community on Discord](https://discord.gg/r3XrJxH), in addition to the members of the [subreddit](https://www.reddit.com/r/marblemarcher) and anyone else who has contributed.
@@ -13,7 +13,9 @@ Marble Marcher: Community Edition comes with a wealth of new features and improv
 
 If you have suggestions, issues, or would like to contribute, feel free to submit issues and pull requests. After all, this is a community project!
 
-Note: This project requires a mid-range dedicated graphics card (non-integrated) to run in HD (1920x1080) at a good FPS. Anything higher and you'll likely need a higher-range card. However, if no HD isn't an issue, you can lower the resolution or settings to run on something like a laptop or budget computer, in which case the game will run just fine.
+Just as the original Marble Marcher, the game is particularly GPU heavy, but nonetheless it is optimized to run about 100% to 200% faster with the same resolution and also has customisable graphics settings.
+
+speedrun.com link: [https://www.speedrun.com/marblemarcher](https://www.speedrun.com/marblemarcher)
 
 itch.io link: [https://michaelmoroz.itch.io/mmce](https://michaelmoroz.itch.io/mmce)
 
@@ -34,6 +36,7 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 ## Table of Contents
 - [Changes](#changes)
 - [Proposed changes](#proposed-changes)
+- [Graphics settings](#graphics-settings)
 - [System Dependencies](#system-dependencies)
   - [macOS](#macos)
   - [Arch Linux](#arch-linux)
@@ -50,39 +53,18 @@ All credit goes to [HackerPoet](https://github.com/HackerPoet) (aka [CodeParade]
 - [Troubleshooting/FAQ](#troubleshooting/faq)
 
 ## Changes
-- Many, many fixes have been applied
-- Easier compilation for macOS
-- Feasible Windows and Linux compilation
-- README.md overhaul
-- New rendering engine
+Compared to the original game, the following features and improvements have been added as of the current version of MMCE:
+- New flexible graphics engine which heavily uses compute shaders and allows writing custom shaderpacks, with the ability to edit shaders in real-time
+- Redesigned animated interface. A modular interface was built to allow adding new menus in the future.
+- Custom level support with a rudimentary level/fractal editor 
+- Several new menus (credits, pause, settings, etc.)
+- Rudimentary controller support and configurable keyboard controls
+- Basic recording/replay functionality
+- High resolution screenshots can be taken, up to 10K
+- Multiple localisations with Unicode support (translation work still in progress)
 - Ingame statistics added (marble speed, ground/air state, ...). Press `o` to toggle.
-- AntTweakBar editor added. Press `F4` to toggle.
-- Confirmation, exit buttons in end screens
-- Change "controls" menu to "settings" and have audio, controls, sensitivity and fullscreen options there, also allow custom input bindings
-- Added controller support (+deadzone)
-- Improved text rendering
-- Better layout
-- Anaglyph/stereoscopic mode
-- Screenshot mode (temporarily higher resolution and AA)
-- Metal marble skin
-- Added auto-exposure, aka adaptive brightness
-- Improved bloom
-- Improved shadow upscaling
-- Added DOF
-- Added original shaders as a new configuration
-- Added NEON shaders
-- Added simple shaders, for those with low-spec machines
-- Added experimental PTGI shaders
-- Added TXAA
-- Added a credits menu
-- New pause menu
-- New settings menu
-- Added a screenshot sound
-- Improved screensaver mode
 - Added several new levels
-- Added custom texture support to compute shaders
-- Ability to edit shaders in real-time
-- Level Editor and custom level support
+- And dozens of smaller features
 ![Editor](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/development/doc/EDITOR.PNG)
 ![Levels](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/development/doc/LEVELS.PNG)
 For more changes, please see the [release notes](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/releases).
@@ -109,6 +91,23 @@ Though Marble Marcher CE is a largely finished game, there are still several imp
   - Debug info screen
   - Cheat: unlock all levels
   - Add creation of macOS `.dmg` for easy distribution.
+
+## Graphics Settings
+There are multiple shader configurations in the settings menu.
+
+**main.cfg** -  Default shader configuration, normal rendering with PBR materials and simple ray marched AO. Use this while playing. Also uses TXAA and supports DOF.
+
+**PTGI.cfg** - Path traced global illumination, attempts to simulate light propagation in the fractal scene. It is graphically unstable and requires time for the light samples to converge, so it is not recommended to use while playing. Use it mainly to make screenshots. Uses TXAA, supports DOF.
+
+**original.cfg** - The original Marble Marcher shading, except the AO.
+
+**simple.cfg** - The simplest working shader, use if your computer is a potato.
+
+**neon.cfg** - Makes fractals look like they are glowing clouds.
+
+**noise_test.cfg** - An example of noise and a simplest shader pipeline, mainly useful for development purposes.
+
+The screenshot resolution and rendering resolutions are separate, so you can, for example, play in 720p and take screenshots in 4K. There is also the screenshot samples parameter, the more you use, the better the screenshot will look (if the shader uses temporal denoise).
 
 ## System Dependencies
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
