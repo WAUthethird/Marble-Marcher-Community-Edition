@@ -565,11 +565,13 @@ int main(int argc, char *argv[]) {
 			scene.StopAllMusic();
 			scene.SetExposure(0.5f);
 			credits_music.play();
+			credits_music.setVolume(SETTINGS.stg.music_volume);
 		} else if (scene.GetMode() == Scene::MIDPOINT && game_mode != MIDPOINT) {
 			game_mode = MIDPOINT;
 			scene.StopAllMusic();
 			scene.SetExposure(0.5f);
 			credits_music.play();
+			credits_music.setVolume(SETTINGS.stg.music_volume);
 		}
 		
 	
