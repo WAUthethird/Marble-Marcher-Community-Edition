@@ -118,7 +118,7 @@ The screenshot resolution and rendering resolutions are separate, so you can, fo
 * [CMake](https://cmake.org/)
 * [OpenAL](https://www.openal.org/) (in case you get an "OpenAL DLL not found" error while trying to run the software, seems to be Windows-specific)
 
-### MacOS
+### MacOS (Currently unsupported, see below)
 On macOS these can be conveniently installed using [HomeBrew](https://brew.sh):
 
 `brew install cmake eigen sfml anttweakbar glew glm`
@@ -141,6 +141,9 @@ However, `anttweakbar` is on the AUR. Clone and build it yourself, or use and AU
 ## Building
 ### MacOS
 #### Build Script
+
+### Please note that the version of OpenGL that ships with MacOS does not work with compute shaders, which MMCE depends upon. Due to this, the MacOS port is considered completely unworking, and there is no current way to run it successfully. The instructions below have been retained, should another option arise in the future.
+
 **Note for the current version: the macOS build is not yet entirely working properly so revert to the previous prerelease as required. SFML is properly included but as of yet, AntTweakBar is not so this executable will not work on machines without it installed.**
 Simply run `./macOSBuildExec.sh` ( You can alternatively use macOSBuildBundle which is the old version of the script, which will generate a full .app file instead of a normal unix executable). This will generate the MarbleMarcher executable that can be used like any other application. It can even be used on systems without SFML as SFML is included in the bundle and the binary is relinked to these versions (As stated above it currently does not work on systems without AntTweakBar installed). Currently the script will only do the relinking part properly if you use SFML 2.5.1 specifically however it is planned to allow for any version. If you have another version, the script will still work, the app just won't work on a machine without SFML.
 #### Manual
