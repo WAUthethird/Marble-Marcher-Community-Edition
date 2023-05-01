@@ -6,7 +6,7 @@ Localization::Localization()
 {
 }
 
-bool sortByEnglishFirst(const fs::path& path1, const fs::path& path2)
+bool SortByEnglishFirst(const fs::path& path1, const fs::path& path2)
 {
 	return path1.filename() == "English.loc" || path1 < path2 && path2.filename() != "English.loc";
 }
@@ -15,7 +15,7 @@ void Localization::LoadLocalsFromFolder(std::string folder, Fonts *fonts)
 {
 	fonts_ptr = fonts;
 	std::vector<fs::path> files = GetFilesInFolder(folder, ".loc");
-	sort(files.begin(), files.end(), sortByEnglishFirst);
+	sort(files.begin(), files.end(), SortByEnglishFirst);
 	for (int i = 0; i < files.size(); i++)
 	{
 		LoadLocalFromFile(files[i]);
