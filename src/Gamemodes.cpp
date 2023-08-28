@@ -423,9 +423,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	rstbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	rstbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
-		RemoveAllObjects();
-		game_mode = PLAYING;
-		LockMouse(*window);
+		ResumeGame(*window);
 		scene->ResetLevel();
 		scene->SetExposure(1.0f);
 		overlays->sound_click.play();
