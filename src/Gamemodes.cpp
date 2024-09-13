@@ -1130,6 +1130,9 @@ void TW_CALL ApplySettings(void *data)
 
 	InitializeRendering(configs[SETTINGS.stg.shader_config]);
 
+	if (game_mode == LEVEL_EDITOR)
+		SetCameraFocus(1e10);
+
 	if (current_music != nullptr)
 		current_music->setVolume(SETTINGS.stg.music_volume);
 
