@@ -1,6 +1,6 @@
 This is a short and easy tutorial for building Marble Marcher: Community Edition on Windows. This tutorial (the command line parts) can be followed with Git Bash, though you'll need a developer CMD in administrator mode for at least one process.
 
-1. Make sure you have [CMake x64](https://cmake.org/download/), [OpenAL](https://www.openal.org/), and [Visual Studio 2019](https://visualstudio.microsoft.com/vs/) (in addition to the 2015 and/or 2017 VS build tools, if one does not work, try installing the other) installed.
+1. Make sure you have [CMake x64](https://cmake.org/download/), [OpenAL](https://www.openal.org/), and [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) installed.
 
 2. Download the CE edition to a folder of your choice and unzip it: [https://github.com/WAUthethird/Marble-Marcher-Community-Edition](https://github.com/WAUthethird/Marble-Marcher-Community-Edition) or `git clone https://github.com/WAUthethird/Marble-Marcher-Community-Edition.git`.
 
@@ -15,7 +15,7 @@ This is a short and easy tutorial for building Marble Marcher: Community Edition
 6. Download and unzip AntTweakBar to the `Libraries` folder: [http://anttweakbar.sourceforge.net](http://anttweakbar.sourceforge.net)
   * Inside the resulting unzipped folder should be just a folder called `AntTweakBar`. Move this folder outside its parent folder, into `Libraries`. Delete the now empty parent folder.
 
-7. Download and unzip GLM to the `Libraries` folder: [https://github.com/g-truc/glm/releases/latest](https://github.com/g-truc/glm/releases/latest)
+7. Download and unzip GLM to the `Libraries` folder. I used the .zip version of the 0.9.9.8 release: [https://github.com/g-truc/glm/releases/tag/0.9.9.8](https://github.com/g-truc/glm/releases/tag/0.9.9.8)
   * Inside the resulting unzipped folder should be just a folder called `glm`. Move this folder outside its parent folder, into `Libraries`. Delete the now empty parent folder.
 
 8. Download and unzip GLEW to the `Libraries` folder. I used the 2.1.0 Windows binaries: [http://glew.sourceforge.net/](http://glew.sourceforge.net/)

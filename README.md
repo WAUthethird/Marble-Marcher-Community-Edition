@@ -1,6 +1,6 @@
 # Marble Marcher: Community Edition
 
-### Version 1.4.5
+### Version 1.4.6
 
 ![Logo](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/doc/LOGO.PNG)
 

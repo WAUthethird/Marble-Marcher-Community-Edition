@@ -190,7 +190,7 @@ protected:
 
   void UpdateIntro(bool ssaver);
   void UpdateOrbit();
-  void UpdateDeOrbit(float dx, float dy, float dz);
+  void UpdateDeOrbit(float dx, float dy, float dz, int iters);
   void UpdateNormal(float dx, float dy, float dz);
   void UpdateCameraOnly(float dx, float dy, float dz);
   void UpdateGoal();

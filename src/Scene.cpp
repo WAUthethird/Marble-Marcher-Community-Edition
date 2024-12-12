@@ -505,12 +505,8 @@ void Scene::UpdateCamera(float dx, float dy, float dz, bool speedup) {
       }
     }
   } else if (cam_mode == DEORBIT) {
-    for (int i = 0; i < iters; i++) {
-      UpdateDeOrbit(dx, dy, dz);
-      if (cam_mode != DEORBIT) {
-        break;
-      }
-    }
+    //For deorbit, speedup is handled by the function called, not by calling the function multiple times
+    UpdateDeOrbit(dx, dy, dz, iters);
   } else if (cam_mode == MARBLE) {
     UpdateNormal(dx, dy, dz);
   } else if (cam_mode == GOAL || cam_mode == FINAL || cam_mode == MIDPOINT) {
@@ -715,48 +711,64 @@ void Scene::UpdateOrbit() {
   }
 }
 
-void Scene::UpdateDeOrbit(float dx, float dy, float dz) {
-  //Update the timer
-  const float t = timer * orbit_speed;
-  float b = std::min(float(std::max(timer - frame_orbit, 0)) / float(frame_deorbit - frame_orbit), 1.0f);
-  b *= b/(2*b*(b - 1) + 1);
-  timer += 1;
-  sum_time += 1;
-
+void Scene::UpdateDeOrbit(float dx, float dy, float dz, int iters) {
   if (timer > frame_deorbit + 1) {
+    for (int i = 0; i < iters; i++) {
+      //Update the timer
+      timer += 1;
+      sum_time += 1;
+
+      if (cam_mode != DEORBIT) {
+        break;
+      }
+    }
+    //Camera during countdown is not sped up
     UpdateCameraOnly(dx, dy, dz);
   } else {
-    //Get marble location and rotational parameters
-    const float orbit_dist = level_copy.orbit_dist;
-    const Eigen::Vector3f orbit_pt(0.0f, orbit_dist, 0.0f);
-    const Eigen::Vector3f perp_vec(std::sin(t), 0.0f, std::cos(t));
-    const Eigen::Vector3f orbit_cam_pos = orbit_pt + perp_vec * (orbit_dist * 2.5f);
-    cam_pos = cam_pos*orbit_smooth + orbit_cam_pos*(1 - orbit_smooth);
+    for (int i = 0; i < iters; i++) {
+      //Update the timer
+      const float t = timer * orbit_speed;
+      float b = std::min(float(std::max(timer - frame_orbit, 0)) / float(frame_deorbit - frame_orbit), 1.0f);
+      b *= b/(2*b*(b - 1) + 1);
+      timer += 1;
+      sum_time += 1;
 
-    //Solve for the look direction
-    const float start_look_x = level_copy.start_look_x;
-    cam_look_x = std::atan2(cam_pos.x(), cam_pos.z());
-    ModPi(cam_look_x, start_look_x);
+      //Get marble location and rotational parameters
+      const float orbit_dist = level_copy.orbit_dist;
+      const Eigen::Vector3f orbit_pt(0.0f, orbit_dist, 0.0f);
+      const Eigen::Vector3f perp_vec(std::sin(t), 0.0f, std::cos(t));
+      const Eigen::Vector3f orbit_cam_pos = orbit_pt + perp_vec * (orbit_dist * 2.5f);
+      cam_pos = cam_pos*orbit_smooth + orbit_cam_pos*(1 - orbit_smooth);
 
-    //Solve for the look direction
-    cam_look_x_smooth = cam_look_x*(1 - b) + start_look_x*b;
+      //Solve for the look direction
+      const float start_look_x = level_copy.start_look_x;
+      cam_look_x = std::atan2(cam_pos.x(), cam_pos.z());
+      ModPi(cam_look_x, start_look_x);
 
-    //Update look smoothing
-    cam_look_y = -0.3f;
-    cam_look_y_smooth = cam_look_y_smooth*orbit_smooth + cam_look_y*(1 - orbit_smooth);
+      //Solve for the look direction
+      cam_look_x_smooth = cam_look_x*(1 - b) + start_look_x*b;
 
-    //Update the camera rotation matrix
-    MakeCameraRotation();
+      //Update look smoothing
+      cam_look_y = -0.3f;
+      cam_look_y_smooth = cam_look_y_smooth*orbit_smooth + cam_look_y*(1 - orbit_smooth);
 
-    //Update the camera position
-    Eigen::Vector3f marble_cam_pos = marble_pos + cam_mat.block<3, 3>(0, 0) * Eigen::Vector3f(0.0f, 0.0f, marble_rad * cam_dist_smooth);
-    marble_cam_pos += Eigen::Vector3f(0.0f, marble_rad * cam_dist_smooth * 0.1f, 0.0f);
-    cam_pos_smooth = cam_pos*(1 - b) + marble_cam_pos*b;
-    cam_mat.block<3, 1>(0, 3) = cam_pos_smooth;
+      //Update the camera rotation matrix
+      MakeCameraRotation();
 
-    //Required for a smooth transition later on
-    cam_look_x = cam_look_x_smooth;
-    cam_look_y = cam_look_y_smooth;
+      //Update the camera position
+      Eigen::Vector3f marble_cam_pos = marble_pos + cam_mat.block<3, 3>(0, 0) * Eigen::Vector3f(0.0f, 0.0f, marble_rad * cam_dist_smooth);
+      marble_cam_pos += Eigen::Vector3f(0.0f, marble_rad * cam_dist_smooth * 0.1f, 0.0f);
+      cam_pos_smooth = cam_pos*(1 - b) + marble_cam_pos*b;
+      cam_mat.block<3, 1>(0, 3) = cam_pos_smooth;
+
+      //Required for a smooth transition later on
+      cam_look_x = cam_look_x_smooth;
+      cam_look_y = cam_look_y_smooth;
+
+      if (cam_mode != DEORBIT) {
+        break;
+      }
+    }
   }
 
   //When done deorbiting, transition to play

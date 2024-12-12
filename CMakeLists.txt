@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.8)
-project(MarbleMarcher VERSION "1.4.5")
+cmake_minimum_required(VERSION 3.10)
+project(MarbleMarcher VERSION "1.4.6")
 set(CMAKE_CXX_STANDARD 17)
 
 configure_file(src/config.h.in config.h)
@@ -143,7 +143,7 @@ elseif(UNIX)
 	set(CPACK_PACKAGE_VERSION "${MM_VERSION}")
 	set(CPACK_PACKAGE_VERSION_MAJOR "1")
 	set(CPACK_PACKAGE_VERSION_MINOR "4")
-	set(CPACK_PACKAGE_VERSION_PATCH "7")
+	set(CPACK_PACKAGE_VERSION_PATCH "6")
 
 	SET(CPACK_GENERATOR "DEB")
 	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "KK") #required
