@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.8)
-project(MarbleMarcher VERSION "1.4.3")
+cmake_minimum_required(VERSION 3.10)
+project(MarbleMarcher VERSION "1.4.6")
 set(CMAKE_CXX_STANDARD 17)
 
 configure_file(src/config.h.in config.h)
@@ -23,19 +23,19 @@ if (WIN32)
 
 	if(BIT EQUAL 32)
 	#32 bit compilation
-		set(SFML_DIR C:/Libraries/SFML-2.5.1/lib/cmake/SFML)
-		set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1/include)
+		set(SFML_DIR C:/Libraries/SFML/lib/cmake/SFML)
+		set(SFML_INCLUDE_DIR C:/Libraries/SFML/include)
 		set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar.lib)
 		set(GLEW_LIBRARIES ${GLEW_DIR}/lib/Release/Win32/glew32.lib)
 	else()
 	#64 bit compilation
-		set(SFML_DIR C:/Libraries/SFML-2.5.1_64/lib/cmake/SFML)
-		set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1_64/include)
+		set(SFML_DIR C:/Libraries/SFML_64/lib/cmake/SFML)
+		set(SFML_INCLUDE_DIR C:/Libraries/SFML_64/include)
 		set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar64.lib)
 		set(GLEW_LIBRARIES ${GLEW_DIR}/lib/Release/x64/glew32.lib)
 	endif()
 
-	find_package(SFML 2.5 COMPONENTS system window graphics audio REQUIRED)
+	find_package(SFML 3.0 COMPONENTS system window graphics audio REQUIRED)
 
 elseif(UNIX)	
 	set(SFML_STATIC_LIBRARIES FALSE)
@@ -50,6 +50,7 @@ endif()
 add_subdirectory(src)
 target_include_directories(MarbleMarcherSources PUBLIC
   src
+  /usr/include/
   ${EIGEN3_INCLUDE_DIR}
   ${GLEW_INCLUDE_DIRS}
   ${OpenGL_INCLUDE_DIRS}
@@ -143,7 +144,7 @@ elseif(UNIX)
 	set(CPACK_PACKAGE_VERSION "${MM_VERSION}")
 	set(CPACK_PACKAGE_VERSION_MAJOR "1")
 	set(CPACK_PACKAGE_VERSION_MINOR "4")
-	set(CPACK_PACKAGE_VERSION_PATCH "7")
+	set(CPACK_PACKAGE_VERSION_PATCH "6")
 
 	SET(CPACK_GENERATOR "DEB")
 	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "KK") #required

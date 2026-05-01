@@ -15,7 +15,7 @@ sf::Color default_hover_main_color = sf::Color(200, 128, 128, 128);
 sf::Color default_active_main_color = sf::Color(255, 128, 128, 255);
 float default_margin =2;
 sf::Vector2f default_size = sf::Vector2f(1920, 1080);
-sf::View default_view = sf::View(sf::FloatRect(0, 0, default_size.x, default_size.y));
+sf::View default_view = sf::View(sf::FloatRect(sf::Vector2f(0, 0), default_size));
 
 float animation_sharpness = 5.f;
 float action_dt = 0.3;
@@ -24,10 +24,10 @@ float action_dt = 0.3;
 sf::FloatRect overlap(sf::FloatRect a, sf::FloatRect b)
 {
 	sf::FloatRect c;
-	c.top = std::max(a.top, b.top);
-	c.left = std::max(a.left, b.left);
-	c.height = std::max(std::min(a.top + a.height, b.top + b.height) - c.top, 0.f);
-	c.width = std::max(std::min(a.left + a.width, b.left + b.width) - c.left, 0.f);
+	c.position.y = std::max(a.position.y, b.position.y);
+	c.position.x = std::max(a.position.x, b.position.x);
+	c.size.y = std::max(std::min(a.position.y + a.size.y, b.position.y + b.size.y) - c.position.y, 0.f);
+	c.size.x = std::max(std::min(a.position.x + a.size.x, b.position.x + b.size.x) - c.position.x, 0.f);
 	return c;
 }
 
@@ -79,7 +79,7 @@ Object& get_glob_obj(int id)
 void UpdateAspectRatio(float width, float heigth)
 {
 	sf::Vector2f size = sf::Vector2f(default_size.x * std::max(1.f, (width / heigth) * (default_size.y / default_size.x)), default_size.x * std::max(default_size.y / default_size.x, heigth / width));
-	default_view.reset(sf::FloatRect(sf::Vector2f(0, 0), size));
+	default_view = sf::View(sf::FloatRect(sf::Vector2f(0, 0), size));
 }
 
 int AddGlobalObject(Object & a)
@@ -161,7 +161,7 @@ void Add2DeleteQueue(int id)
 std::string key_name(sf::Keyboard::Key & key)
 {
 	//yeah, I dont like this code either
-#define ITEM(x) case sf::Keyboard::x : return #x;
+#define ITEM(x) case sf::Keyboard::Key::x : return #x;
 	switch (key)
 	{
 		ITEM(A); ITEM(B); ITEM(C);
@@ -177,7 +177,7 @@ std::string key_name(sf::Keyboard::Key & key)
 		ITEM(LAlt); ITEM(LSystem); ITEM(RControl); ITEM(RShift);
 		ITEM(RAlt); ITEM(RSystem); ITEM(Menu); ITEM(LBracket);
 		ITEM(RBracket); /*ITEM(Semicolon);*/ ITEM(Comma); ITEM(Period);
-		ITEM(Quote); ITEM(Slash); /*ITEM(Backslash);*/ ITEM(Tilde);
+		ITEM(Hyphen); ITEM(Slash); /*ITEM(Backslash);*/ ITEM(Grave);
 		ITEM(Equal);/* ITEM(Hyphen);*/ ITEM(Space); /*ITEM(Enter);*/
 		/*ITEM(Backspace); */ITEM(Tab); ITEM(PageUp); ITEM(PageDown);
 		ITEM(End); ITEM(Home); ITEM(Insert); ITEM(Delete);
@@ -348,18 +348,18 @@ void Object::Move(sf::Vector2f dx)
 	}
 }
 
-void Object::SetDefaultFunction(std::function<void(sf::RenderWindow * window, InputState&state)> fun)
+void Object::SetDefaultFunction(call_func fun)
 {
 	defaultfn.push_back(fun);
 }
 
-void Object::SetCallbackFunction(std::function<void(sf::RenderWindow*window, InputState&state)> fun, bool limit_repeat)
+void Object::SetCallbackFunction(call_func fun, bool limit_repeat)
 {
 	callback.push_back(fun);
 	limiter = limit_repeat;
 }
 
-void Object::SetHoverFunction(std::function<void(sf::RenderWindow * window, InputState&state)> fun)
+void Object::SetHoverFunction(call_func fun)
 {
 	hoverfn.push_back(fun);
 }
@@ -442,7 +442,7 @@ void Object::clone_states()
 void Object::Update(sf::RenderWindow * window, InputState& state)
 {
 	worldPos = window->mapPixelToCoords(sf::Vector2i(state.mouse_pos.x, state.mouse_pos.y));
-	obj= sf::FloatRect(curstate.position.x, curstate.position.y, curstate.size.x, curstate.size.y);
+	obj= sf::FloatRect(curstate.position, curstate.size);
 
 	window->setView(used_view);
 	state.mouse_speed = window->mapPixelToCoords(sf::Vector2i(state.mouse_pos.x, state.mouse_pos.y)) -
@@ -493,7 +493,7 @@ void Object::UpdateAction(sf::RenderWindow * window, InputState & state)
 	state.mouse_speed = window->mapPixelToCoords(sf::Vector2i(state.mouse_pos.x, state.mouse_pos.y)) -
 						window->mapPixelToCoords(sf::Vector2i(state.mouse_prev.x, state.mouse_prev.y));
 
-	curmode = DEFAULT;
+	curmode = Object::DEFAULT;
 	//if mouse is inside the object 
 	if (obj.contains(worldPos))
 	{
@@ -544,7 +544,7 @@ void Object::UpdateAction(sf::RenderWindow * window, InputState & state)
 }
 
 
-Object::Object() : callback(NULL), hoverfn(NULL), defaultfn(NULL), curmode(DEFAULT), action_time(0.2), obj_allign(LEFT), static_object(false), limiter(false)
+Object::Object() : callback({}), hoverfn({}), defaultfn({}), curmode(DEFAULT), action_time(0.2), obj_allign(LEFT), static_object(false), limiter(false)
 {
 	curstate.color_main = default_main_color;
 	activestate.color_main = default_active_main_color;
@@ -674,9 +674,9 @@ void Box::Draw(sf::RenderWindow * window, InputState& state)
 	sf::View gview = window->getView();
 	sf::FloatRect global_view = sf::FloatRect(gview.getCenter() - gview.getSize()*0.5f, gview.getSize());
 	sf::FloatRect this_view = overlap(global_view, sf::FloatRect(curstate.position, curstate.size));
-	boxView.reset(this_view);
+	boxView = sf::View(this_view);
 	sf::FloatRect global_viewport = gview.getViewport();
-	sf::FloatRect local_viewport = sf::FloatRect(curstate.position.x / view_size.x, curstate.position.y / view_size.y, curstate.size.x / view_size.x, curstate.size.y / view_size.y);
+	sf::FloatRect local_viewport = sf::FloatRect(sf::Vector2f(curstate.position.x / view_size.x, curstate.position.y / view_size.y), sf::Vector2f(curstate.size.x / view_size.x, curstate.size.y / view_size.y));
 	sf::FloatRect this_viewport = overlap(global_viewport, local_viewport);
 	boxView.setViewport(this_viewport);
 	
@@ -739,7 +739,7 @@ void Box::Draw(sf::RenderWindow * window, InputState& state)
 		sf::FloatRect obj_box(obj.get()->curstate.position, obj.get()->curstate.size);
 		sf::FloatRect seen_part = overlap(obj_box, this_view);
 		//if the object is seen in the view, then update it
-		if (seen_part.width > 0.f && seen_part.height > 0.f)
+		if (seen_part.size.x > 0.f && seen_part.size.y > 0.f)
 		{
 			obj.get()->used_view = boxView;
 			obj.get()->Update(window, state);
@@ -842,7 +842,7 @@ void Text::Draw(sf::RenderWindow * window, InputState& state)
 		text.get()->setOutlineThickness(curstate.border_thickness);
 		text.get()->setOutlineColor(ToColor(curstate.color_border));
 		window->draw(*text.get());
-		SetSize(text.get()->getLocalBounds().width, text.get()->getLocalBounds().height);
+		SetSize(text.get()->getLocalBounds().size.x, text.get()->getLocalBounds().size.y);
 	}
 }
 
@@ -912,7 +912,7 @@ void Window::CreateCallbacks()
 	//delete callback
 	this->SetMainDefaultFunction([parent = this](sf::RenderWindow * window, InputState & state)
 	{
-		if (state.key_press[sf::Keyboard::Escape] == true)
+		if (state.key_press[(int)sf::Keyboard::Key::Escape] == true)
 		{
 			Add2DeleteQueue(parent->id);
 			parent->action_time = action_dt;
@@ -1097,19 +1097,19 @@ void MenuBox::CreateCallbacks()
 	{
 		bool A = false;
 
-		if (state.keys[sf::Keyboard::Up])
+		if (state.keys[(int)sf::Keyboard::Key::Up])
 		{
 			parent->Cursor(-1);
 			A = 1;	
 		}
 
-		if (state.keys[sf::Keyboard::Down])
+		if (state.keys[(int)sf::Keyboard::Key::Down])
 		{
 			parent->Cursor(1);
 			A = 1;
 		}
 
-		if (state.keys[sf::Keyboard::Return])
+		if (state.keys[(int)sf::Keyboard::Key::Enter])
 		{
 			//run the callback function of the chosen object
 			A = parent->objects[0].get()->objects[parent->cursor_id].get()->RunCallback(window, state);
@@ -1119,12 +1119,12 @@ void MenuBox::CreateCallbacks()
 
 		A = false;
 
-		if (state.key_press[sf::Keyboard::Up])
+		if (state.key_press[(int)sf::Keyboard::Key::Up])
 		{
 			parent->action_time = action_dt / 4;
 		}
 
-		if (state.key_press[sf::Keyboard::Down])
+		if (state.key_press[(int)sf::Keyboard::Key::Down])
 		{
 			parent->action_time = action_dt / 4;
 		}
@@ -1190,7 +1190,7 @@ Image::Image(sf::Texture image, float w, float h, sf::Color color_hover)
 Image::Image(std::string image_path, float w, float h, sf::Color color_hover)
 {
 	sf::Texture image;
-	image.loadFromFile(image_path);
+	(void)image.loadFromFile(image_path);
 
 	SetSize((w == 0) ? image.getSize().x : w, (h == 0) ? image.getSize().y : h);
 	SetBackgroundColor(sf::Color::White);
@@ -1274,7 +1274,7 @@ void KeyMapper::CreateCallbacks()
 	{
 		if (parent->waiting)
 		{
-			if (state.key_press[sf::Keyboard::Escape])
+			if (state.key_press[(int)sf::Keyboard::Key::Escape])
 			{
 				parent->SetKeyString(); //exit
 			}
@@ -1284,11 +1284,11 @@ void KeyMapper::CreateCallbacks()
 				if (state.isKeyPressed)
 				{
 					//search for the pressed key
-					for (sf::Keyboard::Key i = sf::Keyboard::A; i < sf::Keyboard::KeyCount; i = sf::Keyboard::Key(i + 1))
+					for (sf::Keyboard::Key i = sf::Keyboard::Key::A; (int)i < sf::Keyboard::KeyCount; i = sf::Keyboard::Key((int)i + 1))
 					{
-						if (state.keys[i]) //found
+						if (state.keys[(int)i]) //found
 						{
-							*(parent->key_ptr) = i;
+							*(parent->key_ptr) = (int)i;
 							parent->SetKeyString();
 							break;
 						}
@@ -1301,7 +1301,7 @@ void KeyMapper::CreateCallbacks()
 				{
 					if (abs(state.axis_value[i]) > 0.5f  && state.axis_moved[i])
 					{
-						*(parent->key_ptr) = i;
+						*(parent->key_ptr) = (int)i;
 						parent->SetKeyString();
 						break;
 					}
@@ -1313,7 +1313,7 @@ void KeyMapper::CreateCallbacks()
 				{
 					if (state.button_pressed[i])
 					{
-						*(parent->key_ptr) = i;
+						*(parent->key_ptr) = (int)i;
 						parent->SetKeyString();
 						break;
 					}

@@ -53,11 +53,17 @@ public:
   TwBar *stats, *settings, *fractal_editor, *level_editor, *flaunch, *cheats;
   bool TWBAR_ENABLED;
 
-  sf::Sound sound_hover;
-  sf::Sound sound_click;
-  sf::Sound sound_count;
-  sf::Sound sound_screenshot;
-  sf::Sound sound_go;
+  sf::SoundBuffer buff_hover;
+  sf::SoundBuffer buff_click;
+  sf::SoundBuffer buff_count;
+  sf::SoundBuffer buff_screenshot;
+  sf::SoundBuffer buff_go;
+
+  sf::Sound sound_hover = sf::Sound(buff_hover);
+  sf::Sound sound_click = sf::Sound(buff_click);
+  sf::Sound sound_count = sf::Sound(buff_count);
+  sf::Sound sound_screenshot = sf::Sound(buff_screenshot);
+  sf::Sound sound_go = sf::Sound(buff_go);
 
   Overlays(Scene* scene);
 
@@ -100,17 +106,10 @@ protected:
   void UpdateHover(Texts from, Texts to, float mouse_x, float mouse_y);
 
 private:
-  sf::Text all_text[NUM_TEXTS];
   bool all_hover[NUM_TEXTS];
 
-  sf::SoundBuffer buff_hover;
-  sf::SoundBuffer buff_click;
-  sf::SoundBuffer buff_count;
-  sf::SoundBuffer buff_screenshot;
-  sf::SoundBuffer buff_go;
-
   sf::Texture arrow_tex;
-  sf::Sprite arrow_spr;
+  sf::Sprite arrow_spr = sf::Sprite(arrow_tex);
 
   float draw_scale;
   bool top_level;
@@ -118,5 +117,5 @@ private:
 
   const sf::Font* font;
   const sf::Font* font_mono;
-
+  std::vector<sf::Text> all_text;
 };

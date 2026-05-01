@@ -158,7 +158,7 @@ vec3 marble_render(in vec4 pos, in vec4 dir, in vec4 norm, float fov, vec3 GI)
 }
 
 
-vec3 shading(in vec4 pos, in vec4 dir, float fov, layout (rgba32f) image2D  illuminationDirect, vec3 RR)
+vec3 shading(in vec4 pos, in vec4 dir, float fov, vec3 direct)
 {
 	if(pos.w < max(2*fovray*dir.w, MIN_DIST))
 	{
@@ -167,8 +167,6 @@ vec3 shading(in vec4 pos, in vec4 dir, float fov, layout (rgba32f) image2D  illu
 		vec4 norm = calcNormal(pos.xyz, max(MIN_DIST, error)); 
 		norm.xyz = normalize(norm.xyz);
 		
-		vec3 direct = bilinear_surface(illuminationDirect, dir.w, RR.z, RR.xy).xyz;
-	
 		if(norm.w < -error)
 		{
 			return COL(pos.xyz).xyz;

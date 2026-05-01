@@ -591,8 +591,6 @@ void All_Levels::LoadLevelsFromFolder(std::string folder)
 	{
 		LoadLevelFromFile(files[i]);
 	}
-
-	LoadScoresFromFile(folder + "/scores.bin");
 }
 
 void All_Levels::LoadMusicFromFolder(std::string folder)
@@ -601,8 +599,8 @@ void All_Levels::LoadMusicFromFolder(std::string folder)
 	for (int i = 0; i < files.size(); i++)
 	{
 		music_map.insert(std::make_pair(files[i].filename().string(), new sf::Music()));
-		music_map[files[i].filename().string()]->openFromFile(files[i].string());
-		music_map[files[i].filename().string()]->setLoop(true);
+		(void)music_map[files[i].filename().string()]->openFromFile(files[i].string());
+		music_map[files[i].filename().string()]->setLooping(true);
 		music_names.push_back(files[i].filename().string());
 	}
 }
@@ -652,6 +650,7 @@ sf::Music* All_Levels::GetLevelMusic(int ID)
 	{
 		return music_map[level_map[ID].use_music];
 	}
+	return nullptr;
 }
 
 sf::Music* All_Levels::GetMusic(std::string music)
@@ -660,10 +659,24 @@ sf::Music* All_Levels::GetMusic(std::string music)
 	{
 		return music_map[music];
 	}
+	return nullptr;
+}
+
+void All_Levels::RecreateMissing()
+{
+	for (int i = 0; i < 24; i++)
+	{
+		if (!LevelExists(i)) //if original level doesn't exist
+		{
+			all_levels[i].desc = "Official Level by Codeparade";
+			all_levels[i].SaveToFile(std::string(level_folder) + "/" + ConvertSpaces2_(all_levels[i].txt) + ".lvl", i, (i < 24) ? (i + 1) : -1);
+		}
+	}
 }
 
 void All_Levels::ReloadLevels()
 {
+	RecreateMissing();
 	level_map.clear();
 	level_id_map.clear();
 	level_names.clear();
@@ -719,9 +732,9 @@ float All_Levels::GetBest(int lvl)
 }
 
 
-void All_Levels::SaveScoresToFile()
+void All_Levels::SaveScoresToFile(const std::string& file)
 {
-	std::ofstream score_file(lvl_folder + "/scores.bin", ios_base::trunc | ios_base::binary);
+	std::ofstream score_file(file, ios_base::trunc | ios_base::binary);
 
 	for (auto &score : score_map)
 	{ 
@@ -758,6 +771,7 @@ void All_Levels::DeleteLevel(int lvl)
 {
 	std::string filename = lvl_folder + "/" + ConvertSpaces2_(level_names[lvl]) + ".lvl";
 	fs::remove(filename);
+	level_map.erase(lvl);
 	ReloadLevels();
 }
 

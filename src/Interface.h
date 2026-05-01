@@ -131,9 +131,9 @@ public:
 	void SetScroll(float x);
 	void Move(sf::Vector2f dx);
 
-	void SetDefaultFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
-	void SetCallbackFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun, bool limit_repeat = true);
-	void SetHoverFunction(std::function<void(sf::RenderWindow * window, InputState & state)> fun);
+	void SetDefaultFunction(call_func fun);
+	void SetCallbackFunction(call_func fun, bool limit_repeat = true);
+	void SetHoverFunction(call_func fun);
 	
 	void SetMainDefaultFunction(call_func fun);
 	void SetMainCallbackFunction(call_func fun, bool limit_repeat = true);
@@ -357,7 +357,7 @@ public:
 	};
 
 	template<class T>
-	KeyMapper(T label, T act_label, int* key, float w, float h, MapperType type, sf::Color color_active = sf::Color::Blue, sf::Color color_hover = default_hover_main_color, sf::Color color_main = default_main_color);
+	KeyMapper(T label, T act_label, sf::Keyboard::Key* key, float w, float h, MapperType type, sf::Color color_active = sf::Color::Blue, sf::Color color_hover = default_hover_main_color, sf::Color color_main = default_main_color);
 
 	KeyMapper(KeyMapper& A);
 	KeyMapper(KeyMapper&& A);
@@ -377,7 +377,7 @@ public:
 };
 
 template<class T>
-inline KeyMapper::KeyMapper(T label, T act_label, int * key, float w, float h, MapperType type, sf::Color color_active, sf::Color color_hover, sf::Color color_main): waiting(false), this_type(type), wait_text(act_label)
+inline KeyMapper::KeyMapper(T label, T act_label, sf::Keyboard::Key * key, float w, float h, MapperType type, sf::Color color_active, sf::Color color_hover, sf::Color color_main): waiting(false), this_type(type), wait_text(act_label)
 {
 	SetSize(w, h);
 	SetBackgroundColor(color_main);
@@ -389,7 +389,7 @@ inline KeyMapper::KeyMapper(T label, T act_label, int * key, float w, float h, M
 	hoverstate.color_main = color_hover;
 	this->AddObject(&LeftBox,Allign::LEFT);
 	this->AddObject(&RightBox, Allign::RIGHT);
-	key_ptr = key;
+	key_ptr = (int*)key;
 	SetKeyString();
 }
 
@@ -412,8 +412,8 @@ inline Window::Window(float x, float y, float dx, float dy, sf::Color color_main
 	Bar.SetMargin(0);
 	CloseBx.hoverstate.color_main = sf::Color(255, 0, 0, 255);
 
-	sf::Image close; close.loadFromFile(close_png);
-	sf::Texture closetxt; closetxt.loadFromImage(close);
+	sf::Image close; (void)close.loadFromFile(close_png);
+	sf::Texture closetxt; (void)closetxt.loadFromImage(close);
 	closetxt.setSmooth(true);
 	CloseBx.SetBackground(closetxt);
 
@@ -446,7 +446,7 @@ inline Button::Button(T text, float w, float h, std::function<void(sf::RenderWin
 template<class T>
 inline Text::Text(T str, sf::Font & f, float size, sf::Color col)
 {
-	text.reset(new sf::Text(str, f, size));
+	text.reset(new sf::Text(f, str, size));
 	defaultstate.font_size = size;
 	defaultstate.color_main = col;
 	SetBorderColor(sf::Color::Black);

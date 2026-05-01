@@ -275,6 +275,7 @@ int ExprParser::getOperatorPrecedenceLevel(int op)
 		return 5;
 	else if (op == LBRACK)
 		return 6;
+	return !0; // impossible case
 }
 
 //get operator id from the token
@@ -418,7 +419,7 @@ void ExprParser::Parse(std::string expr)
 float ExprParser::Evaluate(std::map<std::string, float> variable_map)
 {	
 	variable_map["pi"] = 3.141592653589f;
-	variable_map["e"] == 2.718281828459f;	
+	variable_map["e"]  = 2.718281828459f;	
 
 	//code written in such a way to be compatible with OpenCL
 	float varstack[64];

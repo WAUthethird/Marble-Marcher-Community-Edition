@@ -33,8 +33,8 @@ void main() {
 	float td = dot(dir.xyz, sph.xyz - pos.xyz);//traveled distance
 	pos = sph;
 	dir.w += td; 
-	
-	vec3 color = shading(pos, dir, fovray, illuminationDirect, vec3(vec2(global_pos)*res_ratio, 2.*td*fovray/res_ratio));
+	vec3 direct = bilinear_surface(illuminationDirect, dir.w, 2.*td*fovray/res_ratio, vec2(global_pos)*res_ratio).xyz;
+	vec3 color = shading(pos, dir, fovray, direct);
 
 	if(!isnan(color.x) && !isnan(color.y) && !isnan(color.z))
 	{

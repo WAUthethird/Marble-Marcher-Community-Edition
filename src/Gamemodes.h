@@ -1,5 +1,9 @@
 #pragma once
 
+/*#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb/stb_image_write.h>*/
+
 #include<config.h>
 #include<Overlays.h>
 #include<Scene.h>
@@ -74,9 +78,11 @@ int DirExists(const char *path);
 
 void FirstStart(Overlays* overlays);
 
-void SetPointers(sf::RenderWindow * w, Scene * scene, Overlays * overlays, Renderer * rd, sf::Texture * main, sf::Texture * screensht);
+void SetPointers(sf::RenderWindow * w, Scene * scene, Overlays * overlays, Renderer * rd, GLuint * main, GLuint * screensht, GLuint *fb);
 sf::Vector2i getResolution(int i);
 void TakeScreenshot();
+
+void UpdateUniforms();
 
 void SetCameraFocus(float f);
 

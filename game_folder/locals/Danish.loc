@@ -1,0 +1,196 @@
+#Danish
+Dansk
+#font_1
+Orbitron-Bold.ttf
+#font_2
+Inconsolata-Bold.ttf
+#Marble_Marcher
+Marble
+Marcher
+#Play
+Spil
+#Levels
+Baner
+#Controls
+Styring
+#Settings
+Indstillinger
+#Exit
+Afslut
+#OK
+OK
+#Yes
+Ja
+#No
+Nej
+#Best_time
+Bedste tid
+#Edit
+Rediger
+#Remove
+Fjern
+#You_sure
+Er du sikker?
+#Graphics
+Grafik
+#MM_about_short
+Marble Marcher: Community Edition
+#MM_about_long
+Marble Marcher: Community Edition.
+Originale spil lavet af CodeParade. 
+Musik lavet af PettyTheft.
+
+Community Edition-udviklingshold:
+Michael Moroz(michael0884)
+WAUthethird
+Bryce AS202313
+Selicre
+
+Oversættere:
+KaMa2 - polsk
+Michael Moroz - engelsk, ukrainsk og russisk
+#Window
+Vindue
+#Button
+Knap
+#Screen_Saver
+Pauseskærm
+#Back2Main
+Tilbage til Hovedmenu
+#CreateNewLvl
+Skab en ny bane
+#About
+Original lavet af CodeParade, Community Edition
+Musik lavet af PettyTheft
+#DetailControls
+Rul       WASD eller Piletaster
+Kamera    Mus
+Zoom      Musehjul
+Genstart  R eller Højreklik
+Pause     Esc
+#Back
+Tilbage
+#Paused
+Sat på Pause
+#Continue
+Fortsæt
+#Restart
+Genstart
+#Quit
+Afslut
+#Music
+Musik
+#On
+Til
+#Off
+Fra
+#High
+Høj
+#Medium
+Mellem
+#Low
+Lav
+#CongratsEnd
+Tillykke, du klarede alle banerne!
+
+
+
+Som en belønning er snydekoder blevet oplåst!
+Aktiver dem med F1-tasten, mens du spiller.
+Tak fordi du spillede!
+#CongratsMid
+Du har gjort det godt indtil videre.
+
+
+
+Men dette er kun begyndelsen.
+Hvis du har brug for en hurtig pause, så tag den nu.
+De udfordrende baner kommer nu...
+#CheatsON
+Snydekoder Aktiveret
+#CheatsInfo
+[ C ] Skift farve
+[ F ] Frit kamera
+[ G ] Tyngdekraft-styrke
+[ H ] Slå hyperhastighed til eller fra
+[ I ] Ignorer mål
+[ M ] Slå bevægelse fra
+[ P ] Slå planet til eller fra
+[ Z ] Tilpas zoom
+[ 1 - 9 ] Scroll fraktal-parameter
+#Statistics
+Statistik
+#Marble_velocity
+Kuglehastighed
+#Marble_position
+Kugleplacering
+#Settings
+Indstillinger
+#Sun_direction
+Solens retning
+#Shadows
+Skygger
+#Reflection_Refraction
+Reflektion og Refraktion
+#Glass
+Glas
+#Metal
+Metal
+#Marble_type
+Kugletype
+#Mouse_sensitivity
+Musefølsomhed
+#Wheel_sensitivity
+Hjulfølsomhed
+#Music_volume
+Musik-lydstyrke
+#Target_FPS
+FPS-mål
+#Camera_size
+Kamerastørrelse
+#Camera_speed_free
+Kamerahastighed (Fri tilstand)
+#Level_Name
+Navn
+#Level_Description
+Beskrivelse
+#Save
+Gem Bane
+#Set_Marble
+Placer Kugle
+#Set_Marble_help
+Klik på fraktalen for at sætte
+#Set_Flag
+Placer Flag
+#Flag_Position
+Flagplacering
+#Marble_Position
+Kugleplacering
+#Marble_scale
+Kugleradius (Skalering)
+#Level_music
+Musik
+#Play_Music
+Spil/Stop valgte musik
+#None
+Ingen
+#Fractal_Iterations
+Iterationer
+#Fractal_Scale
+Skalering
+#Fractal_Angle1
+Vinkel 1
+#Fractal_Angle2
+Vinkel 2
+#Fractal_Shift
+Flytning
+#Fractal_Color
+Farve
+#Codeparade_descr
+Skaberen af det originale spil.
+#Michael_descr
+Hovedudvikleren af Marble Marcher: Community Edition.
+#WAU_descr
+Styrer det primære Github-repository af MMCE. Overførte også MMCE til Linux. 
+#Bryce_descr
+Overførte MMCE til MacOS.

@@ -18,7 +18,6 @@
 #include <string>
 
 static const int num_level_music = 4;
-static const char settings_bin[] = "assets/settings.bin";
 static const char main_config[] = "shaders/compute/MAIN.cfg";
 static const char textures_folder[] = "shaders/textures/";
 static const char Orbitron_Bold_ttf[] = "assets/Orbitron-Bold.ttf";

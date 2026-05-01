@@ -23,6 +23,13 @@
 #include <AntTweakBar.h>
 namespace fs = std::filesystem;
 
+#if defined(unix) || defined(__unix__) || defined(__unix)
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#endif
+
 const int num_of_keys = 20;
 enum KEYS {
 	UP, DOWN, LEFT, RIGHT, VIEWUP, VIEWDOWN, VIEWLEFT, VIEWRIGHT, 
@@ -75,7 +82,7 @@ struct MainSettings
 	float auto_exposure_target;
 	bool touch_mode;
 
-	std::array<int, num_of_keys> control_mapping;
+	std::array<sf::Keyboard::Key, num_of_keys> control_mapping;
 	
 	//cheeets
 	bool speed_regulation;
@@ -92,19 +99,18 @@ struct MainSettings
 };
 
 extern TwEnumVal resolutions[];
-static const std::array<int, num_of_keys> default_control_mapping =
-{ sf::Keyboard::W, sf::Keyboard::S, sf::Keyboard::A, sf::Keyboard::D,
-  sf::Keyboard::Up, sf::Keyboard::Down, sf::Keyboard::Left, sf::Keyboard::Right,
-  sf::Keyboard::P, sf::Keyboard::R, sf::Keyboard::F5, sf::Keyboard::Num1, sf::Keyboard::Num2,
-	1, 2, 3, 4, 1, 2, 3};
+static const std::array<sf::Keyboard::Key, num_of_keys> default_control_mapping =
+{ sf::Keyboard::Key::W, sf::Keyboard::Key::S, sf::Keyboard::Key::A, sf::Keyboard::Key::D,
+  sf::Keyboard::Key::Up, sf::Keyboard::Key::Down, sf::Keyboard::Key::Left, sf::Keyboard::Key::Right,
+  sf::Keyboard::Key::P, sf::Keyboard::Key::R, sf::Keyboard::Key::F5, sf::Keyboard::Key::Num1, sf::Keyboard::Key::Num2,
+	sf::Keyboard::Key::Unknown, sf::Keyboard::Key::Unknown, sf::Keyboard::Key::Unknown, sf::Keyboard::Key::Unknown, sf::Keyboard::Key::Unknown, sf::Keyboard::Key::Unknown, sf::Keyboard::Key::Unknown};
 //an incomprehensible wall of default parameters 
 static const MainSettings default_settings = 
 { 
-	6, 10, 6, 3, 5, 0, true, true, true, 0.08, 9, 2.2, 70, 20, 20, 0.005, 0.2, false,
+	6, 10, 6, 3, 5, 0, true, true, true, 0.08, 10, 2.2, 70, 20, 20, 0.005, 0.2, false,
 	0.005, 0.45, 0, false, true, 0, true, 0.5, 0.75, 2.2, false, -0.02, 0.2, 0.55, 
 	false, default_control_mapping, true, 60, true, 1.f, 0.1f, 22.f, 4.5f, 30, false, true
 };
-
 
 class AllSettings
 {
@@ -131,6 +137,11 @@ public:
 		return false;
 	}
 
+	void RestoreDefaults()
+	{
+		stg = default_settings;
+	}
+
 	bool LoadFromFile(std::string settings_file)
 	{
 		filename = settings_file;
@@ -153,6 +164,7 @@ public:
 		cfg_file.read(reinterpret_cast<char *>(&stg), sizeof(MainSettings));
 
 		cfg_file.close();
+		return true;
 	}
 
 	void SaveToFile(std::string settings_file)
@@ -162,6 +174,24 @@ public:
 		cfg_file.write(reinterpret_cast<char *>(&stg), sizeof(MainSettings));
 
 		cfg_file.close();
+	}
+
+	//Returns relative path or if on unix, returns config directory
+	std::string GetConfigPath(){
+		#if defined(__APPLE__)
+		return "assets";
+		#elif defined(unix) || defined(__unix__) || defined(__unix)
+			char* userdir;
+			if ((userdir = getenv("HOME")) == NULL) {
+				userdir = getpwuid(getuid())->pw_dir;
+			}
+			std::string path = std::string(userdir) + "/.config/marblemarcher";
+			mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+			return path;
+			delete userdir;
+		#else
+		return "assets";
+		#endif
 	}
 
 	MainSettings stg;

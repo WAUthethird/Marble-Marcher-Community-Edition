@@ -46,6 +46,17 @@ shared vec4 de_sph[group_size][group_size];
 
 #define blur 0.05
 
+vec4 interp_bicubic(vec2 coord)
+{
+	ivec2 i = ivec2(coord);
+	vec2 d = coord - floor(coord);
+	vec4 p0 = cubic(val(color_HDR0, i, -1,-1), val(color_HDR0, i, 0,-1), val(color_HDR0, i, 1,-1), val(color_HDR0, i, 2,-1), d.x);
+	vec4 p1 = cubic(val(color_HDR0, i, -1, 0), val(color_HDR0, i, 0, 0), val(color_HDR0, i, 1, 0), val(color_HDR0, i, 2, 0), d.x);
+	vec4 p2 = cubic(val(color_HDR0, i, -1, 1), val(color_HDR0, i, 0, 1), val(color_HDR0, i, 1, 1), val(color_HDR0, i, 2, 1), d.x);
+	vec4 p3 = cubic(val(color_HDR0, i, -1, 2), val(color_HDR0, i, 0, 2), val(color_HDR0, i, 1, 2), val(color_HDR0, i, 2, 2), d.x);
+	return abs(cubic(p0, p1, p2, p3, d.y));
+}
+
 void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);
@@ -64,7 +75,7 @@ void main() {
 	
     //getting the previous frame pixel and sampling it bicubically 
 	vec2 lastCoord = reproject(pos.xyz + td*dir.xyz, vec2(global_pos)/img_size);
-    vec4 lastColor = interp_bicubic(color_HDR0, lastCoord);
+    vec4 lastColor = interp_bicubic(lastCoord);
 	
 	vec3 antialiased = vec3(0.);
 	antialiased = lastColor.xyz;

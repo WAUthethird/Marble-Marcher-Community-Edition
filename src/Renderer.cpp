@@ -1,7 +1,4 @@
 #include "Renderer.h"
-#include "Renderer.h"
-#include "Renderer.h"
-
 
 Renderer::Renderer(int w, int h, std::string config_file)
 {
@@ -231,9 +228,9 @@ void Renderer::ReInitialize(int w, int h)
 }
 
 
-void Renderer::SetOutputTexture(sf::Texture & tex)
+void Renderer::SetOutputTexture(GLuint tex)
 {
-	shader_textures[shader_textures.size()-1][0] = tex.getNativeHandle();
+	shader_textures[shader_textures.size()-1][0] = tex;
 }
 
 void Renderer::LoadShader(std::string shader_file)
@@ -257,7 +254,7 @@ void Renderer::LoadExternalTextures(std::string texture_folder)
 	for (auto &path : images)
 	{
 		sf::Texture textr; 
-		textr.loadFromFile(path.string());
+		(void)textr.loadFromFile(path.string());
 		input_textures.push_back(textr);
 	}
 }

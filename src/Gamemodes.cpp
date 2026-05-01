@@ -21,10 +21,10 @@ Scene *scene_ptr;
 Overlays *overlays_ptr;
 Renderer *renderer_ptr;
 sf::RenderWindow *window;
-sf::Texture *main_txt;
-sf::Texture *screenshot_txt;
+GLuint *main_txt, *screenshot_txt;
+GLuint *framebuffer;
 
-void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, sf::Texture *main, sf::Texture *screensht)
+void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, GLuint *main, GLuint *screensht, GLuint *fb)
 {
 	window = w;
 	scene_ptr = scene;
@@ -32,8 +32,8 @@ void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer
 	renderer_ptr = rd;
 	main_txt = main;
 	screenshot_txt = screensht;
+	framebuffer = fb;
 }
-
 void OpenMainMenu(Scene * scene, Overlays * overlays)
 {
 	SetCameraFocus(4.5);
@@ -189,7 +189,7 @@ void OpenCredits(Scene * scene, Overlays * overlays)
 	//add a default callback
 	creditslist.SetDefaultFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
-		if (state.keys[sf::Keyboard::Escape])
+		if (state.keys[(int)sf::Keyboard::Key::Escape])
 		{
 			OpenMainMenu(scene, overlays);
 		}
@@ -295,7 +295,7 @@ void OpenControlMenu(Scene * scene, Overlays * overlays)
 	//add a default callback
 	controls.SetDefaultFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
-		if (state.keys[sf::Keyboard::Escape])
+		if (state.keys[(int)sf::Keyboard::Key::Escape])
 		{
 			OpenMainMenu(scene, overlays);
 		}
@@ -423,9 +423,7 @@ void OpenPauseMenu(Scene * scene, Overlays * overlays)
 	rstbtn.hoverstate.color_main = sf::Color(200, 40, 0, 255);
 	rstbtn.SetCallbackFunction([scene, overlays](sf::RenderWindow * window, InputState & state)
 	{
-		RemoveAllObjects();
-		game_mode = PLAYING;
-		LockMouse(*window);
+		ResumeGame(*window);
 		scene->ResetLevel();
 		scene->SetExposure(1.0f);
 		overlays->sound_click.play();
@@ -512,7 +510,7 @@ void PauseGame(sf::RenderWindow& window, Overlays * overlays, Scene * scene) {
 
 void OpenScreenSaver(Scene * scene, Overlays * overlays)
 {
-	SetCameraFocus(6.);
+	SetCameraFocus(8.);
 	RemoveAllObjects();
 	game_mode = SCREEN_SAVER;
 	scene->SetMode(Scene::SCREEN_SAVER);
@@ -598,12 +596,12 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 	Newlvl.AddObject(&newlvl, Object::Allign::CENTER);
 	levels.AddObject(&Newlvl, Object::Allign::LEFT);
 	
-	sf::Image edit; edit.loadFromFile(edit_png);
-	sf::Texture edittxt; edittxt.loadFromImage(edit);
+	sf::Image edit; (void)edit.loadFromFile(edit_png);
+	sf::Texture edittxt; (void)edittxt.loadFromImage(edit);
 	edittxt.setSmooth(true);
 
-	sf::Image remove; remove.loadFromFile(delete_png);
-	sf::Texture removetxt; removetxt.loadFromImage(remove);
+	sf::Image remove; (void)remove.loadFromFile(delete_png);
+	sf::Texture removetxt; (void)removetxt.loadFromImage(remove);
 	removetxt.setSmooth(true);
 
 	for (int i = 0; i < scene->levels.GetLevelNum(); i++)
@@ -874,7 +872,7 @@ void FirstStart(Overlays* overlays)
 	RemoveAllObjects();
 
 	sf::VideoMode fs_size = sf::VideoMode::getDesktopMode();
-	int barPos[2] = { (fs_size.width - 600)/2 , (fs_size.height - 100.f - 200) / 2 };
+	unsigned int barPos[2] = { (fs_size.size.x - 600)/2 , (fs_size.size.y - 300) / 2 };
 	TwSetParam(overlays_ptr->flaunch, NULL, "position", TW_PARAM_INT32, 2, barPos); 
 
 	sf::Vector2f wsize = default_size;
@@ -940,6 +938,8 @@ sf::Vector2i getResolution(int i)
 		return sf::Vector2i(10240, 4320);
 	case 14:
 		return sf::Vector2i(240, 140);
+	default:
+		return sf::Vector2i(1280, 720); //Good default resolution
 	}
 }
 
@@ -957,17 +957,46 @@ void TakeScreenshot()
 	renderer_ptr->SetOutputTexture(*screenshot_txt);
 
 	renderer_ptr->camera.SetMotionBlur(0);
+/*
+	std::vector<char> buffer(screenshot_resolution.x * screenshot_resolution.y * 4);
+	std::string filename = (std::string)"screenshots/screenshot" + (std::string)num2str(time(NULL)) + (std::string)".jpg";
 	
 	//a few rendering steps to converge the TXAA
 	for(int i = 0; i < SETTINGS.stg.screenshot_samples; i++) 	renderer_ptr->Render();
 	window -> resetGLStates();
-	screenshot_txt->copyToImage().saveToFile((std::string)"screenshots/screenshot" + (std::string)num2str(time(NULL)) + ".jpg");
 
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA8, GL_UNSIGNED_BYTE, buffer.data());
+
+	stbi_flip_vertically_on_write(true);
+	stbi_write_jpg(filename.c_str(), screenshot_resolution.x, screenshot_resolution.y, 3, buffer.data(), 100);
+*/
 	scene_ptr->SetResolution(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->ReInitialize(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->SetOutputTexture(*main_txt);
 	overlays_ptr->sound_screenshot.play();
 	screenshot_clock.restart();
+}
+
+
+void UpdateUniforms()
+{
+	renderer_ptr->camera.bloomintensity = SETTINGS.stg.bloom_intensity;
+	renderer_ptr->camera.bloomradius = SETTINGS.stg.bloom_radius;
+	renderer_ptr->camera.auto_exposure_speed = SETTINGS.stg.auto_exposure_speed;
+	renderer_ptr->camera.auto_exposure_target = SETTINGS.stg.auto_exposure_target;
+	renderer_ptr->camera.SetMotionBlur(SETTINGS.stg.motion_blur);
+	renderer_ptr->camera.SetFOV(SETTINGS.stg.FOV);
+	renderer_ptr->camera.cross_eye = SETTINGS.stg.cross_eye;
+	renderer_ptr->camera.eye_separation = SETTINGS.stg.eye_separation;
+	renderer_ptr->camera.SetBokehRadius(SETTINGS.stg.DOF_max);
+
+	scene_ptr->Refl_Refr_Enabled = SETTINGS.stg.refl_refr;
+	scene_ptr->Shadows_Enabled = SETTINGS.stg.shadows;
+	scene_ptr->Fog_Enabled = SETTINGS.stg.fog;
+	scene_ptr->gamma_camera = SETTINGS.stg.gamma_camera;
+	scene_ptr->gamma_material = SETTINGS.stg.gamma_material;
+	scene_ptr->gamma_sky = SETTINGS.stg.gamma_sky;
 }
 
 void InitializeRendering(std::string config)
@@ -981,28 +1010,19 @@ void InitializeRendering(std::string config)
 	scene_ptr->SetResolution(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->Initialize(rendering_resolution.x, rendering_resolution.y, renderer_ptr->GetConfigFolder() + "/" + config);
 	
-	renderer_ptr->camera.bloomintensity = SETTINGS.stg.bloom_intensity;
-	renderer_ptr->camera.bloomradius = SETTINGS.stg.bloom_radius;
-	renderer_ptr->camera.auto_exposure_speed = SETTINGS.stg.auto_exposure_speed;
-	renderer_ptr->camera.auto_exposure_target = SETTINGS.stg.auto_exposure_target;
-	renderer_ptr->camera.SetMotionBlur(SETTINGS.stg.motion_blur);
-	renderer_ptr->camera.SetFOV(SETTINGS.stg.FOV);
-	renderer_ptr->camera.cross_eye = SETTINGS.stg.cross_eye;
-	renderer_ptr->camera.eye_separation = SETTINGS.stg.eye_separation;
-	renderer_ptr->camera.SetExposure(SETTINGS.stg.exposure);
-	renderer_ptr->camera.SetBokehRadius(SETTINGS.stg.DOF_max);
+	UpdateUniforms();
 	renderer_ptr->camera.SetFocus(SETTINGS.stg.DOF_focus);
+	renderer_ptr->camera.SetExposure(SETTINGS.stg.exposure);
+	
+	glDeleteTextures(1, main_txt);
+	glCreateTextures(GL_TEXTURE_2D, 1, main_txt);
+	glTextureStorage2D(*main_txt, 1, GL_RGBA8, rendering_resolution.x, rendering_resolution.y);
 
-	scene_ptr->Refl_Refr_Enabled = SETTINGS.stg.refl_refr;
-	scene_ptr->Shadows_Enabled = SETTINGS.stg.shadows;
-	scene_ptr->Fog_Enabled = SETTINGS.stg.fog;
-	scene_ptr->gamma_camera = SETTINGS.stg.gamma_camera;
-	scene_ptr->gamma_material = SETTINGS.stg.gamma_material;
-	scene_ptr->gamma_sky = SETTINGS.stg.gamma_sky;
+	glDeleteTextures(1, screenshot_txt);
+	glCreateTextures(GL_TEXTURE_2D, 1, screenshot_txt);
+	glTextureStorage2D(*main_txt, 1, GL_RGBA8, screenshot_resolution.x, screenshot_resolution.y);
 
-	main_txt->create(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->SetOutputTexture(*main_txt);
-	screenshot_txt->create(screenshot_resolution.x, screenshot_resolution.y);
 }
 
 void SetCameraFocus(float f)
@@ -1066,7 +1086,6 @@ void TW_CALL PlayThisLevel(void *data)
 }
 
 
-
 void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const std::string& sourceLibraryString)
 {
 	// Copy the content of souceString handled by the AntTweakBar library to destinationClientString handled by your application
@@ -1082,15 +1101,15 @@ void TW_CALL ApplySettings(void *data)
 		fullscreen_current = SETTINGS.stg.fullscreen;
 
 		sf::VideoMode screen_size;
-		sf::Uint32 window_style;
+		sf::State window_state;
 		bool fullscreen = SETTINGS.stg.fullscreen;
 		if (fullscreen) {
 			screen_size = sf::VideoMode::getDesktopMode();
-			window_style = sf::Style::Fullscreen;
+			window_state = sf::State::Fullscreen;
 		}
 		else {
 			screen_size = sf::VideoMode::getDesktopMode();
-			window_style = sf::Style::Default;
+			window_state = sf::State::Windowed;
 		}
 
 		//GL settings
@@ -1098,7 +1117,7 @@ void TW_CALL ApplySettings(void *data)
 		settings.majorVersion = 4;
 		settings.minorVersion = 3;
 
-		window->create(screen_size, "Marble Marcher: Community Edition", window_style, settings);
+		window->create(screen_size, "Marble Marcher: Community Edition", window_state, settings);
 		window->setVerticalSyncEnabled(SETTINGS.stg.VSYNC);
 		window->setKeyRepeatEnabled(false);
 		
@@ -1107,13 +1126,18 @@ void TW_CALL ApplySettings(void *data)
 		if (!fullscreen)
 		{
 			sf::VideoMode fs_size = sf::VideoMode::getDesktopMode();
-			window->setSize(sf::Vector2u(fs_size.width, fs_size.height - 100.f));
+			window->setSize(sf::Vector2u(fs_size.size.x, fs_size.size.y - 100.f));
 			window->setPosition(sf::Vector2i(0, 0));
 		}
 
 		SETTINGS.first_start = false;
 
 		overlays_ptr->SetAntTweakBar(window->getSize().x, window->getSize().y);
+
+		//GL framebuffer and textures
+		glGenFramebuffers(1, framebuffer);
+		glGenTextures(1, main_txt);
+		glGenTextures(1, screenshot_txt);
 	}
 
 	window->setFramerateLimit(SETTINGS.stg.fps_limit);
@@ -1123,6 +1147,11 @@ void TW_CALL ApplySettings(void *data)
 	std::vector<std::string> configs = renderer_ptr->GetConfigurationsList();
 
 	InitializeRendering(configs[SETTINGS.stg.shader_config]);
+
+	glNamedFramebufferTexture(*framebuffer, GL_COLOR_ATTACHMENT0, *main_txt, 0);
+
+	if (game_mode == LEVEL_EDITOR)
+		SetCameraFocus(1e10);
 
 	if (current_music != nullptr)
 		current_music->setVolume(SETTINGS.stg.music_volume);
@@ -1140,6 +1169,13 @@ void TW_CALL ApplySettings(void *data)
 	overlays_ptr->sound_count.setVolume(SETTINGS.stg.fx_volume);
 	overlays_ptr->sound_go.setVolume(SETTINGS.stg.fx_volume);
 	overlays_ptr->sound_screenshot.setVolume(SETTINGS.stg.fx_volume);
+}
+
+
+void TW_CALL RestoreSettings(void* data)
+{
+	SETTINGS.RestoreDefaults();
+	ApplySettings(data);
 }
 
 void TW_CALL InitialOK(void *data)
@@ -1310,6 +1346,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Gamepad deadzone", TW_TYPE_FLOAT, &SETTINGS.stg.gamepad_deadzone, "min=0.0 max=0.9 step=0.01 group='Control settings'");
 	TwAddVarRW(overlays_ptr->settings, "Windows touch controls(experimental)", TW_TYPE_BOOLCPP, &SETTINGS.stg.touch_mode, "group='Control settings' help='Use a touchscreen'");
 	TwAddButton(overlays_ptr->settings, "Apply4", ApplySettings, NULL, "group='Control settings' label='Apply settings'  ");
+	TwAddButton(overlays_ptr->settings, "Restore", RestoreSettings, NULL, "label='Restore default settings'  ");
 	int barPos1[2] = { 16, 250 };
 
 	TwSetParam(overlays_ptr->settings, NULL, "position", TW_PARAM_INT32, 2, &barPos1);

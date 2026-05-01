@@ -1,15 +1,5 @@
 
-float min_distance(layout (rgba32f) image2D T, vec3 cur, vec2 lastPos, int scale)
-{
-	ivec2 rp = ivec2(round(lastPos));
-	float mdist = 1e10;
-	for(int i = -scale; i <= scale; i++)
-		for(int j = -scale; j <= scale; j++)
-		{
-			mdist = min(length(cur - imageLoad(T, rp+ivec2(i,j)).xyz), mdist);
-		}
-	return mdist;
-}
+
 
 vec3 ambient_sky_color(in vec3 pos)
 {

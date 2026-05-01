@@ -36,6 +36,17 @@ vec3 decodePalYuv(vec3 yuv)
     return rgb; // gamma correction
 }
 
+vec4 interp_bicubic(vec2 coord)
+{
+	ivec2 i = ivec2(coord);
+	vec2 d = coord - floor(coord);
+	vec4 p0 = cubic(val(HDR0, i, -1,-1), val(HDR0, i, 0,-1), val(HDR0, i, 1,-1), val(HDR0, i, 2,-1), d.x);
+	vec4 p1 = cubic(val(HDR0, i, -1, 0), val(HDR0, i, 0, 0), val(HDR0, i, 1, 0), val(HDR0, i, 2, 0), d.x);
+	vec4 p2 = cubic(val(HDR0, i, -1, 1), val(HDR0, i, 0, 1), val(HDR0, i, 1, 1), val(HDR0, i, 2, 1), d.x);
+	vec4 p3 = cubic(val(HDR0, i, -1, 2), val(HDR0, i, 0, 2), val(HDR0, i, 1, 2), val(HDR0, i, 2, 2), d.x);
+	return abs(cubic(p0, p1, p2, p3, d.y));
+}
+
 void main() {
 	ivec2 global_pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 local_indx = ivec2(gl_LocalInvocationID.xy);
@@ -55,20 +66,21 @@ void main() {
     //getting the previous frame pixel and sampling it bicubically 
 	vec2 lastCoord = reproject(pos.xyz, (vec2(global_pos))/img_size);
 	
-    vec4 lastColor = interp_bicubic(HDR0, clamp(lastCoord/res_ratio,vec2(2.),img_size-2.));
+    vec4 lastColor = interp_bicubic(clamp(lastCoord/res_ratio,vec2(2.),img_size-2.));
 	vec4 lastPos = interp(DE_previous, round(lastCoord));
 	
 	ray pr = get_ray(PrevCamera, clamp(lastCoord,vec2(0.),imageSize(DE_input)-1.)/imageSize(DE_input));
 	vec4 ppos = vec4(pr.pos,0);
 	vec4 pdir = vec4(pr.dir,0);
-	lastPos.xyz = ppos.xyz + length(lastPos.xyz - ppos.xyz)*pdir.xyz;
+	float tdprev = length(lastPos.xyz - ppos.xyz);//traveled distance
+	lastPos.xyz = ppos.xyz + tdprev*pdir.xyz;
 	
     vec3 in0 = imageLoad(color_input, global_pos).xyz;
 	
 	////rejecting some of the previous data
 	//the previous point UV coordinate in the current camera plane
 	vec2 lastUV = project(lastPos.xyz, vec2(global_pos)/img_size);
-	float delta = length(lastUV - global_pos);
+	float delta = length(lastUV - global_pos) + 3.*sqrt(abs(dot(dir.xyz, pr.pos.xyz - rr.pos.xyz))/td);
 	
 	//remove prev data based on color difference
 	ivec3 off = ivec3(-1, 0, 1);
@@ -100,7 +112,7 @@ void main() {
 	vec3 avgColor = (in0 + in1 + in2 + in3 + in4 + in5 + in6 + in7 + in8)/9.;
 	vec3 colorRange = abs(maxColor - minColor) + 0.001;
 	vec3 dColor = (encodePalYuv(lastColor.xyz/lastColor.w) - avgColor)/colorRange;
-	lastColor *= 0.15 + 0.85*exp(-0.8*dot(dColor,dColor));
+	lastColor *= 0.15 + 0.85*exp(-TXAAstr*dot(dColor,dColor));
 	
 	//remove prev data based on relative pixel distance
 	lastColor *= exp(-pow(delta, 2.));

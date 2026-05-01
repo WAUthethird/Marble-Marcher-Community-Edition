@@ -67,8 +67,9 @@ vec3 path_march(vec4 p, inout vec4 dir, vec4 var, float angle, float seed, int s
 			vec3 H = normalize(V + L);
 			
 			// add to the color            
+			float NdotL = max(dot(norm.xyz, L), 0.0);    
 			vec3 ill = sky_color(L)*shadow_march(p, vec4(L,0), MAX_DIST, LIGHT_ANGLE);
-			finill += clamp(BRDF(V, L, norm.xyz, albedo, pbr),0.,2.5)*ill*fincol;
+			finill += clamp(BRDF(V, L, norm.xyz, albedo, pbr),0.,5.)*ill*fincol*NdotL;
 		}
 		
 		//random reflected ray
@@ -79,7 +80,7 @@ vec3 path_march(vec4 p, inout vec4 dir, vec4 var, float angle, float seed, int s
 			
 			// add to the color       
 			finill += emission*fincol;			
-			fincol *= clamp(BRDF(V, L, norm.xyz, albedo, pbr),0.,2.5);
+			fincol *= clamp(BRDF(V, L, norm.xyz, albedo, pbr),0.,3.);
 		}
     }
     dir.xyz = fdir;
@@ -175,8 +176,9 @@ vec3 adaptive_path_march(vec4 p, inout vec4 dir, vec4 pdir, vec4 adir, vec4 var,
 			vec3 H = normalize(V + L);
 			
 			// add to the color            
+			float NdotL = max(dot(norm.xyz, L), 0.0);       
 			vec3 ill = sky_color(L)*shadow_march(p, vec4(L,0), MAX_DIST, LIGHT_ANGLE);
-			finill += clamp(BRDF(V, L, norm.xyz, albedo, pbr),0.,2.5)*ill*fincol;
+			finill += clamp(BRDF(V, L, norm.xyz, albedo, pbr),0.,2.5)*ill*fincol*NdotL;
 		}
 		
 		//random reflected ray

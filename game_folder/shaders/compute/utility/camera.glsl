@@ -38,8 +38,6 @@ uniform glcamera Camera;
 uniform glcamera PrevCamera;
 float fovray;
 
-
-
 ray get_ray(glcamera cam, vec2 screen_pos)
 {
 	float delta = 0;
@@ -76,17 +74,51 @@ ray get_ray(vec2 screen_pos)
 	return get_ray(Camera, screen_pos);
 }
 
-vec2 reproject_step(glcamera cam, vec3 point, vec2 UV)
+//reprojection cost function, distance 
+float rd(glcamera cam, vec3 point, vec2 UV)
 {
 	ray guess = get_ray(cam, UV);
 	vec3 a = normalize(point - guess.pos);
-	UV = vec2(dot(a,normalize(cam.dirx))/cam.aspect_ratio,-dot(a,normalize(cam.diry)))/(2.*cam.FOV*dot(a,normalize(cam.dirz))) + 0.5;
+	return dot(guess.dir - a, guess.dir - a);
+}
+
+#define duv 0.0001
+vec2 reproject_gradient(glcamera cam, vec3 point, vec2 UV)
+{
+	return vec2(rd(cam, point, UV + vec2(duv,0)) - rd(cam, point, UV - vec2(duv,0)), rd(cam, point, UV + vec2(0,duv)) - rd(cam, point, UV - vec2(0,duv)))/(2*duv);
+}
+
+//gradient descent step
+#define gdstep 0.06
+
+
+vec2 reproject_step_gd(glcamera cam, vec3 point, vec2 UV)
+{
+	//gradient descent, works for any camera
+	UV -= gdstep*reproject_gradient(cam, point, UV);
+	return UV;
+}
+
+
+vec2 reproject_step(glcamera cam, vec3 point, vec2 UV)
+{
+	//exact reprojection, limited to a simple camera
+	ray guess = get_ray(cam, UV);
+	vec3 a = normalize(point - guess.pos);
 	if(cam.cross_eye)
 	{
-		UV.x *= 0.5;
+		float dUV = 0.;
+		dUV = floor(2.f*UV.x);
+		UV = vec2(dot(a,normalize(cam.dirx))/cam.aspect_ratio,-dot(a,normalize(cam.diry)))/(2.*cam.FOV*dot(a,normalize(cam.dirz))) + vec2(0.25+0.5*dUV,0.5);
+	}
+	else
+	{
+		UV = vec2(dot(a,normalize(cam.dirx))/cam.aspect_ratio,-dot(a,normalize(cam.diry)))/(2.*cam.FOV*dot(a,normalize(cam.dirz))) + 0.5;
 	}
 	return UV;
 }
+	
+	
 
 //find the previous uv coordinate
 vec2 reproject(vec3 point, vec2 UV)
@@ -94,6 +126,10 @@ vec2 reproject(vec3 point, vec2 UV)
 	for(int i = 0; i < 5; i++)
 	{
 		UV = reproject_step(PrevCamera, point, UV);
+	}
+	for(int i = 0; i < 4; i++)
+	{
+		UV = reproject_step_gd(PrevCamera, point, UV);
 	}
 	return UV*PrevCamera.resolution.xy;
 }
@@ -104,6 +140,10 @@ vec2 project(vec3 point, vec2 UV)
 	for(int i = 0; i < 5; i++)
 	{
 		UV = reproject_step(Camera, point, UV);
+	}
+	for(int i = 0; i < 4; i++)
+	{
+		UV = reproject_step_gd(Camera, point, UV);
 	}
 	return UV*Camera.resolution.xy;
 }

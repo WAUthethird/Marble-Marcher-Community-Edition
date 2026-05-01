@@ -43,6 +43,8 @@
 bool TOUCH_MODE = false;
 bool DEBUG_BAR = false;
 
+std::string configPath;
+
 #if defined(_WIN32)
 int WinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR lpCmdLine, int nCmdShow) {
 #else
@@ -50,22 +52,23 @@ int main(int argc, char *argv[]) {
 #endif
 	//Load the music
 	sf::Music menu_music;
-	menu_music.openFromFile(menu_ogg);
-	menu_music.setLoop(true);
+	(void)menu_music.openFromFile(menu_ogg);
+	menu_music.setLooping(true);
 	sf::Music level_music[num_level_music];
-	level_music[0].openFromFile(level1_ogg);
-	level_music[0].setLoop(true);
-	level_music[1].openFromFile(level2_ogg);
-	level_music[1].setLoop(true);
-	level_music[2].openFromFile(level3_ogg);
-	level_music[2].setLoop(true);
-	level_music[3].openFromFile(level4_ogg);
-	level_music[3].setLoop(true);
+	(void)level_music[0].openFromFile(level1_ogg);
+	level_music[0].setLooping(true);
+	(void)level_music[1].openFromFile(level2_ogg);
+	level_music[1].setLooping(true);
+	(void)level_music[2].openFromFile(level3_ogg);
+	level_music[2].setLooping(true);
+	(void)level_music[3].openFromFile(level4_ogg);
+	level_music[3].setLooping(true);
 	sf::Music credits_music;
-	credits_music.openFromFile(credits_ogg);
-	credits_music.setLoop(true);
+	(void)credits_music.openFromFile(credits_ogg);
+	credits_music.setLooping(true);
 
-	bool first_start = SETTINGS.Load(settings_bin);
+	configPath = SETTINGS.GetConfigPath();
+	bool first_start = SETTINGS.Load(configPath + "/settings.bin");
 
 	//all of the fonts
 	Fonts fonts;
@@ -75,7 +78,7 @@ int main(int argc, char *argv[]) {
 	sf::RenderWindow window;
   
 	Renderer rend(main_config);
-	sf::Texture main_txt, screenshot_txt;
+	GLuint framebuffer, main_txt, screenshot_txt;
 	
 	//Create the fractal scene
 	Scene scene(level_music);
@@ -87,12 +90,13 @@ int main(int argc, char *argv[]) {
 	mouse_pos = sf::Vector2i(0, 0);
 	mouse_prev_pos = sf::Vector2i(0, 0);
   
-	SetPointers(&window, &scene, &overlays, &rend, &main_txt, &screenshot_txt);
+	SetPointers(&window, &scene, &overlays, &rend, &main_txt, &screenshot_txt, &framebuffer);
 
 	ApplySettings(nullptr);
 
 	scene.levels.LoadLevelsFromFolder(level_folder);
 	scene.levels.LoadMusicFromFolder(music_folder);
+	scene.levels.LoadScoresFromFile(configPath + "/scores.bin");
 
 	InitializeATBWindows(&smooth_fps, &target_fps);
 
@@ -100,8 +104,8 @@ int main(int argc, char *argv[]) {
 	UpdateAspectRatio(window.getSize().x, window.getSize().y);
 	//set window icon
 	sf::Image icon;
-	icon.loadFromFile(icon_png); 
-	window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+	(void)icon.loadFromFile(icon_png); 
+	window.setIcon(icon.getSize(), icon.getPixelsPtr());
 
 	//force fullscreen mode
 	bool fullscreen = true;
@@ -156,8 +160,6 @@ int main(int argc, char *argv[]) {
 	//Main loop
 	while (window.isOpen())
 	{
-		
-		sf::Event event;
 		window.clear(sf::Color::White);
 		float mouse_wheel = 0.0f;
 		mouse_prev_pos = mouse_pos;
@@ -190,27 +192,27 @@ int main(int argc, char *argv[]) {
 
 
 
-		while (window.pollEvent(event)) 
+		while (const std::optional event = window.pollEvent()) 
 		{
-			bool handled = overlays.TwManageEvent(&event);	
+			bool handled = overlays.TwManageEvent((sf::Event*)&event);	
 
-			if (event.type == sf::Event::Closed) 
+			if (event->is<sf::Event::Closed>()) 
 			{
 				window.close();
 				break;
 			}
 
-			else if (event.type == sf::Event::LostFocus) 
+			else if (event->is<sf::Event::FocusLost>()) 
 			{
 				if (game_mode == PLAYING) 
 				{
 					PauseGame(window, &overlays, &scene);
 				}
 			}
-			else if (event.type == sf::Event::Resized) 
+			else if (const auto* resized = event->getIf<sf::Event::Resized>()) 
 			{
-				overlays.SetScale( std::max(float(event.size.width), float(event.size.height))/ 1280.0f);
-				sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
+				overlays.SetScale( std::max(float(resized->size.x), float(resized->size.y))/ 1280.0f);
+				sf::FloatRect visibleArea(sf::Vector2f(0, 0), (sf::Vector2f)resized->size);
 				default_window_view = sf::View(visibleArea);
 				window.setView(default_window_view);
 				io_state.window_size = sf::Vector2f(window.getSize().x, window.getSize().y);
@@ -224,91 +226,91 @@ int main(int argc, char *argv[]) {
 			{
 				if (TOUCH_MODE)
 				{
-					if (event.type == sf::Event::TouchBegan)
+					if (const auto* touchBegan = event->getIf<sf::Event::TouchBegan>())
 					{
-						touched[event.touch.finger] = true;
-						touch_pxy[event.touch.finger] = sf::Vector2i(event.touch.x, event.touch.y);
-						if (event.touch.finger < n_touch)
+						touched[touchBegan->finger] = true;
+						touch_pxy[touchBegan->finger] = sf::Vector2i(touchBegan->position.x, touchBegan->position.y);
+						if (touchBegan->finger < n_touch)
 						{
-							touch_circle[event.touch.finger].setRadius(60);
+							touch_circle[touchBegan->finger].setRadius(60);
 						}
 						//the joystick half of the screen
-						if(event.touch.x < window.getSize().x/2)
+						if(touchBegan->position.x < window.getSize().x/2)
 						{ 
 							if (joystick_finger < 0)
 							{
-								joystick_finger = event.touch.finger;
+								joystick_finger = touchBegan->finger;
 								joystick.setRadius(120);
-								joystick.setPosition(event.touch.x - joystick.getRadius(), event.touch.y - joystick.getRadius());
+								joystick.setPosition(sf::Vector2f(touchBegan->position.x - joystick.getRadius(), touchBegan->position.y - joystick.getRadius()));
 							}
 						}
 						else //the view half of the screen
 						{
 							if (view_finger < 0)
 							{
-								view_finger = event.touch.finger;
+								view_finger = touchBegan->finger;
 							}
 						}
 					}
-					if (event.type == sf::Event::TouchEnded)
+					if (const auto* touchEnded = event->getIf<sf::Event::TouchEnded>())
 					{
-						touched[event.touch.finger] = false;
-						if (event.touch.finger < n_touch)
+						touched[touchEnded->finger] = false;
+						if (touchEnded->finger < n_touch)
 						{
-							touch_circle[event.touch.finger].setRadius(0);
+							touch_circle[touchEnded->finger].setRadius(0);
 						}
-						if (joystick_finger == event.touch.finger)
+						if (joystick_finger == touchEnded->finger)
 						{
 							joystick_finger = -1;
 							joystick.setRadius(0);
 						}
-						if (view_finger == event.touch.finger)
+						if (view_finger == touchEnded->finger)
 						{
 							view_finger = -1;
 						}
 					}
 				}
 
-				if (event.type == sf::Event::JoystickButtonPressed)
+				if (const auto* joystickButtonPressed = event->getIf<sf::Event::JoystickButtonPressed>())
 				{
-					io_state.buttons[event.joystickButton.button] = true;
-					io_state.button_pressed[event.joystickButton.button] = true;
+					io_state.buttons[joystickButtonPressed->button] = true;
+					io_state.button_pressed[joystickButtonPressed->button] = true;
 
-					if (event.joystickButton.button == SETTINGS.stg.control_mapping[JOYSTICK_RESTART])
+					if (joystickButtonPressed->button == (int)SETTINGS.stg.control_mapping[JOYSTICK_RESTART])
 					{
 						if (game_mode == PLAYING) {
 							scene.ResetLevel();
 						}
 					}
-					else if (event.joystickButton.button == SETTINGS.stg.control_mapping[JOYSTICK_EXIT])
+					else if (joystickButtonPressed->button == (int)SETTINGS.stg.control_mapping[JOYSTICK_EXIT])
 					{
 						if (game_mode == PLAYING) {
 							PauseGame(window, &overlays, &scene);
 						}
 					} 
-					else if (event.joystickButton.button == SETTINGS.stg.control_mapping[JOYSTICK_SCREENSHOT])
+					else if (joystickButtonPressed->button == (int)SETTINGS.stg.control_mapping[JOYSTICK_SCREENSHOT])
 					{
 						TakeScreenshot();
 					}
 				}
-				else if (event.type == sf::Event::JoystickButtonReleased)
+				else if (const auto* joystickButtonReleased = event->getIf<sf::Event::JoystickButtonReleased>())
 				{
-					io_state.buttons[event.joystickButton.button] = false;
+					io_state.buttons[joystickButtonReleased->button] = false;
 				}
-				else if (event.type == sf::Event::JoystickMoved)
+				else if (const auto* joystickMoved = event->getIf<sf::Event::JoystickMoved>())
 				{
-					io_state.axis_value[event.joystickMove.axis] = 
-						(abs(event.joystickMove.position)<SETTINGS.stg.gamepad_deadzone)?0.f:event.joystickMove.position;
-					io_state.axis_moved[event.joystickMove.axis] = true;
+					io_state.axis_value[(int)joystickMoved->axis] = 
+						(abs(joystickMoved->position)<SETTINGS.stg.gamepad_deadzone)?0.f:joystickMoved->position;
+					io_state.axis_moved[(int)joystickMoved->axis] = true;
 				}
-				else if (event.type == sf::Event::KeyPressed)
+				else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
 				{
-					const sf::Keyboard::Key keycode = event.key.code;
-					all_keys[keycode] = true;
+					const sf::Keyboard::Key keycode = keyPressed->code;
+					all_keys[(int)keycode] = true;
 					io_state.isKeyPressed = true;
-					io_state.keys[keycode] = true;
-					io_state.key_press[keycode] = true;  
-					if (event.key.code < 0 || event.key.code >= sf::Keyboard::KeyCount) { continue; }
+					io_state.keys[(int)keycode] = true;
+					io_state.key_press[(int)keycode] = true;  
+					if ((int)keyPressed->code < 0 || (int)keyPressed->code >= sf::Keyboard::KeyCount) { continue; }
 					if (game_mode == CREDITS)
 					{
 						OpenMainMenu(&scene, &overlays);
@@ -323,12 +325,12 @@ int main(int argc, char *argv[]) {
 						credits_music.stop();
 						scene.StartNextLevel();
 					}
-					else if (keycode == sf::Keyboard::D && event.key.control)
+					else if (keycode == sf::Keyboard::Key::D && keyPressed->control)
 					{
 						DEBUG_BAR = !DEBUG_BAR;
 						TwDefine((std::string("Debug_bar visible=") + ((DEBUG_BAR) ? "true" : "false")).c_str());
 					}
-					else if (keycode == sf::Keyboard::Escape)
+					else if (keycode == sf::Keyboard::Key::Escape)
 					{
 						if (game_mode == MAIN_MENU)
 						{
@@ -382,7 +384,7 @@ int main(int argc, char *argv[]) {
 							mouse_wheel -= 1.f;
 						}
 					}
-					else if (keycode == sf::Keyboard::F1) 
+					else if (keycode == sf::Keyboard::Key::F1) 
 					{
 						if (game_mode == PLAYING) {
 							show_cheats = !show_cheats;
@@ -393,39 +395,39 @@ int main(int argc, char *argv[]) {
 					{ 
 						TakeScreenshot();
 					} 
-					else if (keycode == sf::Keyboard::F4)
+					else if (keycode == sf::Keyboard::Key::F4)
 					{
 						overlays.TWBAR_ENABLED = !overlays.TWBAR_ENABLED;
 					} 
-					else if (keycode == sf::Keyboard::C) 
+					else if (keycode == sf::Keyboard::Key::C) 
 					{
 						scene.Cheat_ColorChange();
 					} 	
-					else if (keycode == sf::Keyboard::F) 
+					else if (keycode == sf::Keyboard::Key::F) 
 					{
 						scene.Cheat_FreeCamera();
 					}
-					else if (keycode == sf::Keyboard::G) 
+					else if (keycode == sf::Keyboard::Key::G) 
 					{
 						scene.Cheat_Gravity();
 					}
-					else if (keycode == sf::Keyboard::H) 
+					else if (keycode == sf::Keyboard::Key::H) 
 					{
 						scene.Cheat_HyperSpeed();
 					}
-					else if (keycode == sf::Keyboard::I) 
+					else if (keycode == sf::Keyboard::Key::I) 
 					{
 						scene.Cheat_IgnoreGoal();
 					}
-					else if (keycode == sf::Keyboard::M) 
+					else if (keycode == sf::Keyboard::Key::M) 
 					{
 						scene.Cheat_Motion();
 					}
-					else if (keycode == sf::Keyboard::P) 
+					else if (keycode == sf::Keyboard::Key::P) 
 					{
 						scene.Cheat_Planet();
 					}
-					else if (keycode == sf::Keyboard::Z) 
+					else if (keycode == sf::Keyboard::Key::Z) 
 					{
 						if (scene.GetParamMod() == -1) 
 						{
@@ -436,24 +438,24 @@ int main(int argc, char *argv[]) {
 							scene.Cheat_Param(-1);
 						}
 					} 
-					if (keycode >= sf::Keyboard::Num0 && keycode <= sf::Keyboard::Num9)
+					if (keycode >= sf::Keyboard::Key::Num0 && keycode <= sf::Keyboard::Key::Num9)
 					{
-						scene.Cheat_Param(int(keycode) - int(sf::Keyboard::Num1));
+						scene.Cheat_Param(int(keycode) - int(sf::Keyboard::Key::Num1));
 					}
 				
 				}
-				else if (event.type == sf::Event::KeyReleased) 
+				else if (const auto* keyReleased = event->getIf<sf::Event::KeyReleased>()) 
 				{
-					const sf::Keyboard::Key keycode = event.key.code;
-					if (event.key.code < 0 || event.key.code >= sf::Keyboard::KeyCount) { continue; }
-					all_keys[keycode] = false;
-					io_state.keys[keycode] = false;
+					const sf::Keyboard::Key keycode = keyReleased->code;
+					if ((int)keyReleased->code < 0 || (int)keyReleased->code >= sf::Keyboard::KeyCount) { continue; }
+					all_keys[(int)keycode] = false;
+					io_state.keys[(int)keycode] = false;
 				}
-				else if (event.type == sf::Event::MouseButtonPressed)
+				else if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>())
 			    {
-					if (event.mouseButton.button == sf::Mouse::Left) 
+					if (mouseButtonPressed->button == sf::Mouse::Button::Left) 
 					{
-						mouse_pos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
+						mouse_pos = sf::Vector2i(mouseButtonPressed->position.x, mouseButtonPressed->position.y);
 						mouse_clicked = true;
 						io_state.mouse[0] = true;
 						io_state.mouse_press[0] = true;
@@ -476,7 +478,7 @@ int main(int argc, char *argv[]) {
 							}
 						}
 					}
-					else if (event.mouseButton.button == sf::Mouse::Right && !TOUCH_MODE)
+					else if (mouseButtonPressed->button == sf::Mouse::Button::Right && !TOUCH_MODE)
 					{
 						io_state.mouse[2] = true; 
 						io_state.mouse_press[2] = true;
@@ -485,21 +487,21 @@ int main(int argc, char *argv[]) {
 						}
 					}
 				}
-				else if (event.type == sf::Event::MouseButtonReleased)
+				else if (const auto* mouseButtonReleased = event->getIf<sf::Event::MouseButtonReleased>())
 			    {
-					if (event.mouseButton.button == sf::Mouse::Left) 
+					if (mouseButtonReleased->button == sf::Mouse::Button::Left) 
 					{
 						io_state.mouse[0] = false;
-						mouse_pos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
+						mouse_pos = sf::Vector2i(mouseButtonReleased->position.x, mouseButtonReleased->position.y);
 						mouse_clicked = false;
 					}
-					else if (event.mouseButton.button == sf::Mouse::Right) {
+					else if (mouseButtonReleased->button == sf::Mouse::Button::Right) {
 						io_state.mouse[2] = false;
 					}
 				}
-				else if (event.type == sf::Event::MouseMoved) 
+				else if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>()) 
 				{
-					mouse_pos = sf::Vector2i(event.mouseMove.x, event.mouseMove.y);
+					mouse_pos = sf::Vector2i(mouseMoved->position.x, mouseMoved->position.y);
 					io_state.mouse_pos = sf::Vector2f(mouse_pos.x, mouse_pos.y);
 					if (scene.cur_ed_mode == Scene::EditorMode::PLACE_MARBLE)
 					{
@@ -512,9 +514,9 @@ int main(int argc, char *argv[]) {
 						scene.level_copy.end_pos = flag_pos;
 					}
 				}
-				else if (event.type == sf::Event::MouseWheelScrolled)
+				else if (const auto* mouseWheelScrolled = event->getIf<sf::Event::MouseWheelScrolled>())
 			    {
-					mouse_wheel += event.mouseWheelScroll.delta;
+					mouse_wheel += mouseWheelScrolled->delta;
 					io_state.wheel = mouse_wheel;
 				}
 			}
@@ -530,7 +532,7 @@ int main(int argc, char *argv[]) {
 					touches++;
 					//touch state
 					touch_xy[i] = sf::Touch::getPosition(i, window);
-					touch_circle[i].setPosition(touch_xy[i].x - touch_circle[i].getRadius(), touch_xy[i].y - touch_circle[i].getRadius());
+					touch_circle[i].setPosition(sf::Vector2f(touch_xy[i].x - touch_circle[i].getRadius(), touch_xy[i].y - touch_circle[i].getRadius()));
 				}
 			}
 
@@ -561,11 +563,13 @@ int main(int argc, char *argv[]) {
 			scene.StopAllMusic();
 			scene.SetExposure(0.5f);
 			credits_music.play();
+			credits_music.setVolume(SETTINGS.stg.music_volume);
 		} else if (scene.GetMode() == Scene::MIDPOINT && game_mode != MIDPOINT) {
 			game_mode = MIDPOINT;
 			scene.StopAllMusic();
 			scene.SetExposure(0.5f);
 			credits_music.play();
+			credits_music.setVolume(SETTINGS.stg.music_volume);
 		}
 		
 	
@@ -591,14 +595,14 @@ int main(int argc, char *argv[]) {
 			else
 			{
 				//Collect keyboard input
-				force_y = (all_keys[SETTINGS.stg.control_mapping[DOWN]] ? -1.0f : 0.0f) +
-					      (all_keys[SETTINGS.stg.control_mapping[UP]] ? 1.0f : 0.0f);
-				force_x = (all_keys[SETTINGS.stg.control_mapping[LEFT]] ? -1.0f : 0.0f) +
-						  (all_keys[SETTINGS.stg.control_mapping[RIGHT]] ? 1.0f : 0.0f);
+				force_y = (all_keys[(int)SETTINGS.stg.control_mapping[DOWN]] ? -1.0f : 0.0f) +
+					      (all_keys[(int)SETTINGS.stg.control_mapping[UP]] ? 1.0f : 0.0f);
+				force_x = (all_keys[(int)SETTINGS.stg.control_mapping[LEFT]] ? -1.0f : 0.0f) +
+						  (all_keys[(int)SETTINGS.stg.control_mapping[RIGHT]] ? 1.0f : 0.0f);
 			}
 			//Collect gamepad input
-			force_y -= io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_Y]];
-			force_x += io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_X]];
+			force_y -= io_state.axis_value[(int)SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_Y]];
+			force_x += io_state.axis_value[(int)SETTINGS.stg.control_mapping[JOYSTICK_MOVE_AXIS_X]];
 			 
 			InputRecord record = GetRecord();
 
@@ -640,13 +644,13 @@ int main(int argc, char *argv[]) {
 
 			float cam_lr = float(-mouse_delta.x) * ms;
 			float cam_ud = float(-mouse_delta.y) * ms;
-			cam_ud -= 0.05* ms *io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y]];
-			cam_lr -= 0.05* ms *io_state.axis_value[SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X]];
+			cam_ud -= 0.05* ms *io_state.axis_value[(int)SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_Y]];
+			cam_lr -= 0.05* ms *io_state.axis_value[(int)SETTINGS.stg.control_mapping[JOYSTICK_VIEW_AXIS_X]];
 
-			cam_ud +=  5*ms * ( (all_keys[SETTINGS.stg.control_mapping[VIEWUP]] ? -1.0f : 0.0f) +
-						    	(all_keys[SETTINGS.stg.control_mapping[VIEWDOWN]] ? 1.0f : 0.0f) );
-			cam_lr +=  5*ms * ((all_keys[SETTINGS.stg.control_mapping[VIEWRIGHT]] ? -1.0f : 0.0f) +
-								(all_keys[SETTINGS.stg.control_mapping[VIEWLEFT]] ? 1.0f : 0.0f));
+			cam_ud +=  5*ms * ( (all_keys[(int)SETTINGS.stg.control_mapping[VIEWUP]] ? -1.0f : 0.0f) +
+						    	(all_keys[(int)SETTINGS.stg.control_mapping[VIEWDOWN]] ? 1.0f : 0.0f) );
+			cam_lr +=  5*ms * ((all_keys[(int)SETTINGS.stg.control_mapping[VIEWRIGHT]] ? -1.0f : 0.0f) +
+								(all_keys[(int)SETTINGS.stg.control_mapping[VIEWLEFT]] ? 1.0f : 0.0f));
 			
 			float cam_z = mouse_wheel * SETTINGS.stg.wheel_sensitivity;
 
@@ -676,6 +680,7 @@ int main(int argc, char *argv[]) {
 			{
 				if (!(taken_screenshot && SETTINGS.stg.screenshot_preview))
 				{
+					glNamedFramebufferTexture(framebuffer, GL_COLOR_ATTACHMENT0, main_txt, 0);
 					scene.WriteRenderer(rend);
 					rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
 					rend.SetOutputTexture(main_txt);
@@ -683,23 +688,22 @@ int main(int argc, char *argv[]) {
 					rend.Render();
 					window.resetGLStates();
 					//Draw render texture to main window
-					sf::Sprite sprite(main_txt);
-					sprite.setScale(float(window.getSize().x) / float(rend.variables["width"]),
-						float(window.getSize().y) / float(rend.variables["height"]));
-					window.draw(sprite);
+					glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
+					glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+					glBlitFramebuffer(rend.variables["width"], 0, 0, rend.variables["height"], window.getSize().x, window.getSize().y, 0, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 				}
 				else
 				{
-					//Draw screenshot preview
+/*					//Draw screenshot preview
 					sf::Sprite sprite(screenshot_txt);
 					sf::Vector2u ssize = screenshot_txt.getSize();
 					float scale = min(float(window.getSize().x) / float(ssize.x),
 						float(window.getSize().y) / float(ssize.y));
 					vec2 pos = vec2(window.getSize().x - ssize.x*scale, window.getSize().y - ssize.y*scale)*0.5f;
-					sprite.setScale(scale, scale);
-					sprite.setPosition(pos.x, pos.y);
+					sprite.setScale(sf::Vector2f(scale, scale));
+					sprite.setPosition(sf::Vector2f(pos.x, pos.y));
 					window.draw(sprite);
-
+*/
 					const float s = screenshot_clock.getElapsedTime().asSeconds();
 					if (s > SETTINGS.stg.preview_time)
 					{
@@ -744,6 +748,7 @@ int main(int argc, char *argv[]) {
 		UpdateAllObjects(&window, io_state);
 		io_state.isKeyPressed = false;
 		window.setView(default_window_view);
+		UpdateUniforms();
 		
 		if (!skip_frame) {
 			if (overlays.TWBAR_ENABLED)
@@ -783,7 +788,7 @@ int main(int argc, char *argv[]) {
 
 	RemoveAllObjects();
 	scene.StopMusic();
-	scene.levels.SaveScoresToFile();
+	scene.levels.SaveScoresToFile(configPath + "/scores.bin");
 	TwTerminate();
 	return 0;
 }

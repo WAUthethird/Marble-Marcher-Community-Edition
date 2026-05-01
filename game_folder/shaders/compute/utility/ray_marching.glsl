@@ -107,6 +107,8 @@ void ray_march_continue(inout vec4 pos, inout vec4 dir, inout vec4 var, float fo
 #define shadow_steps 128
 float shadow_march(vec4 pos, vec4 dir, float distance2light, float light_angle)
 {
+	if(!SHADOWS_ENABLED) return 0.;
+	
 	float light_visibility = 1;
 	float ph = 1e5;
 	float dDEdt = 0;
