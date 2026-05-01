@@ -1,6 +1,6 @@
 # Marble Marcher: Community Edition
 
-### Version 1.4.6
+### Version 1.4.7
 
 ![Logo](https://github.com/WAUthethird/Marble-Marcher-Community-Edition/blob/master/doc/LOGO.PNG)
 
@@ -111,7 +111,7 @@ The screenshot resolution and rendering resolutions are separate, so you can, fo
 
 ## System Dependencies
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
-* [SFML 2.5.0](https://www.sfml-dev.org)
+* [SFML 3](https://www.sfml-dev.org)
 * [AntTweakBar](http://anttweakbar.sourceforge.net/)
 * [GLEW](http://glew.sourceforge.net/)
 * [GLM](https://glm.g-truc.net/)
@@ -123,10 +123,9 @@ On macOS these can be conveniently installed using [HomeBrew](https://brew.sh):
 
 `brew install cmake eigen sfml anttweakbar glew glm`
 
-The version of SFML required is 2.5.1 or newer. It has come to my attention that HomeBrew does now have this version (unlike when these instructions where first written) so installing via HomeBrew should work but you can still [download manually](https://www.sfml-dev.org/download/sfml/2.5.1/) if you wish and install using [these instructions](https://www.sfml-dev.org/tutorials/2.5/start-osx.php). You must install the Frameworks option not the dylib option or the build script may fail.
-**Note that if HomeBrew installed a version of SFML older than 2.5.1 for some reason or you wish to install manually, you must remove the version of SFML that Brew installed using `brew remove sfml`.**
+The version of SFML required is 3.0.0 or newer.
 
-Alternatively, [vcpkg](https://github.com/Microsoft/vcpkg) can be used though it is unsupported:
+Alternatively, [vcpkg](https://github.com/Microsoft/vcpkg) can be used, though it is unsupported:
 
 `vcpkg install cmake eigen3 sfml anttweakbar`
 

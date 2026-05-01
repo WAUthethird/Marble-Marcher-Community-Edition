@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.10)
-project(MarbleMarcher VERSION "1.4.6")
+cmake_minimum_required(VERSION 3.13)
+project(MarbleMarcher VERSION "1.4.7")
 set(CMAKE_CXX_STANDARD 17)
 
 configure_file(src/config.h.in config.h)
@@ -50,13 +50,16 @@ endif()
 add_subdirectory(src)
 target_include_directories(MarbleMarcherSources PUBLIC
   src
-  /usr/include/
   ${EIGEN3_INCLUDE_DIR}
   ${GLEW_INCLUDE_DIRS}
   ${OpenGL_INCLUDE_DIRS}
   ${GLM_INCLUDE_DIR}
   ${PROJECT_BINARY_DIR}
 )
+
+if(UNIX)
+    target_link_libraries(MarbleMarcherSources PUBLIC Eigen3::Eigen)
+endif()
 
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${GLM_INCLUDE_DIR})
@@ -144,7 +147,7 @@ elseif(UNIX)
 	set(CPACK_PACKAGE_VERSION "${MM_VERSION}")
 	set(CPACK_PACKAGE_VERSION_MAJOR "1")
 	set(CPACK_PACKAGE_VERSION_MINOR "4")
-	set(CPACK_PACKAGE_VERSION_PATCH "6")
+	set(CPACK_PACKAGE_VERSION_PATCH "7")
 
 	SET(CPACK_GENERATOR "DEB")
 	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "KK") #required
