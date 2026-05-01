@@ -228,9 +228,10 @@ void Renderer::ReInitialize(int w, int h)
 }
 
 
-void Renderer::SetOutputTexture(GLuint tex)
+void Renderer::SetOutputTexture(GLuint tex, GLuint fb)
 {
 	shader_textures[shader_textures.size()-1][0] = tex;
+	glNamedFramebufferTexture(fb, GL_COLOR_ATTACHMENT0, tex, 0);
 }
 
 void Renderer::LoadShader(std::string shader_file)
