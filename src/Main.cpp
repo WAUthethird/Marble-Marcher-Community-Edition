@@ -680,10 +680,9 @@ int main(int argc, char *argv[]) {
 			{
 				if (!(taken_screenshot && SETTINGS.stg.screenshot_preview))
 				{
-					glNamedFramebufferTexture(framebuffer, GL_COLOR_ATTACHMENT0, main_txt, 0);
+					rend.SetOutputTexture(main_txt, framebuffer);
 					scene.WriteRenderer(rend);
 					rend.camera.SetAspectRatio((float)window.getSize().x / (float)window.getSize().y);
-					rend.SetOutputTexture(main_txt);
 					//Draw to the render texture
 					rend.Render();
 					window.resetGLStates();
@@ -694,20 +693,23 @@ int main(int argc, char *argv[]) {
 				}
 				else
 				{
-/*					//Draw screenshot preview
-					sf::Sprite sprite(screenshot_txt);
-					sf::Vector2u ssize = screenshot_txt.getSize();
+					//Draw screenshot preview
+					sf::Vector2u ssize = (sf::Vector2u)getResolution(SETTINGS.stg.screenshot_resolution);
+					sf::Image image(ssize, (std::uint8_t*)screenshot_data);
+					sf::Texture texture(image);
+					sf::Sprite sprite(texture);
 					float scale = min(float(window.getSize().x) / float(ssize.x),
 						float(window.getSize().y) / float(ssize.y));
 					vec2 pos = vec2(window.getSize().x - ssize.x*scale, window.getSize().y - ssize.y*scale)*0.5f;
 					sprite.setScale(sf::Vector2f(scale, scale));
 					sprite.setPosition(sf::Vector2f(pos.x, pos.y));
 					window.draw(sprite);
-*/
+
 					const float s = screenshot_clock.getElapsedTime().asSeconds();
 					if (s > SETTINGS.stg.preview_time)
 					{
 						taken_screenshot = false;
+						free(screenshot_data);
 					}
 				}
 			}

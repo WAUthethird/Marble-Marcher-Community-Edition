@@ -1,8 +1,6 @@
 #pragma once
 
-/*#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb/stb_image_write.h>*/
+#include <stb/stb_image_write.h>
 
 #include<config.h>
 #include<Overlays.h>
@@ -38,6 +36,7 @@ extern bool show_cheats;
 extern bool taken_screenshot;
 extern sf::Clock screenshot_clock;
 extern InputState io_state;
+extern GLubyte *screenshot_data;
 
 //Constants
 extern float target_fps;

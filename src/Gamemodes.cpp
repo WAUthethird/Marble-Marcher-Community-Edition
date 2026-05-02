@@ -1,5 +1,6 @@
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "Gamemodes.h"
-
 
 //Global variables
 sf::Vector2i mouse_pos, mouse_prev_pos;
@@ -23,6 +24,7 @@ Renderer *renderer_ptr;
 sf::RenderWindow *window;
 GLuint *main_txt, *screenshot_txt;
 GLuint *framebuffer;
+GLubyte *screenshot_data;
 
 void SetPointers(sf::RenderWindow *w, Scene* scene, Overlays* overlays, Renderer* rd, GLuint *main, GLuint *screensht, GLuint *fb)
 {
@@ -954,26 +956,27 @@ void TakeScreenshot()
 	renderer_ptr->ReInitialize(screenshot_resolution.x, screenshot_resolution.y);
 
 	scene_ptr->WriteRenderer(*renderer_ptr);
-	renderer_ptr->SetOutputTexture(*screenshot_txt);
+	renderer_ptr->SetOutputTexture(*screenshot_txt, *framebuffer);
 
 	renderer_ptr->camera.SetMotionBlur(0);
-/*
-	std::vector<char> buffer(screenshot_resolution.x * screenshot_resolution.y * 4);
+
+	screenshot_data = new GLubyte[screenshot_resolution.x * screenshot_resolution.y * 4];
 	std::string filename = (std::string)"screenshots/screenshot" + (std::string)num2str(time(NULL)) + (std::string)".jpg";
 	
 	//a few rendering steps to converge the TXAA
 	for(int i = 0; i < SETTINGS.stg.screenshot_samples; i++) 	renderer_ptr->Render();
 	window -> resetGLStates();
 
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, *framebuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(screenshot_resolution.x, 0, 0, screenshot_resolution.y, screenshot_resolution.x, screenshot_resolution.y, 0, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA8, GL_UNSIGNED_BYTE, buffer.data());
+	glReadPixels(0, 0, screenshot_resolution.x, screenshot_resolution.y, GL_RGBA, GL_UNSIGNED_BYTE, screenshot_data);
 
-	stbi_flip_vertically_on_write(true);
-	stbi_write_jpg(filename.c_str(), screenshot_resolution.x, screenshot_resolution.y, 3, buffer.data(), 100);
-*/
+	stbi_write_jpg(filename.c_str(), screenshot_resolution.x, screenshot_resolution.y, 4, screenshot_data, 100);
+
 	scene_ptr->SetResolution(rendering_resolution.x, rendering_resolution.y);
 	renderer_ptr->ReInitialize(rendering_resolution.x, rendering_resolution.y);
-	renderer_ptr->SetOutputTexture(*main_txt);
 	overlays_ptr->sound_screenshot.play();
 	screenshot_clock.restart();
 }
@@ -1020,9 +1023,7 @@ void InitializeRendering(std::string config)
 
 	glDeleteTextures(1, screenshot_txt);
 	glCreateTextures(GL_TEXTURE_2D, 1, screenshot_txt);
-	glTextureStorage2D(*main_txt, 1, GL_RGBA8, screenshot_resolution.x, screenshot_resolution.y);
-
-	renderer_ptr->SetOutputTexture(*main_txt);
+	glTextureStorage2D(*screenshot_txt, 1, GL_RGBA8, screenshot_resolution.x, screenshot_resolution.y);
 }
 
 void SetCameraFocus(float f)
@@ -1147,8 +1148,6 @@ void TW_CALL ApplySettings(void *data)
 	std::vector<std::string> configs = renderer_ptr->GetConfigurationsList();
 
 	InitializeRendering(configs[SETTINGS.stg.shader_config]);
-
-	glNamedFramebufferTexture(*framebuffer, GL_COLOR_ATTACHMENT0, *main_txt, 0);
 
 	if (game_mode == LEVEL_EDITOR)
 		SetCameraFocus(1e10);
