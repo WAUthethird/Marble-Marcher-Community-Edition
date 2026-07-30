@@ -5,11 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 configure_file(src/config.h.in config.h)
 
 if (WIN32)
-	#CHECK THE BITNESS
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	    set(BIT 64)
-	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-	    set(BIT 32)
+	if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+	    message(SEND_ERROR "This project does not support non-64-bit Windows targets")
 	endif()
 
 	## DEPENDENCIES
@@ -21,19 +18,10 @@ if (WIN32)
 	set(SFML_STATIC_LIBRARIES TRUE)
 	set(ANTTWEAKBAR_DIR C:/Libraries/AntTweakBar)
 
-	if(BIT EQUAL 32)
-	#32 bit compilation
-		set(SFML_DIR C:/Libraries/SFML-2.5.1/lib/cmake/SFML)
-		set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1/include)
-		set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar.lib)
-		set(GLEW_LIBRARIES ${GLEW_DIR}/lib/Release/Win32/glew32.lib)
-	else()
-	#64 bit compilation
-		set(SFML_DIR C:/Libraries/SFML-2.5.1_64/lib/cmake/SFML)
-		set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1_64/include)
-		set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar64.lib)
-		set(GLEW_LIBRARIES ${GLEW_DIR}/lib/Release/x64/glew32.lib)
-	endif()
+	set(SFML_DIR C:/Libraries/SFML-2.5.1_64/lib/cmake/SFML)
+	set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1_64/include)
+	set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar64.lib)
+	set(GLEW_LIBRARIES ${GLEW_DIR}/lib/Release/x64/glew32.lib)
 
 	find_package(SFML 2.5 COMPONENTS system window graphics audio REQUIRED)
 
@@ -89,15 +77,9 @@ add_custom_command(TARGET MarbleMarcher PRE_BUILD
                        ${CMAKE_SOURCE_DIR}/game_folder $<TARGET_FILE_DIR:MarbleMarcher>)
 
 if(WIN32)
-	if(BIT EQUAL 32)
-		add_custom_command(TARGET MarbleMarcher PRE_BUILD
-		           COMMAND ${CMAKE_COMMAND} -E copy_directory
-		               ${CMAKE_SOURCE_DIR}/bin32 $<TARGET_FILE_DIR:MarbleMarcher>)
-	else()
-		add_custom_command(TARGET MarbleMarcher PRE_BUILD
-		           COMMAND ${CMAKE_COMMAND} -E copy_directory
-		               ${CMAKE_SOURCE_DIR}/bin64 $<TARGET_FILE_DIR:MarbleMarcher>)
-	endif()	
+	add_custom_command(TARGET MarbleMarcher PRE_BUILD
+				COMMAND ${CMAKE_COMMAND} -E copy_directory
+					${CMAKE_SOURCE_DIR}/bin64 $<TARGET_FILE_DIR:MarbleMarcher>)
 endif()	
 
 if(CMAKE_COMPILER_IS_GNUCC)
