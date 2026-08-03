@@ -10,16 +10,49 @@ if (WIN32)
 	endif()
 
 	## DEPENDENCIES
-	set(GLEW_DIR C:/Libraries/GLEW/)
-	set(GLEW_INCLUDE_DIRS ${GLEW_DIR}/include)
+
+	function(extract_if_needed)
+		cmake_parse_arguments(PARSE_ARGV 0 arg
+			"" "SRC;DEST;INTERMEDIATE_DIR" ""
+		)
+
+		file(TIMESTAMP "${CMAKE_CURRENT_SOURCE_DIR}/vendor/cache/${arg_SRC}" ARCHIVE_TIMESTAMP UTC)
+		file(TIMESTAMP "${CMAKE_CURRENT_SOURCE_DIR}/vendor/${arg_DEST}.extracted" EXTRACTED_TIMESTAMP UTC)
+		if (EXTRACTED_TIMESTAMP STRLESS ARCHIVE_TIMESTAMP)
+			file(REMOVE_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}/vendor/${arg_DEST}")
+			file(ARCHIVE_EXTRACT
+				INPUT "${CMAKE_CURRENT_SOURCE_DIR}/vendor/cache/${arg_SRC}"
+				DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/vendor"
+			)
+			if(DEFINED arg_INTERMEDIATE_DIR)
+				file(RENAME "${CMAKE_CURRENT_SOURCE_DIR}/vendor/${arg_INTERMEDIATE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/vendor/${arg_DEST}")
+			endif()
+			file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/vendor/${arg_DEST}.extracted")
+		endif()
+	endfunction()
+
+	list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vendor")
+
+	file(MAKE_DIRECTORY vendor/cache)
+
+	file(DOWNLOAD
+		https://www.sfml-dev.org/files/SFML-2.6.2-windows-vc17-64-bit.zip
+		${CMAKE_CURRENT_SOURCE_DIR}/vendor/cache/SFML-2.6.2-windows-vc17-64-bit.zip
+		SHOW_PROGRESS
+		EXPECTED_HASH SHA256=f5995724604d74d06efe89544315d11ac2d3c2d348854c6be55a7a11fb7ecad8
+	)
+	extract_if_needed(
+		SRC SFML-2.6.2-windows-vc17-64-bit.zip
+		DEST SFML
+	    INTERMEDIATE_DIR SFML-2.6.2
+	)
+
 	set(SDK_DIRECTORY "C:/Program Files (x86)/Microsoft SDKs")
 	set(EIGEN3_INCLUDE_DIR C:/Libraries/eigen3/)
 	set(GLM_INCLUDE_DIR C:/Libraries/glm)
 	set(SFML_STATIC_LIBRARIES TRUE)
 	set(ANTTWEAKBAR_DIR C:/Libraries/AntTweakBar)
 
-	set(SFML_DIR C:/Libraries/SFML-2.5.1_64/lib/cmake/SFML)
-	set(SFML_INCLUDE_DIR C:/Libraries/SFML-2.5.1_64/include)
 	set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/AntTweakBar64.lib)
 	set(GLEW_LIBRARIES ${GLEW_DIR}/lib/Release/x64/glew32.lib)
 
@@ -50,7 +83,6 @@ include_directories(${GLM_INCLUDE_DIR})
 
 if(WIN32)
 	target_include_directories(MarbleMarcherSources PUBLIC
-	  ${SFML_INCLUDE_DIR}
 	  ${ANTTWEAKBAR_DIR}/include
 	)
 	include_directories(${ANTTWEAKBAR_DIR}/include)
