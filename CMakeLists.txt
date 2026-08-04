@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 configure_file(src/config.h.in config.h)
 
 if (WIN32)
+	include(FetchContent)
+
 	if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
 	    message(SEND_ERROR "This project does not support non-64-bit Windows targets")
 	endif()
@@ -34,6 +36,16 @@ if (WIN32)
 	list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vendor")
 
 	file(MAKE_DIRECTORY vendor/cache)
+
+	# Handle dependencies that we have to build from source (e.g. because their binary distributions
+	# don't include the necessary CMake configuration).
+	FetchContent_Declare(
+		OpenAL
+		URL https://openal-soft.org/openal-releases/openal-soft-1.25.2.tar.bz2
+		URL_HASH SHA256=1dbaac44e7579d5bc8847ca8db4b2e8b9fd3961041f35ee20def4958301e1089
+		DOWNLOAD_EXTRACT_TIMESTAMP true
+	)
+	FetchContent_MakeAvailable(OpenAL)
 
 	file(DOWNLOAD
 		https://www.sfml-dev.org/files/SFML-2.6.2-windows-vc17-64-bit.zip
