@@ -40,12 +40,19 @@ if (WIN32)
 	# Handle dependencies that we have to build from source (e.g. because their binary distributions
 	# don't include the necessary CMake configuration).
 	FetchContent_Declare(
+		GLEW
+		URL https://github.com/nigels-com/glew/releases/download/glew-2.3.1/glew-2.3.1.tgz
+		URL_HASH SHA256=b64790f94b926acd7e8f84c5d6000a86cb43967bd1e688b03089079799c9e889
+		DOWNLOAD_EXTRACT_TIMESTAMP true
+		SOURCE_SUBDIR build/cmake
+	)
+	FetchContent_Declare(
 		OpenAL
 		URL https://openal-soft.org/openal-releases/openal-soft-1.25.2.tar.bz2
 		URL_HASH SHA256=1dbaac44e7579d5bc8847ca8db4b2e8b9fd3961041f35ee20def4958301e1089
 		DOWNLOAD_EXTRACT_TIMESTAMP true
 	)
-	FetchContent_MakeAvailable(OpenAL)
+	FetchContent_MakeAvailable(GLEW OpenAL)
 
 	file(DOWNLOAD
 		https://www.sfml-dev.org/files/SFML-2.6.2-windows-vc17-64-bit.zip
@@ -136,7 +143,7 @@ if(WIN32)
 	target_link_libraries(MarbleMarcher
 	  MarbleMarcherSources
 	  ${ATB_LIB}
-	  ${GLEW_LIBRARIES}
+	  glew
 	  sfml-system
 	  sfml-window
 	  sfml-graphics
@@ -147,7 +154,7 @@ elseif(UNIX)
 		MarbleMarcherSources
 		${OPENGL_LIBRARIES}
 		libAntTweakBar.so	
-		${GLEW_LIBRARIES}
+		glew
 		stdc++fs
 		libsfml-system.so
 		libsfml-window.so
