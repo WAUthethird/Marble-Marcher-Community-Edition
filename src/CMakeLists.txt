@@ -40,3 +40,10 @@ add_library(MarbleMarcherSources
   SoundSystem.h
   SoundSystem.cpp
 )
+
+target_link_libraries(MarbleMarcherSources
+	sfml-system
+	sfml-window
+	sfml-graphics
+	sfml-audio
+)
