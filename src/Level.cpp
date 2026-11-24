@@ -15,6 +15,9 @@
 * along with this program.If not, see <http://www.gnu.org/licenses/>.
 */
 #include "Level.h"
+#include <cstring>
+#include <ctime>
+#include <cmath>
 
 using namespace std;
 
@@ -456,35 +459,101 @@ Level::Level(float s, float a1, float a2,
 
   background_col = Eigen::Vector3f(0.6, 0.8, 1.0);
   gravity_dir = Eigen::Vector3f(0, 0, -1.0);
+
+  InitExtDefaults();
+  glow_pattern = params.segment<3>(6);
 }
 
-void Level::LoadFromFile(fs::path path)
+void Level::InitExtDefaults()
 {
-	int lvl_size = fs::file_size(path);
-	int LevelF_size = sizeof(LevelF);
+	rot_axis1 = Eigen::Vector3f(0.f, 0.f, 1.f);
+	rot_axis2 = Eigen::Vector3f(1.f, 0.f, 0.f);
 
-	if (lvl_size != LevelF_size)
+	glow_enabled = false;
+	glow_beat_sync = false;
+	glow_color = Eigen::Vector3f(1.0f, 0.55f, 0.15f);
+	glow_brightness = 1.0f;
+	glow_beat_strength = 1.0f;
+	glow_pattern = Eigen::Vector3f(0.42f, 0.38f, 0.19f);
+
+	custom_sky = false;
+	sky_color = Eigen::Vector3f(0.6f, 0.8f, 1.0f);
+
+	sym_type = SYM_MENGER;
+	sym_mirror[0] = sym_mirror[1] = sym_mirror[2] = true;
+	sym_radial_global = 1;
+	sym_radial_internal = 1;
+
+	jump_enabled = false;
+	jump_height = 4.0f;
+	rubber_ball = false;
+	rubber_bounce = 0.85f;
+	ball_weight = 1.0f;
+	kill_y_enabled = true;
+	max_fall_speed = 0.0f;
+	max_speed = 0.0f;
+
+	multi_flag = false;
+	num_flags = 0;
+	num_checkpoints = 0;
+	for (int i = 0; i < MAX_EXTRA_FLAGS; i++) flags[i].setZero();
+	for (int i = 0; i < MAX_CHECKPOINTS; i++) checkpoints[i].setZero();
+
+	music_react = false;
+	music_react_strength = 1.0f;
+	const float eq_default[5] = { 1.0f, 1.0f, 0.5f, 0.25f, 0.0f };
+	for (int i = 0; i < 5; i++) beat_eq[i] = eq_default[i];
+	ordered_checkpoints = false;
+	time_limit = 0.0f;
+}
+
+bool Level::LoadFromFile(fs::path path)
+{
+	std::error_code ec;
+	const auto lvl_size = fs::file_size(path, ec);
+	const size_t LevelF_size = sizeof(LevelF);
+	const size_t Full_size = sizeof(LevelF) + sizeof(LevelExt);
+
+	if (ec || (lvl_size != LevelF_size && lvl_size != Full_size))
 	{
-		ERROR_MSG("Invalid .LVL file");
+		//skip broken files instead of loading garbage
+		return false;
 	}
 
 	LevelF loaded_lvl;
+	memset(&loaded_lvl, 0, sizeof(LevelF));
 
 	std::ifstream level_file(path, ios_base::in | ios_base::binary);
 
 	level_file.seekg(0);
 	level_file.read(reinterpret_cast<char *>(&loaded_lvl), sizeof(LevelF));
 
-	level_file.close();
-
 	LoadLevelF(loaded_lvl);
+	InitExtDefaults();
+	//the glow pattern of old levels follows the old surface color => same look as before
+	glow_pattern = params.segment<3>(6);
 
+	if (lvl_size == Full_size)
+	{
+		LevelExt ext;
+		level_file.read(reinterpret_cast<char *>(&ext), sizeof(LevelExt));
+		if (level_file && memcmp(ext.magic, LEVEL_EXT_MAGIC, 8) == 0)
+		{
+			LoadLevelExt(ext);
+		}
+	}
+
+	level_file.close();
+	//sanitize values that would break the game
+	if (!(marble_rad > 0.0f) || !std::isfinite(marble_rad)) marble_rad = 0.035f;
+	if (FractalIter < 1) FractalIter = 1;
+	return true;
 }
 
 void Level::SaveToFile(std::string file, int ID, int Link)
 {
 	std::ofstream level_file(file, ios_base::out | ios_base::trunc | ios_base::binary);
-	
+
 	LevelF lvl_to_save = GetLevelF();
 
 	lvl_to_save.level_id = ID;
@@ -492,7 +561,104 @@ void Level::SaveToFile(std::string file, int ID, int Link)
 
 	level_file.write(reinterpret_cast<char *>(&lvl_to_save), sizeof(lvl_to_save));
 
+	LevelExt ext = GetLevelExt();
+	level_file.write(reinterpret_cast<char *>(&ext), sizeof(ext));
+
 	level_file.close();
+}
+
+static float SafeF(float x, float def) { return std::isfinite(x) ? x : def; }
+
+void Level::LoadLevelExt(const LevelExt& e)
+{
+	rot_axis1 = Eigen::Vector3f(e.rot_axis1);
+	rot_axis2 = Eigen::Vector3f(e.rot_axis2);
+	if (!(rot_axis1.norm() > 1e-6f)) rot_axis1 = Eigen::Vector3f(0, 0, 1);
+	if (!(rot_axis2.norm() > 1e-6f)) rot_axis2 = Eigen::Vector3f(1, 0, 0);
+
+	glow_enabled = e.glow_enabled;
+	glow_beat_sync = e.glow_beat_sync;
+	glow_color = Eigen::Vector3f(e.glow_color);
+	glow_brightness = SafeF(e.glow_brightness, 1.f);
+	glow_beat_strength = SafeF(e.glow_beat_strength, 1.f);
+	glow_pattern = Eigen::Vector3f(e.glow_pattern);
+
+	custom_sky = e.custom_sky;
+	sky_color = Eigen::Vector3f(e.sky_color);
+
+	sym_type = std::min(std::max(e.sym_type, 0), 3);
+	for (int i = 0; i < 3; i++) sym_mirror[i] = e.sym_mirror[i];
+	sym_radial_global = std::max(e.sym_radial_global, 1);
+	sym_radial_internal = std::max(e.sym_radial_internal, 1);
+
+	jump_enabled = e.jump_enabled;
+	jump_height = SafeF(e.jump_height, 4.f);
+	rubber_ball = e.rubber_ball;
+	rubber_bounce = SafeF(e.rubber_bounce, 0.85f);
+	ball_weight = std::max(SafeF(e.ball_weight, 1.f), 0.01f);
+	kill_y_enabled = e.kill_y_enabled;
+	max_fall_speed = std::max(SafeF(e.max_fall_speed, 0.f), 0.f);
+	max_speed = std::max(SafeF(e.max_speed, 0.f), 0.f);
+
+	multi_flag = e.multi_flag;
+	num_flags = std::min(std::max(e.num_flags, 0), MAX_EXTRA_FLAGS);
+	for (int i = 0; i < MAX_EXTRA_FLAGS; i++) flags[i] = Eigen::Vector3f(e.flags[i]);
+	num_checkpoints = std::min(std::max(e.num_checkpoints, 0), MAX_CHECKPOINTS);
+	for (int i = 0; i < MAX_CHECKPOINTS; i++) checkpoints[i] = Eigen::Vector3f(e.checkpoints[i]);
+
+	music_react = e.music_react;
+	music_react_strength = SafeF(e.music_react_strength, 1.f);
+	for (int i = 0; i < 5; i++) beat_eq[i] = std::max(SafeF(e.beat_eq[i], 1.f), 0.f);
+	ordered_checkpoints = e.ordered_checkpoints != 0;
+	time_limit = std::max(SafeF(e.time_limit, 0.f), 0.f);
+}
+
+LevelExt Level::GetLevelExt()
+{
+	LevelExt e;
+	memset(&e, 0, sizeof(LevelExt));
+	memcpy(e.magic, LEVEL_EXT_MAGIC, 8);
+	e.version = 1;
+
+	std::copy(rot_axis1.data(), rot_axis1.data() + 3, e.rot_axis1);
+	std::copy(rot_axis2.data(), rot_axis2.data() + 3, e.rot_axis2);
+
+	e.glow_enabled = glow_enabled;
+	e.glow_beat_sync = glow_beat_sync;
+	std::copy(glow_color.data(), glow_color.data() + 3, e.glow_color);
+	e.glow_brightness = glow_brightness;
+	e.glow_beat_strength = glow_beat_strength;
+	std::copy(glow_pattern.data(), glow_pattern.data() + 3, e.glow_pattern);
+
+	e.custom_sky = custom_sky;
+	std::copy(sky_color.data(), sky_color.data() + 3, e.sky_color);
+
+	e.sym_type = sym_type;
+	for (int i = 0; i < 3; i++) e.sym_mirror[i] = sym_mirror[i];
+	e.sym_radial_global = sym_radial_global;
+	e.sym_radial_internal = sym_radial_internal;
+
+	e.jump_enabled = jump_enabled;
+	e.jump_height = jump_height;
+	e.rubber_ball = rubber_ball;
+	e.rubber_bounce = rubber_bounce;
+	e.ball_weight = ball_weight;
+	e.kill_y_enabled = kill_y_enabled;
+	e.max_fall_speed = max_fall_speed;
+	e.max_speed = max_speed;
+
+	e.multi_flag = multi_flag;
+	e.num_flags = num_flags;
+	for (int i = 0; i < MAX_EXTRA_FLAGS; i++) std::copy(flags[i].data(), flags[i].data() + 3, e.flags[i]);
+	e.num_checkpoints = num_checkpoints;
+	for (int i = 0; i < MAX_CHECKPOINTS; i++) std::copy(checkpoints[i].data(), checkpoints[i].data() + 3, e.checkpoints[i]);
+
+	e.music_react = music_react;
+	e.music_react_strength = music_react_strength;
+	for (int i = 0; i < 5; i++) e.beat_eq[i] = beat_eq[i];
+	e.ordered_checkpoints = ordered_checkpoints ? 1 : 0;
+	e.time_limit = time_limit;
+	return e;
 }
 
 void Level::LoadLevelF(LevelF lvl)
@@ -538,10 +704,11 @@ void Level::LoadLevelF(LevelF lvl)
 LevelF Level::GetLevelF()
 {
 	LevelF lvlF;
+	memset(&lvlF, 0, sizeof(LevelF));
 
-	strcpy(lvlF.txt, txt.c_str());
-	strcpy(lvlF.desc, desc.c_str());
-	strcpy(lvlF.use_music, use_music.c_str());
+	strncpy(lvlF.txt, txt.c_str(), 254);
+	strncpy(lvlF.desc, desc.c_str(), 254);
+	strncpy(lvlF.use_music, use_music.c_str(), 254);
 
 	lvlF.FractalIterations = FractalIter;	
 	std::copy(params.data(), params.data() + 9, lvlF.FractalParams);
@@ -602,6 +769,7 @@ void All_Levels::LoadMusicFromFolder(std::string folder)
 		music_map[files[i].filename().string()]->openFromFile(files[i].string());
 		music_map[files[i].filename().string()]->setLoop(true);
 		music_names.push_back(files[i].filename().string());
+		music_paths[files[i].filename().string()] = files[i].string();
 	}
 }
 
@@ -688,7 +856,10 @@ void All_Levels::ReloadLevels()
 void All_Levels::LoadLevelFromFile(fs::path file)
 {
 	Level cur_lvl;
-	cur_lvl.LoadFromFile(file);
+	if (!cur_lvl.LoadFromFile(file))
+	{
+		return;
+	}
 	level_map.insert(std::make_pair(cur_lvl.level_id, cur_lvl));
 	level_id_map.insert(std::make_pair(level_num, cur_lvl.level_id));
 	level_names[cur_lvl.level_id] = cur_lvl.txt;
@@ -777,6 +948,7 @@ void All_Levels::DeleteLevel(int lvl)
 
 sf::Music * All_Levels::GetMusicByID(int ID)
 {
+	if (ID < 0 || ID >= (int)music_names.size()) return nullptr;
 	return music_map[music_names[ID]];
 }
 
@@ -793,3 +965,58 @@ std::vector<std::string> All_Levels::GetMusicNames()
 	return music_names;
 }
 
+
+std::string All_Levels::GetMusicPath(const std::string& name)
+{
+	if (music_paths.count(name) > 0)
+		return music_paths[name];
+	return "";
+}
+
+std::string All_Levels::GetPlayingMusic(float& offset)
+{
+	offset = 0.f;
+	for (auto& m : music_map)
+	{
+		if (m.second != nullptr && m.second->getStatus() == sf::SoundSource::Playing)
+		{
+			offset = m.second->getPlayingOffset().asSeconds();
+			return m.first;
+		}
+	}
+	return "";
+}
+
+int All_Levels::SaveAsNewLevel(Level lvl, std::string name)
+{
+	//unique name (the file name is derived from it)
+	std::string base = name;
+	int n = 2;
+	auto taken = [&](const std::string& nm) {
+		if (fs::exists(lvl_folder + "/" + ConvertSpaces2_(nm) + ".lvl")) return true;
+		for (auto& ln : level_names) { if (ln.second == nm) return true; }
+		return false;
+	};
+	while (taken(name))
+	{
+		name = base + " " + std::to_string(n++);
+	}
+	if (name.size() > 250) name = name.substr(0, 250);
+
+	//unique id (time based like the editor, but never equal to an existing one)
+	int id = (int)time(NULL);
+	while (LevelExists(id) || id < 24) id++;
+
+	lvl.txt = name;
+	lvl.level_id = id;
+	lvl.SaveToFile(lvl_folder + "/" + ConvertSpaces2_(name) + ".lvl", id, lvl.link_level);
+	ReloadLevels();
+	return id;
+}
+
+int All_Levels::DuplicateLevel(int lvl)
+{
+	if (!LevelExists(lvl)) return -1;
+	Level copy = level_map[lvl];
+	return SaveAsNewLevel(copy, copy.txt + " copy");
+}

@@ -95,6 +95,10 @@ void Overlays::DrawControls(sf::RenderWindow& window) {
 
 void Overlays::DrawTimer(sf::RenderWindow& window, int t, bool is_high_score) {
   sf::Text text;
+  //the overlay is drawn more often than the 60 Hz timer ticks => play each sound once
+  static int last_sound_t = -1;
+  const bool new_tick = (t != last_sound_t);
+  last_sound_t = t;
   if (t < 0) {
     return;
   } else if (t < 3*60) {
@@ -104,14 +108,14 @@ void Overlays::DrawTimer(sf::RenderWindow& window, int t, bool is_high_score) {
     MakeText(txt, 640, 50, 140, sf::Color::White, text);
 
     //Play count sound if needed
-    if (t % 60 == 0) {
+    if (t % 60 == 0 && new_tick) {
       sound_count.play();
     }
   } else if (t < 4*60) {
     MakeText("GO!", 640, 50, 140, sf::Color::White, text);
 
     //Play go sound if needed
-    if (t == 3*60) {
+    if (t == 3*60 && new_tick) {
       sound_go.play();
     }
   } else {
@@ -163,7 +167,7 @@ void Overlays::DrawPaused(sf::RenderWindow& window) {
   }
 }
 
-void Overlays::DrawArrow(sf::RenderWindow& window, const sf::Vector3f& v3) {
+void Overlays::DrawArrow(sf::RenderWindow& window, const sf::Vector3f& v3, const std::string& label) {
   const float x_scale = 250.0f * v3.y + 520.0f * (1.0f - v3.y);
   const float x = 640.0f + x_scale * std::cos(v3.x);
   const float y = 360.0f + 250.0f * std::sin(v3.x);
@@ -174,7 +178,33 @@ void Overlays::DrawArrow(sf::RenderWindow& window, const sf::Vector3f& v3) {
     arrow_spr.setPosition(draw_scale * x, draw_scale * y);
     arrow_spr.setColor(sf::Color(255, 255, 255, alpha));
     window.draw(arrow_spr);
+
+    //number of the flag the arrow points to (multi flag mode)
+    if (!label.empty()) {
+      const float lx = 640.0f + (x_scale - 70.0f) * std::cos(v3.x);
+      const float ly = 360.0f + (250.0f - 70.0f) * std::sin(v3.x);
+      sf::Text text;
+      MakeText(label.c_str(), lx, ly, 40, sf::Color::White, text);
+      const sf::FloatRect b = text.getLocalBounds();
+      text.setOrigin(b.left + b.width / 2, b.top + b.height / 2);
+      const sf::Uint8 ta = sf::Uint8(std::min(255, int(alpha) * 2 + 40));
+      text.setFillColor(sf::Color(255, 255, 255, ta));
+      text.setOutlineColor(sf::Color(0, 0, 0, ta));
+      window.draw(text);
+    }
   }
+}
+
+void Overlays::DrawFlagCounter(sf::RenderWindow& window, int next, int total) {
+  DrawProgressText(window, "Flag " + std::to_string(std::min(next + 1, total)) + " / " + std::to_string(total));
+}
+
+void Overlays::DrawProgressText(sf::RenderWindow& window, const std::string& str) {
+  sf::Text text;
+  MakeText(str.c_str(), 640, 95, 32, sf::Color(255, 230, 120), text);
+  const sf::FloatRect b = text.getLocalBounds();
+  text.setOrigin(b.left + b.width / 2, 0);
+  window.draw(text);
 }
 
 void Overlays::DrawCredits(sf::RenderWindow& window, bool fullrun, int t) {
@@ -436,4 +466,71 @@ bool Overlays::TwManageEvent(sf::Event *event)
 void Overlays::SetTWBARResolution(int Width, int Height)
 {
 	TwWindowSize(Width, Height);
+}
+
+static std::string FormatTime(int frames) {
+  const int total_cs = frames * 100 / 60;
+  const int m = total_cs / 6000, sec = (total_cs / 100) % 60, cs = total_cs % 100;
+  char buf[32];
+  snprintf(buf, sizeof(buf), "%d:%02d.%02d", m, sec, cs);
+  return buf;
+}
+
+//split time when a checkpoint / flag is reached (total time, it keeps running)
+void Overlays::DrawSplit(sf::RenderWindow& window, const std::string& label, int t, int show) {
+  sf::Text text;
+  const std::string str = label + "   " + FormatTime(t);
+  MakeText(str.c_str(), 640, 140, 36, sf::Color(120, 255, 140), text);
+  const sf::FloatRect b = text.getLocalBounds();
+  text.setOrigin(b.left + b.width / 2, 0);
+  const sf::Uint8 a = sf::Uint8(std::min(255, show * 8));
+  text.setFillColor(sf::Color(120, 255, 140, a));
+  text.setOutlineColor(sf::Color(0, 0, 0, a));
+  window.draw(text);
+}
+
+//remaining time of the level time limit
+void Overlays::DrawTimeLeft(sf::RenderWindow& window, int frames_left) {
+  sf::Text text;
+  const sf::Color col = (frames_left < 10 * 60) ? sf::Color(255, 70, 50) : sf::Color(255, 200, 80);
+  MakeText(("Time left " + FormatTime(frames_left)).c_str(), 1260, 10, 36, col, text);
+  const sf::FloatRect b = text.getLocalBounds();
+  text.setOrigin(b.left + b.width, 0);
+  window.draw(text);
+}
+
+void Overlays::DrawEditorMarker(sf::RenderWindow& window, float x, float y, const std::string& label, const sf::Color& col, bool selected) {
+  const float s = std::max(draw_scale, 0.5f);
+  //label box above the object, a line down to the exact point
+  sf::Text text;
+  text.setString(label);
+  text.setFont(LOCAL("default"));
+  text.setCharacterSize(int(20 * s));
+  text.setFillColor(selected ? sf::Color(255, 60, 60) : col);
+  text.setOutlineThickness(2.0f * s);
+  text.setOutlineColor(sf::Color::Black);
+  const sf::FloatRect b = text.getLocalBounds();
+  const float lift = 28.0f * s;
+  text.setOrigin(b.left + b.width / 2, b.top + b.height);
+  text.setPosition(x, y - lift);
+
+  sf::RectangleShape bg(sf::Vector2f(b.width + 12 * s, b.height + 10 * s));
+  bg.setOrigin(bg.getSize().x / 2, bg.getSize().y - 5 * s);
+  bg.setPosition(x, y - lift);
+  bg.setFillColor(sf::Color(0, 0, 0, 150));
+  bg.setOutlineThickness(1.5f * s);
+  bg.setOutlineColor(selected ? sf::Color(255, 60, 60) : col);
+
+  sf::Vertex line[] = { sf::Vertex(sf::Vector2f(x, y - lift + 5 * s), col), sf::Vertex(sf::Vector2f(x, y), col) };
+  sf::CircleShape dot(4.0f * s);
+  dot.setOrigin(4.0f * s, 4.0f * s);
+  dot.setPosition(x, y);
+  dot.setFillColor(selected ? sf::Color(255, 60, 60) : col);
+  dot.setOutlineThickness(1.0f * s);
+  dot.setOutlineColor(sf::Color::Black);
+
+  window.draw(line, 2, sf::Lines);
+  window.draw(bg);
+  window.draw(text);
+  window.draw(dot);
 }

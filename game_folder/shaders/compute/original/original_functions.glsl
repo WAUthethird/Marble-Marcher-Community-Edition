@@ -10,12 +10,12 @@
 #define SUN_ENABLED 1
 #define SUN_SHARPNESS 2.0
 #define SUN_SIZE 0.004
-#define BACKGROUND_COLOR vec3(0.6,0.8,1.0)
+#define BACKGROUND_COLOR_ORIG (CUSTOM_SKY ? SKY_COLOR : vec3(0.6,0.8,1.0))
 
 
 vec3 sky_color_orig(vec3 dir)
 {
-	vec3 col = BACKGROUND_COLOR;
+	vec3 col = BACKGROUND_COLOR_ORIG;
 
 	//Background specular
 	#if SUN_ENABLED
@@ -24,7 +24,10 @@ vec3 sky_color_orig(vec3 dir)
 		col.xyz += LIGHT_COLOR * sun_spec;
 	#endif
 	
-	return col;
+	//Rebuild: dark when the sun is below the horizon, black sky for a black sun
+	float daylight = smoothstep(-0.08, 0.03, normalize(LIGHT_DIRECTION).y);
+	float sun_strength = max(max(LIGHT_COLOR.x, LIGHT_COLOR.y), LIGHT_COLOR.z);
+	return col*daylight*min(sun_strength, 1.0);
 }
 
 vec3 lighting_original(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3 refl, vec3 refr, float shadow) 
@@ -33,6 +36,7 @@ vec3 lighting_original(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3
 	vec3 col = vec3(0.);
 	//Get if this point is in shadow
 	float k = shadow;
+	float daylight = smoothstep(-0.08, 0.03, normalize(LIGHT_DIRECTION).y);
 	vec4 ambient_color = ambient_occlusion(pos, norm, dir);
 	if(!SHADOWS_ENABLED)
 	{
@@ -57,6 +61,7 @@ vec3 lighting_original(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3
 	//Don't make shadows entirely dark
 	k = max(k, 1.0 - SHADOW_DARKNESS);
 	col.xyz += color.xyz * LIGHT_COLOR * k;
+	col.xyz *= daylight;
 
 	//Add small amount of ambient occlusion
 	col.xyz *= 0.5 + 0.5*ambient_color.w;
@@ -64,7 +69,7 @@ vec3 lighting_original(vec4 color, vec2 pbr, vec4 pos, vec4 dir, vec4 norm, vec3
 	//Add fog effects
 	#if FOG_ENABLED
 		float b = dir.w / MAX_DIST;
-		col.xyz = (1.0 - b) * col.xyz + b * BACKGROUND_COLOR;
+		col.xyz = (1.0 - b) * col.xyz + b * sky_color_orig(dir.xyz);
 	#endif
 	
 	vec3 V = -dir.xyz;

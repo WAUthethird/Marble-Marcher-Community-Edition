@@ -8,3 +8,7 @@ MarbleMarcher.exe
 MarbleMarcher
 game_folder/game_folder.rar
 game_folder/shaders/compute/noise/noise.glsl_error.txt
+deps/
+*_error.txt
+game_folder/levels/progress/
+assets/settings.bin

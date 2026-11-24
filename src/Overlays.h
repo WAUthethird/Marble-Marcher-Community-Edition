@@ -82,7 +82,13 @@ public:
   void DrawLevelDesc(sf::RenderWindow& window, std::string desc);
   void DrawFPS(sf::RenderWindow& window, int fps);
   void DrawPaused(sf::RenderWindow& window);
-  void DrawArrow(sf::RenderWindow& window, const sf::Vector3f& v3);
+  void DrawArrow(sf::RenderWindow& window, const sf::Vector3f& v3, const std::string& label = std::string());
+  void DrawFlagCounter(sf::RenderWindow& window, int next, int total);
+  void DrawProgressText(sf::RenderWindow& window, const std::string& str);
+  void DrawSplit(sf::RenderWindow& window, const std::string& label, int t, int show);
+  void DrawTimeLeft(sf::RenderWindow& window, int frames_left);
+  //level editor label at a window pixel position
+  void DrawEditorMarker(sf::RenderWindow& window, float x, float y, const std::string& label, const sf::Color& col, bool selected);
   void DrawCredits(sf::RenderWindow& window, bool fullrun, int t);
   void DrawMidPoint(sf::RenderWindow& window, bool fullrun, int t);
   void DrawLevels(sf::RenderWindow& window);

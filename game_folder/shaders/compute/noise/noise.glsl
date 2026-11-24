@@ -9,7 +9,8 @@ layout(rgba8, binding = 0) uniform image2D final_color; //final output texture 1
 layout(rgba32f, binding = 1) uniform image2D DE_input; //global tex
 layout(rgba32f, binding = 2) uniform image2D color_HDR; //global tex
 
-#define PI 3.14159265
+#include<utility/definitions.glsl>
+#include<utility/uniforms.glsl>
 #include<utility/RNG.glsl>
 
 void main() {

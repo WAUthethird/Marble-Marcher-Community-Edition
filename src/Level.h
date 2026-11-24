@@ -79,9 +79,82 @@ struct LevelF
 	float FractalParamsFrq[9];
 };
 
+//Rebuild extensions: appended after LevelF in the .lvl file.
+//Old levels (only LevelF) still load and get the defaults below.
+static const int MAX_EXTRA_FLAGS = 16;
+static const int MAX_CHECKPOINTS = 16;
+static const char LEVEL_EXT_MAGIC[8] = "MMCEXT1";
+
+enum SymmetryType
+{
+	SYM_MENGER = 0,      //cubic (original)
+	SYM_SIERPINSKI = 1,  //tetrahedral
+	SYM_DIAGONAL = 2,    //single diagonal plane
+	SYM_NONE = 3         //only the mirror axes
+};
+
+struct LevelExt
+{
+	char magic[8];
+	int version;
+
+	//Fractal animation: rotation axes of Angle1 / Angle2
+	float rot_axis1[3];
+	float rot_axis2[3];
+
+	//Fractal glow
+	bool glow_enabled;
+	bool glow_beat_sync;
+	float glow_color[3];
+	float glow_brightness;
+	float glow_beat_strength;
+	float glow_pattern[3];
+
+	//Sky
+	bool custom_sky;
+	float sky_color[3];
+
+	//Symmetry
+	int sym_type;
+	bool sym_mirror[3];
+	int sym_radial_global;
+	int sym_radial_internal;
+
+	//Game rules
+	bool jump_enabled;
+	float jump_height;       //in marble radii
+	bool rubber_ball;
+	float rubber_bounce;     //0..1 restitution
+	float ball_weight;
+	bool kill_y_enabled;
+	float max_fall_speed;    //marble radii per second, 0 = unlimited
+	float max_speed;         //marble radii per second, 0 = unlimited
+
+	//Multiple flags + checkpoints
+	bool multi_flag;
+	int num_flags;
+	float flags[MAX_EXTRA_FLAGS][3];
+	int num_checkpoints;
+	float checkpoints[MAX_CHECKPOINTS][3];
+
+	//Music reaction
+	bool music_react;
+	float music_react_strength;
+
+	//beat analysis sensitivity equalizer (5 bands, see MusicAnalyzer.h)
+	float beat_eq[5];
+
+	//checkpoints must be hit in order before the flags (taken from the reserved block,
+	//so levels saved before keep loading: they have 0 here)
+	int ordered_checkpoints;
+	float time_limit;        //seconds, 0 = no time limit
+
+	float reserved[30];
+};
+
 class Level {
 public:
-  Level() {}
+  Level() { InitExtDefaults(); }
   Level(float s, float a1, float a2,
         const Eigen::Vector3f& v,
         const Eigen::Vector3f& c,
@@ -95,7 +168,7 @@ public:
         const char* desc,
         float an1=0.0f, float an2=0.0f, float an3=0.0f);
 
-  void LoadFromFile(fs::path path);
+  bool LoadFromFile(fs::path path);
   void SaveToFile(std::string file, int ID, int Link);
 
   void LoadLevelF(LevelF lvl);
@@ -140,6 +213,55 @@ public:
   //Advanced Animation
   FractalParams FractalParamsAmp;
   FractalParams FractalParamsFrq;
+
+  //---- Rebuild extensions ----
+  void InitExtDefaults();
+  void LoadLevelExt(const LevelExt& ext);
+  LevelExt GetLevelExt();
+
+  Eigen::Vector3f rot_axis1;      //rotation axis for Angle1 (default Z)
+  Eigen::Vector3f rot_axis2;      //rotation axis for Angle2 (default X)
+
+  bool glow_enabled;
+  bool glow_beat_sync;
+  Eigen::Vector3f glow_color;
+  float glow_brightness;
+  float glow_beat_strength;
+  Eigen::Vector3f glow_pattern;   //orbit trap that decides WHERE it glows
+
+  bool custom_sky;
+  Eigen::Vector3f sky_color;
+
+  int sym_type;
+  bool sym_mirror[3];
+  int sym_radial_global;
+  int sym_radial_internal;
+
+  bool jump_enabled;
+  float jump_height;
+  bool rubber_ball;
+  float rubber_bounce;
+  float ball_weight;
+  bool kill_y_enabled;
+  float max_fall_speed;
+  float max_speed;
+
+  bool multi_flag;
+  int num_flags;
+  Eigen::Vector3f flags[MAX_EXTRA_FLAGS];
+  int num_checkpoints;
+  Eigen::Vector3f checkpoints[MAX_CHECKPOINTS];
+
+  bool music_react;
+  float music_react_strength;
+  float beat_eq[5];          //beat detection sensitivity per frequency band
+  bool ordered_checkpoints;  //checkpoints in order, then the flags
+  float time_limit;          //seconds, 0 = off; the ball is destroyed when it runs out
+
+  bool HasDefaultSymmetry() const {
+	  return sym_type == SYM_MENGER && sym_mirror[0] && sym_mirror[1] && sym_mirror[2] &&
+		  sym_radial_global <= 1 && sym_radial_internal <= 1;
+  }
 };
 
 extern Level all_levels[num_levels];
@@ -186,13 +308,20 @@ public:
 
 	bool UpdateScore(int lvl, float time);
 	void DeleteLevel(int lvl);
+	//saves a copy of the level under a new, unused name and id; returns the new id
+	int SaveAsNewLevel(Level lvl, std::string name);
+	int DuplicateLevel(int lvl);
 	sf::Music* GetMusicByID(int ID);
 
 	void StopAllMusic();
 
 	std::vector<std::string> GetMusicNames();
+	std::string GetMusicPath(const std::string& name);
+	//name of the currently playing track ("" if none) + its playback position in seconds
+	std::string GetPlayingMusic(float& offset);
 
 private:
+	std::map<std::string, std::string> music_paths;
 	std::map<int, Level> level_map;
 	std::map<int, Score> score_map;
 	std::map<int, int> level_id_map;

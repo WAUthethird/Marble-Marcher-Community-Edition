@@ -43,7 +43,7 @@ void main() {
 		vec3 cpos = pos.xyz - norm.w*norm.xyz;
 		vec2 pbr; vec3 emission;
 		scene_material(cpos, color, pbr, emission);
-		color *= max(dot(normalize(LIGHT_DIRECTION),norm.xyz),0.05);
+		color *= max(dot(normalize(LIGHT_DIRECTION),norm.xyz),0.05)*smoothstep(-0.08, 0.03, normalize(LIGHT_DIRECTION).y)*min(max(max(LIGHT_COLOR.x, LIGHT_COLOR.y), LIGHT_COLOR.z), 1.0);
 		color.xyz += emission;
 	}
 	else
