@@ -331,7 +331,7 @@ Launching should be self-explanatory for these systems, just run the executable 
 ## Browser / Android version
 The folder [`web/`](web/) contains a standalone WebGL2 version of the game (`web/index.html`). It needs no build step and runs in any current browser – on desktop and on Android (Chrome/Firefox), with touch controls.
 
-* It includes all 30 levels (exported from `game_folder/levels` with `python3 tools/export_levels_web.py`), the marble physics of the desktop game, unlimited checkpoints and the multi color fractal glow.
+* It includes all 30 levels (embedded into `index.html` by `python3 tools/export_levels_web.py`), the marble physics of the desktop game, unlimited checkpoints and the multi color fractal glow.
 * The renderer is a simplified single-pass ray marcher (no GI/bloom/TXAA) so that it runs on phones. Lower the resolution in the menu if it is slow.
 * Serve it over http(s), e.g. `cd web && python3 -m http.server 8000`, then open `http://localhost:8000`. Hosted over https (e.g. GitHub Pages) it can be installed as an app on Android ("Add to home screen") and works offline.
 * Touch: drag on the left half = joystick, drag on the right half = camera, two fingers = zoom, buttons for checkpoints and restart.
