@@ -1304,6 +1304,10 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Camera gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_camera, "min=0 max=4 step=0.1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Fractal glow", TW_TYPE_BOOLCPP, &SETTINGS.stg.fractal_glow, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Flag glow", TW_TYPE_BOOLCPP, &SETTINGS.stg.flag_glow, "group='Graphics settings'");
+	TwEnumVal glow_modes[] = { {0, "Original"}, {1, "Multi color (structure)"}, {2, "Multi color (animated)"}, {3, "Multi color (structure + animated)"} };
+	TwType GlowModeType = TwDefineEnum("GlowModeType", glow_modes, 4);
+	TwAddVarRW(overlays_ptr->settings, "Fractal glow mode", GlowModeType, &SETTINGS.stg.fractal_glow_mode, "group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "Fractal glow intensity", TW_TYPE_FLOAT, &SETTINGS.stg.fractal_glow_intensity, "min=0 max=5 step=0.05 group='Graphics settings'");
 	TwAddButton(overlays_ptr->settings, "Apply2", ApplySettings, NULL, "group='Graphics settings' label='Apply settings'  ");
 
 	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &SETTINGS.stg.language, "group='Gameplay settings'");

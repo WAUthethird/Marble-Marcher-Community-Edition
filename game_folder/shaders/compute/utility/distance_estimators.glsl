@@ -180,6 +180,41 @@ vec4 col_scene(vec3 pos)
 	return vec4(min(col.xyz,1), 0.0);
 }
 
+//##########################################
+//   Multi color fractal glow
+//##########################################
+vec3 glow_palette(float t)
+{
+	return 0.5 + 0.5*cos(6.28318*(t + vec3(0.0, 0.33, 0.67)));
+}
+
+//mode 1: every structural band of the fractal glows in its own color
+//mode 2: the glowing band cycles through the spectrum over time and space
+//mode 3: both combined
+vec3 multicolor_glow(vec3 pos, vec3 hfcol, int mode)
+{
+	const vec3 bands[3] = vec3[3](vec3(0.2,0.5,0.75), vec3(0.75,0.3,0.4), vec3(0.4,0.8,0.25));
+	float shift = 0.;
+	if(mode >= 2)
+	{
+		shift = 0.08*time + dot(pos, vec3(0.3,0.5,0.7))/(30.*max(iMarbleRad, 1e-4));
+	}
+	int nbands = (mode == 2) ? 1 : 3;
+	vec3 em = vec3(0.);
+	for(int k = 0; k < nbands; k++)
+	{
+		float d = length(hfcol - bands[k]);
+		float mask = exp(-50.*clamp(d*d, 0., 1.));
+		float hue = shift;
+		if(mode != 2)
+		{
+			hue += float(k)/3. + 0.35*dot(hfcol, vec3(1.));
+		}
+		em += mask*glow_palette(hue);
+	}
+	return 12.*em;
+}
+
 void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emission)
 {
 	//DE_count = DE_count+1;
@@ -196,7 +231,15 @@ void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emiss
 	if(FRACTAL_GLOW)
 	{
 		vec3 hfcol = 0.5*sin(vec3(3.,4.,5.)*color.xyz)+0.5;
-		emission = 20.*color.xyz*exp(-50.*clamp(pow(abs(length(hfcol-vec3(0.2,0.5,0.75))),2.),0.,1.));
+		if(FRACTAL_GLOW_MODE <= 0)
+		{
+			emission = 20.*color.xyz*exp(-50.*clamp(pow(abs(length(hfcol-vec3(0.2,0.5,0.75))),2.),0.,1.));
+		}
+		else
+		{
+			emission = multicolor_glow(pos, hfcol, FRACTAL_GLOW_MODE);
+		}
+		emission *= FRACTAL_GLOW_INTENSITY;
 	}
 	
 	if (color_f.w < color.w) 

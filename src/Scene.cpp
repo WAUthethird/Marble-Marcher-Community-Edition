@@ -230,7 +230,8 @@ Scene::Scene(sf::Music* level_music) :
 	cur_ed_mode(DEFAULT),
 	level_editor(false),
 	gravity(0.005f),
-	time(0.f)
+	time(0.f),
+	checkpoint_used(false)
 {
   ResetCheats();
   frac_params.setOnes();
@@ -273,6 +274,7 @@ void Scene::SetFlag(float x, float y, float z) {
 }
 
 void Scene::SetLevel(int level) {
+  ClearCheckpoints();
   cur_level = level;    
   level_copy = levels.GetLevel(level);
   SetCurrentMusic(levels.GetLevelMusic(level));
@@ -450,6 +452,7 @@ void Scene::ResetLevel() {
     StopRecording2File("", false);
 	StartRecording();
 	AddResetPadding();
+    ClearCheckpoints();
     SetMode(DEORBIT);
     timer = frame_deorbit;
     frac_params = level_copy.params;
@@ -478,6 +481,46 @@ void Scene::ResetCheats() {
   hyper_speed = false;
   disable_motion = false;
   zoom_to_scale = false;
+}
+
+bool Scene::SetCheckpoint() {
+  if (cam_mode != MARBLE || free_camera || level_editor) {
+    return false;
+  }
+  Checkpoint cp;
+  cp.pos = marble_pos;
+  cp.mat = marble_mat;
+  cp.look_x = cam_look_x;
+  cp.look_y = cam_look_y;
+  checkpoints.push_back(cp);
+  return true;
+}
+
+bool Scene::LoadCheckpoint() {
+  if (checkpoints.empty() || cam_mode != MARBLE || free_camera) {
+    return false;
+  }
+  const Checkpoint& cp = checkpoints.back();
+  marble_pos = cp.pos;
+  marble_vel.setZero();
+  marble_mat = cp.mat;
+  cam_look_x = cp.look_x;
+  cam_look_y = cp.look_y;
+  checkpoint_used = true;
+  return true;
+}
+
+bool Scene::RemoveCheckpoint() {
+  if (checkpoints.empty()) {
+    return false;
+  }
+  checkpoints.pop_back();
+  return true;
+}
+
+void Scene::ClearCheckpoints() {
+  checkpoints.clear();
+  checkpoint_used = false;
 }
 
 void Scene::Synchronize()
@@ -595,7 +638,8 @@ void Scene::UpdateMarble(float dx, float dy) {
       if (fx*fx + fz*fz < 6 * marble_rad*marble_rad) {
         final_time = timer;
 		bool best = false;
-        if (!enable_cheats) {
+        //Respawning at a checkpoint is not recorded in the replay and counts like a cheat for highscores
+        if (!enable_cheats && !checkpoint_used) {
 			best = levels.UpdateScore(cur_level, final_time/60.f);
         }
 		StopRecording2File(std::string(recordings_folder) + "/" + ConvertSpaces2_(level_copy.txt) + ".bin", best);
@@ -607,7 +651,10 @@ void Scene::UpdateMarble(float dx, float dy) {
 
   //Check if marble passed the death barrier
   if (marble_pos.y() < (enable_cheats ? -999.0f : level_copy.kill_y)) {
-    ResetLevel();
+    //Respawn at the last checkpoint if there is one, otherwise restart the level
+    if (!LoadCheckpoint()) {
+      ResetLevel();
+    }
   }
 }
 
@@ -1030,6 +1077,8 @@ void Scene::WriteShader(ComputeShader& shader)
 	shader.setUniform("MARBLE_MODE", MarbleType);
 	shader.setUniform("FRACTAL_GLOW", SETTINGS.stg.fractal_glow);
 	shader.setUniform("FLAG_GLOW", SETTINGS.stg.flag_glow);
+	shader.setUniform("FRACTAL_GLOW_MODE", SETTINGS.stg.fractal_glow_mode);
+	shader.setUniform("FRACTAL_GLOW_INTENSITY", SETTINGS.stg.fractal_glow_intensity);
 
 	shader.setUniform("gamma_material", gamma_material);
 	shader.setUniform("gamma_sky", gamma_sky);

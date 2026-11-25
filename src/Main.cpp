@@ -362,6 +362,24 @@ int main(int argc, char *argv[]) {
 								ConfirmEditorExit(&scene, &overlays);
 						}
 					}
+					else if (keycode == sf::Keyboard::K)
+					{
+						if (game_mode == PLAYING) {
+							scene.SetCheckpoint();
+						}
+					}
+					else if (keycode == sf::Keyboard::L)
+					{
+						if (game_mode == PLAYING) {
+							scene.LoadCheckpoint();
+						}
+					}
+					else if (keycode == sf::Keyboard::J)
+					{
+						if (game_mode == PLAYING) {
+							scene.RemoveCheckpoint();
+						}
+					}
 					else if (keycode == SETTINGS.stg.control_mapping[RESTART])
 					{
 						if (game_mode == PLAYING) {
@@ -734,6 +752,9 @@ int main(int argc, char *argv[]) {
 			}
 			if (show_cheats) {
 				overlays.DrawCheats(window);
+			}
+			if (scene.GetCheckpointCount() > 0 && scene.GetMode() == Scene::MARBLE) {
+				overlays.DrawCheckpoints(window, scene.GetCheckpointCount());
 			}
 		}
 		else if (game_mode == CREDITS) {

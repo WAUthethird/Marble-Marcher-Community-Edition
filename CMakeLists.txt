@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(MarbleMarcher VERSION "1.4.6")
+project(MarbleMarcher VERSION "1.0.1")
 set(CMAKE_CXX_STANDARD 17)
 
 configure_file(src/config.h.in config.h)
@@ -142,8 +142,8 @@ elseif(UNIX)
 	set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A ray marched marble game")
 	set(CPACK_PACKAGE_VERSION "${MM_VERSION}")
 	set(CPACK_PACKAGE_VERSION_MAJOR "1")
-	set(CPACK_PACKAGE_VERSION_MINOR "4")
-	set(CPACK_PACKAGE_VERSION_PATCH "6")
+	set(CPACK_PACKAGE_VERSION_MINOR "0")
+	set(CPACK_PACKAGE_VERSION_PATCH "1")
 
 	SET(CPACK_GENERATOR "DEB")
 	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "KK") #required
