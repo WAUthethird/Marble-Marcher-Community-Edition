@@ -374,6 +374,43 @@ float glow_mask(vec3 c)
 	return exp(-50.*clamp(pow(abs(length(hfcol-vec3(0.2,0.5,0.75))),2.),0.,1.));
 }
 
+//##########################################
+//   Multi color glow
+//##########################################
+vec3 glow_palette(float t)
+{
+	return 0.5 + 0.5*cos(6.28318*(t + vec3(0.0, 0.33, 0.67)));
+}
+
+//c = glow orbit trap, base = color of band 0 (glow color, or the surface color for the legacy glow)
+vec3 multi_glow(vec3 pos, vec3 c, vec3 base)
+{
+	//band 0 is the original glow band, bands 1 and 2 are other parts of the fractal structure
+	const vec3 band[3] = vec3[3](vec3(0.2,0.5,0.75), vec3(0.75,0.3,0.4), vec3(0.4,0.8,0.25));
+	vec3 hfcol = 0.5*sin(vec3(3.,4.,5.)*c)+0.5;
+	float m[3];
+	for(int k = 0; k < 3; k++)
+	{
+		vec3 d = hfcol - band[k];
+		m[k] = exp(-50.*clamp(dot(d,d), 0., 1.));
+	}
+	float shift = GLOW_HUE_SPEED*time + GLOW_HUE_SPREAD*dot(pos, vec3(0.3,0.5,0.7))/max(iMarbleRad, 1e-6);
+	if(GLOW_MULTI == 1)
+	{
+		return base*m[0] + GLOW_COLOR2*m[1] + GLOW_COLOR3*m[2];
+	}
+	if(GLOW_MULTI == 2)
+	{
+		return glow_palette(shift)*m[0];
+	}
+	vec3 em = vec3(0.);
+	for(int k = 0; k < 3; k++)
+	{
+		em += m[k]*glow_palette(shift + float(k)/3. + 0.35*dot(hfcol, vec3(1.)));
+	}
+	return em;
+}
+
 void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emission)
 {
 	//DE_count = DE_count+1;
@@ -390,7 +427,14 @@ void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emiss
 
 	if(FRACTAL_GLOW)
 	{
-		if(GLOW_CUSTOM)
+		if(GLOW_MULTI > 0)
+		{
+			//multi color glow (level setting or global override)
+			emission = GLOW_CUSTOM ?
+				20.*GLOW_BRIGHTNESS*GLOW_BEAT*multi_glow(pos, gorbit, GLOW_COLOR) :
+				20.*multi_glow(pos, color.xyz, color.xyz);
+		}
+		else if(GLOW_CUSTOM)
 		{
 			//glow color is independent from the surface color
 			emission = 20.*GLOW_BRIGHTNESS*GLOW_BEAT*GLOW_COLOR*glow_mask(gorbit);

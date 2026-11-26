@@ -319,7 +319,9 @@ private:
   Eigen::Vector3f squash_dir;
   int             next_flag;
   int             active_checkpoint;
-  bool            cp_active[MAX_CHECKPOINTS];
+  std::vector<char> cp_active;      //one entry per checkpoint, no upper limit
+  bool CpActive(int i) const { return i >= 0 && i < (int)cp_active.size() && cp_active[i]; }
+  void SetCpActive(int i) { if (i < 0) return; if (i >= (int)cp_active.size()) cp_active.resize(i + 1, 0); cp_active[i] = 1; }
 
   //saved progress
   struct SavedProgress { int checkpoint; int next_flag; int timer; unsigned int cp_mask; float respawn[3]; int has_respawn; };
@@ -328,6 +330,7 @@ private:
   bool            time_over;
   bool            pending_restore;
   SavedProgress   restore_data;
+  std::vector<char> restore_cp;     //hit checkpoints of the saved progress (all of them, not only the first 32)
   bool            restored_run;
 
   //crush effect state
