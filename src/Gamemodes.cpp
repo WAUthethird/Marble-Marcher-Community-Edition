@@ -249,13 +249,14 @@ void OpenEditor(Scene * scene, Overlays * overlays, int level)
 	scene->SetExposure(1.0f);
 	overlays->TWBAR_ENABLED = true;
 	TwDefine("LevelEditor visible=true position='20 20'");
-	TwDefine("FractalEditor visible=true position='20 500'");
+	TwDefine("FractalEditor visible=true position='500 20'");
 	TwDefine("Settings iconified=true");
 	TwDefine("Statistics iconified=true");
 	scene->StartLevelEditor(level);
+	EditorLevelChanged();
 }
 
-void PlayLevel(Scene * scene, sf::RenderWindow * window, int level)
+static void StartLevelNow(Scene * scene, sf::RenderWindow * window, int level, bool from_checkpoint)
 {
 	SetCameraFocus(1e10);
 	StopReplay();
@@ -263,7 +264,59 @@ void PlayLevel(Scene * scene, sf::RenderWindow * window, int level)
 	//play level
 	game_mode = PLAYING;
 	scene->StartSingle(level);
+	if (from_checkpoint)
+	{
+		scene->RestoreSavedProgress();
+	}
+	//"start from new" keeps the saved checkpoint: it is only replaced when a new
+	//checkpoint is reached and deleted when the level is finished
 	LockMouse(*window);
+}
+
+void PlayLevel(Scene * scene, sf::RenderWindow * window, int level)
+{
+	if (!scene->HasSavedProgress(level))
+	{
+		StartLevelNow(scene, window, level, false);
+		return;
+	}
+
+	//saved checkpoint => ask where to start
+	sf::Vector2f wsize = default_size;
+	Window dialog(wsize.x*0.35f, wsize.y*0.4f, 560, 215, sf::Color(0, 0, 0, 128), std::string("Saved checkpoint"), LOCAL("default"));
+	Text text(std::string("Continue from the saved checkpoint?"), LOCAL("default"), 30, sf::Color::White);
+	Text button1(std::string("Start from new"), LOCAL("default"), 30, sf::Color::White);
+	Text button2(std::string("Start from checkpoint"), LOCAL("default"), 30, sf::Color::White);
+
+	Box but1(0, 0, 260, 40, sf::Color(0, 64, 128, 240));
+	Box but2(0, 0, 260, 40, sf::Color(0, 64, 128, 240));
+	but1.hoverstate.color_main = sf::Color(230, 140, 20, 200);
+	but2.hoverstate.color_main = sf::Color(40, 230, 20, 200);
+	but1.AddObject(&button1, Box::CENTER);
+	but2.AddObject(&button2, Box::CENTER);
+
+	dialog.Add(&text, Box::CENTER);
+	dialog.Add(&but1, Box::RIGHT);
+	dialog.Add(&but2, Box::RIGHT);
+
+	int id = AddGlobalObject(dialog);
+
+	//the click that opened the dialog must not press one of its buttons
+	auto opened = std::make_shared<sf::Clock>();
+
+	get_glob_obj(id).objects[1].get()->objects[0].get()->objects[1].get()->SetCallbackFunction([scene, window, level, opened](sf::RenderWindow * w, InputState & state)
+	{
+		if (opened->getElapsedTime().asSeconds() < 0.3f) return;
+		overlays_ptr->sound_click.play();
+		StartLevelNow(scene, window, level, false);
+	}, true);
+
+	get_glob_obj(id).objects[1].get()->objects[0].get()->objects[2].get()->SetCallbackFunction([scene, window, level, opened](sf::RenderWindow * w, InputState & state)
+	{
+		if (opened->getElapsedTime().asSeconds() < 0.3f) return;
+		overlays_ptr->sound_click.play();
+		StartLevelNow(scene, window, level, true);
+	}, true);
 }
 
 void RePlayBest(Scene * scene, sf::RenderWindow * window, int level)
@@ -622,7 +675,7 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 		{
 			PlayLevel(scene, window, selected);
 			overlays->sound_click.play();
-		});
+		}, true); //only once per click (it fired every frame while the button was held)
 		lvltitle.AddObject(&lvlname, Object::Allign::LEFT);
 		lvltext.AddObject(&lvltitle, Object::Allign::LEFT);
 	
@@ -674,7 +727,7 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 		lvlavg.AddObject(&lvlavgtxt, Object::Allign::CENTER);
 		lvlbtton.AddObject(&lvlavg, Object::Allign::LEFT);
 
-		Box buttons(120, 60);
+		Box buttons(180, 60);
 		buttons.SetBackgroundColor(sf::Color::Transparent);
 		Box bedit(56, 56);
 		bedit.defaultstate.color_main = sf::Color(255, 255, 255, 255);
@@ -697,8 +750,22 @@ void OpenLevelMenu(Scene* scene, Overlays* overlays)
 			overlays->sound_click.play();
 		}, true);
 
+		//duplicate the level
+		Box bcopy(56, 56);
+		bcopy.defaultstate.color_main = sf::Color(40, 80, 160, 255);
+		bcopy.hoverstate.color_main = sf::Color(60, 140, 255, 255);
+		Text copytxt(std::string("Copy"), LOCAL("default"), 18, sf::Color::White);
+		bcopy.AddObject(&copytxt, Object::Allign::CENTER);
+		bcopy.SetCallbackFunction([scene, overlays, id = ids[i]](sf::RenderWindow * window, InputState & state)
+		{
+			scene->levels.DuplicateLevel(id);
+			overlays->sound_click.play();
+			OpenLevelMenu(scene, overlays);
+		}, true);
+
 		buttons.AddObject(&bremove, Object::Allign::RIGHT);
 		buttons.AddObject(&bedit, Object::Allign::RIGHT);
+		buttons.AddObject(&bcopy, Object::Allign::RIGHT);
 		lvlbtton.AddObject(&buttons, Object::Allign::RIGHT);
 		levels.AddObject(&lvlbtton, Object::Allign::LEFT);
 	}
@@ -1020,14 +1087,196 @@ void SetCameraFocus(float f)
 int music_id = 0;
 bool music_play = false;
 
+//put the object under the cursor right away (not only after the mouse moved)
+static void PlaceAtCursor()
+{
+	sf::Vector2i m = sf::Mouse::getPosition(*window);
+	scene_ptr->EditorPlace(m.x, m.y);
+}
+
 void TW_CALL MarbleSet(void *data)
 {
 	scene_ptr->cur_ed_mode = Scene::EditorMode::PLACE_MARBLE;
+	PlaceAtCursor();
 }
 
 void TW_CALL FlagSet(void *data)
 {
 	scene_ptr->cur_ed_mode = Scene::EditorMode::PLACE_FLAG;
+	PlaceAtCursor();
+}
+
+//===== Rebuild 1.0.1: multi color glow =====
+static TwType GlowMultiType()
+{
+	static TwType t = TW_TYPE_UNDEF;
+	if (t == TW_TYPE_UNDEF)
+	{
+		TwEnumVal v[] = { {GLOW_SINGLE, "Single color"}, {GLOW_THREE_COLORS, "Three colors (structure)"},
+			{GLOW_RAINBOW, "Rainbow (animated)"}, {GLOW_RAINBOW_BANDS, "Rainbow (structure + animated)"} };
+		t = TwDefineEnum("GlowMultiType", v, 4);
+	}
+	return t;
+}
+
+static TwType GlowSettingType()
+{
+	static TwType t = TW_TYPE_UNDEF;
+	if (t == TW_TYPE_UNDEF)
+	{
+		TwEnumVal v[] = { {0, "As level"}, {GLOW_THREE_COLORS, "Three colors (structure)"},
+			{GLOW_RAINBOW, "Rainbow (animated)"}, {GLOW_RAINBOW_BANDS, "Rainbow (structure + animated)"} };
+		t = TwDefineEnum("GlowSettingType", v, 4);
+	}
+	return t;
+}
+
+//the setting is stored in one byte, AntTweakBar enums are int
+static void TW_CALL SetGlowColorsSetting(const void *value, void *clientData)
+{
+	SETTINGS.stg.glow_colors = (unsigned char)std::min(std::max(*(const int*)value, 0), 3);
+}
+
+static void TW_CALL GetGlowColorsSetting(void *value, void *clientData)
+{
+	*(int*)value = SETTINGS.stg.glow_colors;
+}
+
+//===== Rebuild: extra flags + checkpoints in the level editor =====
+TwType TwVec3P;
+bool editor_markers = true;
+static int shown_flags = 0;
+static int shown_checkpoints = 0;
+
+void TW_CALL PlaceExtraFlag(void *data)
+{
+	scene_ptr->ed_place_index = (int)(intptr_t)data;
+	scene_ptr->cur_ed_mode = Scene::EditorMode::PLACE_EXTRA_FLAG;
+	PlaceAtCursor();
+}
+
+void TW_CALL PlaceCheckpoint(void *data)
+{
+	scene_ptr->ed_place_index = (int)(intptr_t)data;
+	scene_ptr->cur_ed_mode = Scene::EditorMode::PLACE_CHECKPOINT;
+	PlaceAtCursor();
+}
+
+//original Marble Marcher physics values
+void TW_CALL ResetPhysicsDefaults(void *data)
+{
+	Level* c = &scene_ptr->level_copy;
+	c->gravity = 0.005f;
+	c->ground_force = 0.008f;
+	c->air_force = 0.004f;
+	c->ground_friction = 0.99f;
+	c->air_friction = 0.995f;
+	c->ground_ratio = 1.15f;
+	c->jump_height = 4.0f;
+	c->rubber_bounce = 0.85f;
+	c->ball_weight = 1.0f;
+	c->max_speed = 0.0f;
+	c->max_fall_speed = 0.0f;
+}
+
+//the bar itself is rebuilt next frame (UpdateEditorFlagVars), not inside the callback
+void TW_CALL AddExtraFlag(void *data)
+{
+	Level* copy = &scene_ptr->level_copy;
+	if (copy->num_flags >= MAX_EXTRA_FLAGS) return;
+	copy->flags[copy->num_flags] = copy->end_pos;
+	copy->num_flags++;
+	PlaceExtraFlag((void*)(intptr_t)(copy->num_flags - 1));
+}
+
+void TW_CALL RemoveExtraFlag(void *data)
+{
+	Level* copy = &scene_ptr->level_copy;
+	if (copy->num_flags > 0) copy->num_flags--;
+	scene_ptr->cur_ed_mode = Scene::EditorMode::DEFAULT;
+}
+
+void TW_CALL AddCheckpoint(void *data)
+{
+	Level* copy = &scene_ptr->level_copy;
+	//no upper limit
+	copy->AddCheckpoint(copy->start_pos);
+	PlaceCheckpoint((void*)(intptr_t)(copy->num_checkpoints - 1));
+}
+
+void TW_CALL RemoveCheckpoint(void *data)
+{
+	Level* copy = &scene_ptr->level_copy;
+	copy->RemoveLastCheckpoint();
+	scene_ptr->cur_ed_mode = Scene::EditorMode::DEFAULT;
+}
+
+static void RebuildFlagVars()
+{
+	TwBar* led = overlays_ptr->level_editor;
+	if (led == nullptr) return;
+	Level* copy = &scene_ptr->level_copy;
+	for (int i = 0; i < shown_flags; i++)
+	{
+		TwRemoveVar(led, ("flagpos" + num2str(i)).c_str());
+		TwRemoveVar(led, ("flagplace" + num2str(i)).c_str());
+	}
+	for (int i = 0; i < shown_checkpoints; i++)
+	{
+		TwRemoveVar(led, ("cppos" + num2str(i)).c_str());
+		TwRemoveVar(led, ("cpplace" + num2str(i)).c_str());
+	}
+	for (int i = 0; i < copy->num_flags; i++)
+	{
+		std::string n = num2str(i + 1);
+		TwAddVarRW(led, ("flagpos" + num2str(i)).c_str(), TwVec3P, copy->flags[i].data(),
+			("group='Flags and checkpoints' label='Flag " + n + "'").c_str());
+		TwAddButton(led, ("flagplace" + num2str(i)).c_str(), PlaceExtraFlag, (void*)(intptr_t)i,
+			("group='Flags and checkpoints' label='   place flag " + n + "'").c_str());
+	}
+	for (int i = 0; i < copy->num_checkpoints; i++)
+	{
+		std::string n = num2str(i + 1);
+		TwAddVarRW(led, ("cppos" + num2str(i)).c_str(), TwVec3P, copy->checkpoints[i].data(),
+			("group='Flags and checkpoints' label='Checkpoint " + n + "'").c_str());
+		TwAddButton(led, ("cpplace" + num2str(i)).c_str(), PlaceCheckpoint, (void*)(intptr_t)i,
+			("group='Flags and checkpoints' label='   place checkpoint " + n + "'").c_str());
+	}
+	shown_flags = copy->num_flags;
+	shown_checkpoints = copy->num_checkpoints;
+}
+
+void EditorLevelChanged()
+{
+	std::vector<std::string> music_list = scene_ptr->levels.GetMusicNames();
+	for (int i = 0; i < (int)music_list.size(); i++)
+	{
+		if (music_list[i] == scene_ptr->level_copy.use_music) music_id = i;
+	}
+	RebuildFlagVars();
+}
+
+void UpdateEditorFlagVars()
+{
+	Level* copy = &scene_ptr->level_copy;
+
+	//logarithmic marble scale: the crank step is always 3% of the current radius
+	static float last_step = -1.0f;
+	const float step = std::max(copy->marble_rad * 0.03f, 1e-9f);
+	if (last_step < 0.0f || std::abs(step - last_step) > 0.005f * last_step)
+	{
+		last_step = step;
+		char def[128];
+		snprintf(def, sizeof(def), "LevelEditor/'Marble Radius(Scale)' step=%.9g", step);
+		TwDefine(def);
+	}
+
+	if (shown_flags != copy->num_flags || shown_checkpoints != copy->num_checkpoints)
+	{
+		RebuildFlagVars();
+	}
+	//the bar no longer points to removed checkpoints => free them
+	copy->TrimCheckpoints();
 }
 
 void TW_CALL PlayMusic(void *data)
@@ -1036,7 +1285,8 @@ void TW_CALL PlayMusic(void *data)
 	music_play = !music_play;
 	if (music_play)
 	{
-		scene_ptr->levels.GetMusicByID(music_id)->play();
+		sf::Music* m = scene_ptr->levels.GetMusicByID(music_id);
+		if (m != nullptr) m->play();
 	}
 }
 
@@ -1047,7 +1297,8 @@ void TW_CALL SaveLevel(void *data)
 
 	std::vector<std::string> music_list = scene_ptr->levels.GetMusicNames();
 	std::vector<int> lvlnum = scene_ptr->levels.getLevelIds();
-	copy->use_music = music_list[music_id];
+	if (music_id >= 0 && music_id < (int)music_list.size())
+		copy->use_music = music_list[music_id];
 	bool same_level = scene_ptr->original_level_name == copy->txt;
 	if (lvlid < 0 || !same_level)
 		lvlid = time(NULL);
@@ -1059,6 +1310,21 @@ void TW_CALL SaveLevel(void *data)
 		scene_ptr->WriteLVL(lvlid);
 		scene_ptr->original_level_name = copy->txt;
 	}
+}
+
+//editor: save the current state (including unsaved changes) as a new level and edit the copy
+void TW_CALL DuplicateThisLevel(void *data)
+{
+	Level* copy = &scene_ptr->level_copy;
+	std::vector<std::string> music_list = scene_ptr->levels.GetMusicNames();
+	if (music_id >= 0 && music_id < (int)music_list.size())
+		copy->use_music = music_list[music_id];
+	int new_id = scene_ptr->levels.SaveAsNewLevel(*copy, copy->txt + " copy");
+	Level saved = scene_ptr->levels.GetLevel(new_id);
+	copy->txt = saved.txt;
+	copy->level_id = new_id;
+	scene_ptr->WriteLVL(new_id);
+	scene_ptr->original_level_name = saved.txt;
 }
 
 void TW_CALL PlayThisLevel(void *data)
@@ -1104,7 +1370,7 @@ void TW_CALL ApplySettings(void *data)
 		settings.majorVersion = 4;
 		settings.minorVersion = 3;
 
-		window->create(screen_size, "Marble Marcher: Community Edition", window_style, settings);
+		window->create(screen_size, "Marble Marcher: Community Edition (Unofficial Rebuild)", window_style, settings);
 		window->setVerticalSyncEnabled(SETTINGS.stg.VSYNC);
 		window->setKeyRepeatEnabled(false);
 		
@@ -1122,7 +1388,9 @@ void TW_CALL ApplySettings(void *data)
 		overlays_ptr->SetAntTweakBar(window->getSize().x, window->getSize().y);
 	}
 
-	window->setFramerateLimit(SETTINGS.stg.fps_limit);
+	//V-Sync and the frame limit are applied every time (not only when the window is created)
+	window->setVerticalSyncEnabled(SETTINGS.stg.VSYNC);
+	window->setFramerateLimit(std::max(SETTINGS.stg.fps_limit, 0)); //0 = unlimited
 	std::vector<std::string> langs = LOCAL.GetLanguages();
 	LOCAL.SetLanguage(langs[SETTINGS.stg.language]);
 
@@ -1273,7 +1541,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 
 	TwAddVarRW(overlays_ptr->settings, "Rendering resolution", Resolutions, &SETTINGS.stg.rendering_resolution, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Fullscreen", TW_TYPE_BOOLCPP, &SETTINGS.stg.fullscreen, "group='Rendering settings' help='You need to restart the game for changes to take effect'");
-	TwAddVarRW(overlays_ptr->settings, "Framerate limit", TW_TYPE_INT32, &SETTINGS.stg.fps_limit, "min=1 max=240 group='Rendering settings'");
+	TwAddVarRW(overlays_ptr->settings, "Framerate limit", TW_TYPE_INT32, &SETTINGS.stg.fps_limit, "min=0 max=1000 group='Rendering settings' help='0 = unlimited. Turn VSYNC off for more fps than the monitor refresh rate. The physics always runs at 60 Hz, the picture is interpolated.'");
 	TwAddVarRW(overlays_ptr->settings, "Cross-eye 3D", TW_TYPE_BOOLCPP, &SETTINGS.stg.cross_eye, "group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "3D eye separation", TW_TYPE_FLOAT, &SETTINGS.stg.eye_separation, "min=-2 step=0.05 max=2 group='Rendering settings'");
 	TwAddVarRW(overlays_ptr->settings, "Screenshot resolution", Resolutions, &SETTINGS.stg.screenshot_resolution, "group='Rendering settings'");
@@ -1289,7 +1557,7 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Auto-exposure speed", TW_TYPE_FLOAT, &SETTINGS.stg.auto_exposure_speed, "min=0 step=0.01 max=1 group='Graphics settings' help='The speed at which the camera adapts to the scene brightness' ");
 	TwAddVarRW(overlays_ptr->settings, "Auto-exposure target brightness", TW_TYPE_FLOAT, &SETTINGS.stg.auto_exposure_target, "min=0 step=0.01 max=1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "FOV", TW_TYPE_FLOAT, &SETTINGS.stg.FOV, "min=30 step=1 max=180 group='Graphics settings'");
-	TwAddVarRW(overlays_ptr->settings, "VSYNC", TW_TYPE_BOOLCPP, &SETTINGS.stg.VSYNC, "group='Graphics settings'");
+	TwAddVarRW(overlays_ptr->settings, "VSYNC", TW_TYPE_BOOLCPP, &SETTINGS.stg.VSYNC, "group='Graphics settings' help='On = fps limited to the monitor refresh rate'");
 	TwAddVarRW(overlays_ptr->settings, "Shadows", TW_TYPE_BOOLCPP, &SETTINGS.stg.shadows, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Reflection and Refraction", TW_TYPE_BOOLCPP, &SETTINGS.stg.refl_refr, "group='Graphics settings'");
 	//TwAddVarRW(overlays_ptr->settings, "Volumetric fog(TODO)", TW_TYPE_BOOLCPP, &SETTINGS.stg.fog, "group='Graphics settings'");
@@ -1304,6 +1572,8 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Camera gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_camera, "min=0 max=4 step=0.1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Fractal glow", TW_TYPE_BOOLCPP, &SETTINGS.stg.fractal_glow, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Flag glow", TW_TYPE_BOOLCPP, &SETTINGS.stg.flag_glow, "group='Graphics settings'");
+	TwAddVarCB(overlays_ptr->settings, "Fractal glow colors", GlowSettingType(), SetGlowColorsSetting, GetGlowColorsSetting, NULL,
+		"group='Graphics settings' help='Overrides the glow colors of every level (As level = what the level editor set)'");
 	TwAddButton(overlays_ptr->settings, "Apply2", ApplySettings, NULL, "group='Graphics settings' label='Apply settings'  ");
 
 	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &SETTINGS.stg.language, "group='Gameplay settings'");
@@ -1314,6 +1584,9 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwType Marble_type = TwDefineEnum("Marble type", marble_type, 3);
 	TwAddVarRW(overlays_ptr->settings, "Marble type", Marble_type, &SETTINGS.stg.marble_type, "group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Play next level", TW_TYPE_BOOLCPP, &SETTINGS.stg.play_next, "group='Gameplay settings' help='Will play next level of a level pack if enabled'");
+	TwAddVarCB(overlays_ptr->settings, "Crush effects", TW_TYPE_BOOLCPP,
+		[](const void* v, void*) { SETTINGS.stg.crush_effects_off = !*(const bool*)v; },
+		[](void* v, void*) { *(bool*)v = !SETTINGS.stg.crush_effects_off; }, NULL, "group='Gameplay settings' help='A crushed marble shatters into physical shards (metal: squashed like a dumpling), respawn after 3 seconds'");
 	TwAddVarRW(overlays_ptr->settings, "Music volume", TW_TYPE_FLOAT, &SETTINGS.stg.music_volume, "min=0 max=100 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "FX volume", TW_TYPE_FLOAT, &SETTINGS.stg.fx_volume, "min=0 max=100 step=1 group='Gameplay settings'");
 	TwAddVarRW(overlays_ptr->settings, "Camera size", TW_TYPE_FLOAT, &scene_ptr->camera_size, "min=0 max=10 step=0.001 group='Gameplay settings'");
@@ -1335,60 +1608,141 @@ void InitializeATBWindows(float* fps, float *target_fps)
 
 	overlays_ptr->level_editor = TwNewBar("LevelEditor");
 	Level *copy = &scene_ptr->level_copy;
+	TwBar *led = overlays_ptr->level_editor;
 
-	TwAddVarRW(overlays_ptr->level_editor, "Level Name", TW_TYPE_STDSTRING, &copy->txt, "");
-	TwAddVarRW(overlays_ptr->level_editor, "Level Description", TW_TYPE_STDSTRING, &copy->desc, "");
+	//3 component vector with 7 decimal places
+	TwStructMember vec3_members[] = {
+		{ "X", TW_TYPE_FLOAT, 0,                 " precision=7 step=0.01 " },
+		{ "Y", TW_TYPE_FLOAT, sizeof(float),     " precision=7 step=0.01 " },
+		{ "Z", TW_TYPE_FLOAT, 2 * sizeof(float), " precision=7 step=0.01 " } };
+	TwVec3P = TwDefineStruct("Vec3_7", vec3_members, 3, 3 * sizeof(float), NULL, NULL);
 
-	TwAddButton(overlays_ptr->level_editor, "Save", SaveLevel, NULL,
+	TwAddVarRW(led, "Level Name", TW_TYPE_STDSTRING, &copy->txt, "");
+	TwAddVarRW(led, "Level Description", TW_TYPE_STDSTRING, &copy->desc, "");
+
+	TwAddButton(led, "Save", SaveLevel, NULL,
 		" label='Save Level'  ");
 
-	TwAddButton(overlays_ptr->level_editor, "Play", PlayThisLevel, NULL,
+	TwAddButton(led, "Duplicate", DuplicateThisLevel, NULL,
+		" label='Duplicate level (edit the copy)' help='Saves the current state as a new level and continues editing the copy' ");
+
+	TwAddButton(led, "Play", PlayThisLevel, NULL,
 		" label='Play (unsaved changes will be lost)'  ");
 
-	TwAddButton(overlays_ptr->level_editor, "Set Marble", MarbleSet, NULL,
+	TwAddButton(led, "Set Marble", MarbleSet, NULL,
 		" label='Set Marble Position'  help='Click on the fractal to place' ");
 
-	TwAddButton(overlays_ptr->level_editor, "Set Flag", FlagSet, NULL,
-		" label='Set Flag Position'  help='Click on the fractal to place' ");
+	TwAddButton(led, "Set Flag", FlagSet, NULL,
+		" label='Set Goal Flag Position'  help='Click on the fractal to place' ");
 
-	TwAddButton(overlays_ptr->level_editor, "Reset camera", ResetEditorCamera, NULL,
+	TwAddButton(led, "Reset camera", ResetEditorCamera, NULL,
 		" label='Reset camera' ");
 
-	TwAddVarRW(overlays_ptr->level_editor, "Flag Position", TW_TYPE_DIR3F, copy->end_pos.data(), "");
-	TwAddVarRW(overlays_ptr->level_editor, "Marble Position", TW_TYPE_DIR3F, copy->start_pos.data(), "");
-	TwAddVarRW(overlays_ptr->level_editor, "Marble Radius(Scale)", TW_TYPE_FLOAT, &copy->marble_rad, "min=0 max=10 step=0.001 ");
+	TwAddVarRW(led, "Flag Position", TwVec3P, copy->end_pos.data(), " label='Goal flag position' ");
+	TwAddVarRW(led, "Marble Position", TwVec3P, copy->start_pos.data(), "");
+	TwAddVarRW(led, "Marble Radius(Scale)", TW_TYPE_FLOAT, &copy->marble_rad, "min=0.0000001 max=10 step=0.001 precision=7 help='Logarithmic: every step changes the radius by 3%' ");
 
-	
-	TwAddVarRW(overlays_ptr->level_editor, "Level music", Level_music, &music_id, "");
+	TwAddVarRW(led, "Level music", Level_music, &music_id, "");
 
-	TwAddButton(overlays_ptr->level_editor, "Play Music", PlayMusic, NULL, " label='Play/Stop current music'  ");
+	TwAddButton(led, "Play Music", PlayMusic, NULL, " label='Play/Stop current music'  ");
 
-	
-	TwAddVarRW(overlays_ptr->level_editor, "Play level after finish", Levels, &copy->link_level, "help = 'Which level is played after you finish this one, only works if the option Play Next Level is true'");
+	TwAddVarRW(led, "Play level after finish", Levels, &copy->link_level, "help = 'Which level is played after you finish this one, only works if the option Play Next Level is true'");
 
-	TwAddVarRW(overlays_ptr->level_editor, "Sun direction", TW_TYPE_DIR3F, copy->light_dir.data(), "group='Level parameters'");
-	TwAddVarRW(overlays_ptr->level_editor, "Sun color", TW_TYPE_DIR3F, copy->light_col.data(), "group='Level parameters'");
-	//TwAddVarRW(level_editor, "Background color", TW_TYPE_DIR3F, copy->background_col.data(), "group='Level parameters'");
-	TwAddVarRW(overlays_ptr->level_editor, "Gravity strength", TW_TYPE_FLOAT, &copy->gravity, "min=-0.5 max=0.5 step=0.0001 group='Level parameters'");
-	TwAddVarRW(overlays_ptr->level_editor, "Kill y position (restart level)", TW_TYPE_FLOAT, &copy->kill_y, "min=-100 max=100 step=0.1 group='Level parameters'");
-	TwAddVarRW(overlays_ptr->level_editor, "Is planet", TW_TYPE_BOOLCPP, &copy->planet, "group='Level parameters'");
-	TwAddVarRW(overlays_ptr->level_editor, "Start look direction angle", TW_TYPE_FLOAT, &copy->start_look_x, "min=-3.14159 max=3.14159 step=0.01 group='Level parameters'");
+	//---- Sun & sky ----
+	TwAddVarRW(led, "Sun direction", TW_TYPE_DIR3F, copy->light_dir.data(), "group='Sun and sky' help='Below the horizon (Y < 0) the level gets completely dark'");
+	TwAddVarRW(led, "Sun direction (precise)", TwVec3P, copy->light_dir.data(), "group='Sun and sky'");
+	TwAddVarRW(led, "Sun color", TwVec3P, copy->light_col.data(), "group='Sun and sky' help='Black sun color = no sun and a black sky'");
+	TwAddVarRW(led, "Custom sky color", TW_TYPE_BOOLCPP, &copy->custom_sky, "group='Sun and sky' help='Off = physical atmosphere'");
+	TwAddVarRW(led, "Sky color", TW_TYPE_COLOR3F, copy->sky_color.data(), "group='Sun and sky'");
+
+	//---- Game rules ----
+	TwAddButton(led, "Reset physics", ResetPhysicsDefaults, NULL, "group='Game rules' label='Reset marble physics to defaults' help='Gravity 0.005, acceleration 0.008/0.004, friction 0.99/0.995, weight 1, no speed limits'");
+	TwAddVarRW(led, "Gravity strength", TW_TYPE_FLOAT, &copy->gravity, "min=-0.5 max=0.5 step=0.0001 precision=7 group='Game rules' help='Negative gravity turns the view upside down'");
+	TwAddVarRW(led, "Kill Y enabled", TW_TYPE_BOOLCPP, &copy->kill_y_enabled, "group='Game rules'");
+	TwAddVarRW(led, "Kill y position (restart level)", TW_TYPE_FLOAT, &copy->kill_y, "min=-100 max=100 step=0.1 precision=7 group='Game rules' help='With negative gravity the barrier is mirrored (y > -kill_y)'");
+	TwAddVarRW(led, "Is planet", TW_TYPE_BOOLCPP, &copy->planet, "group='Game rules'");
+	TwAddVarRW(led, "Start look direction angle", TW_TYPE_FLOAT, &copy->start_look_x, "min=-3.14159 max=3.14159 step=0.01 precision=7 group='Game rules'");
+	TwAddVarRW(led, "Jump", TW_TYPE_BOOLCPP, &copy->jump_enabled, "group='Game rules' help='Space / gamepad button A'");
+	TwAddVarRW(led, "Jump height", TW_TYPE_FLOAT, &copy->jump_height, "min=0 max=1000 step=0.1 precision=7 group='Game rules' help='In marble radii'");
+	TwAddVarRW(led, "Rubber ball", TW_TYPE_BOOLCPP, &copy->rubber_ball, "group='Game rules' help='Matte black bouncy ball that deforms on impact and is not destroyed when squeezed'");
+	TwAddVarRW(led, "Rubber bounciness", TW_TYPE_FLOAT, &copy->rubber_bounce, "min=0 max=1 step=0.01 precision=7 group='Game rules'");
+	TwAddVarRW(led, "Ball weight", TW_TYPE_FLOAT, &copy->ball_weight, "min=0.01 max=100 step=0.01 precision=7 group='Game rules' help='Heavier = slower acceleration, less bounce, more deformation'");
+	TwAddVarRW(led, "Steering acceleration (ground)", TW_TYPE_FLOAT, &copy->ground_force, "min=0 max=1 step=0.0001 precision=7 group='Game rules'");
+	TwAddVarRW(led, "Steering acceleration (air)", TW_TYPE_FLOAT, &copy->air_force, "min=0 max=1 step=0.0001 precision=7 group='Game rules'");
+	TwAddVarRW(led, "Max speed", TW_TYPE_FLOAT, &copy->max_speed, "min=0 max=100000 step=1 precision=7 group='Game rules' label='Max speed (0 = unlimited)' help='Marble radii per second, 0 = unlimited'");
+	TwAddVarRW(led, "Max fall speed", TW_TYPE_FLOAT, &copy->max_fall_speed, "min=0 max=100000 step=1 precision=7 group='Game rules' label='Max fall speed (0 = unlimited)' help='Marble radii per second, 0 = unlimited'");
+	TwAddVarRW(led, "Ground friction", TW_TYPE_FLOAT, &copy->ground_friction, "min=0 max=1 step=0.0001 precision=7 group='Game rules'");
+	TwAddVarRW(led, "Air friction", TW_TYPE_FLOAT, &copy->air_friction, "min=0 max=1 step=0.0001 precision=7 group='Game rules'");
+
+	//---- Flags & checkpoints ----
+	TwAddVarRW(led, "Show markers", TW_TYPE_BOOLCPP, &editor_markers, "group='Flags and checkpoints' help='Labels for start, flags and checkpoints in the 3D view'");
+	TwAddVarRW(led, "Multiple flag mode", TW_TYPE_BOOLCPP, &copy->multi_flag, "group='Flags and checkpoints' help='Flags must be reached in order (1, 2, ..., goal flag). Off = any flag finishes the level'");
+	TwAddVarRW(led, "Ordered checkpoints", TW_TYPE_BOOLCPP, &copy->ordered_checkpoints, "group='Flags and checkpoints' help='Checkpoints must be hit in order (the arrow shows the next one), the flags come at the end'");
+	TwAddVarRW(led, "Time limit (s)", TW_TYPE_FLOAT, &copy->time_limit, "min=0 max=100000 step=1 precision=2 group='Game rules' help='0 = no limit. When the time runs out the ball is destroyed and the level restarts'");
+	TwAddButton(led, "Add flag", AddExtraFlag, NULL, "group='Flags and checkpoints' label='Add flag (click to place)'");
+	TwAddButton(led, "Remove flag", RemoveExtraFlag, NULL, "group='Flags and checkpoints' label='Remove last flag'");
+	TwAddButton(led, "Add checkpoint", AddCheckpoint, NULL, "group='Flags and checkpoints' label='Add checkpoint (click to place)'");
+	TwAddButton(led, "Remove checkpoint", RemoveCheckpoint, NULL, "group='Flags and checkpoints' label='Remove last checkpoint'");
 
 	overlays_ptr->fractal_editor = TwNewBar("FractalEditor");
+	TwBar *fed = overlays_ptr->fractal_editor;
 
-	TwAddVarRW(overlays_ptr->fractal_editor, "PBR roughness", TW_TYPE_FLOAT, &copy->PBR_roughness, "min=0 max=1 step=0.001 group='Fractal Material'");
-	TwAddVarRW(overlays_ptr->fractal_editor, "PBR metallic", TW_TYPE_FLOAT, &copy->PBR_metal, "min=0 max=1 step=0.001 group='Fractal Material'");
+	TwAddVarRW(fed, "PBR roughness", TW_TYPE_FLOAT, &copy->PBR_roughness, "min=0 max=1 step=0.001 precision=7 group='Fractal Material'");
+	TwAddVarRW(fed, "PBR metallic", TW_TYPE_FLOAT, &copy->PBR_metal, "min=0 max=1 step=0.001 precision=7 group='Fractal Material'");
 	float *p = copy->params.data();
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Iterations", TW_TYPE_INT32, &copy->FractalIter, "min=1 max=32 step=1 group='Fractal Coefficients'");
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Scale", TW_TYPE_FLOAT, p, "min=0 max=5 step=0.0001 group='Fractal Coefficients'");
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Angle1", TW_TYPE_FLOAT, p + 1, "min=-10 max=10 step=0.0001 group='Fractal Coefficients'");
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Angle2", TW_TYPE_FLOAT, p + 2, "min=-10 max=10 step=0.0001  group='Fractal Coefficients'");
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Shift", TW_TYPE_DIR3F, p + 3, "group='Fractal Coefficients'");
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Color", TW_TYPE_DIR3F, p + 6, "group='Fractal Coefficients'");
+	TwAddVarRW(fed, "Fractal Iterations", TW_TYPE_INT32, &copy->FractalIter, "min=1 step=1 group='Fractal Coefficients' help='No upper limit, the shader stops early once more iterations make no difference'");
+	TwAddVarRW(fed, "Fractal Scale", TW_TYPE_FLOAT, p, "min=0 max=5 step=0.0001 precision=7 group='Fractal Coefficients'");
+	TwAddVarRW(fed, "Fractal Angle1", TW_TYPE_FLOAT, p + 1, "min=-10 max=10 step=0.0001 precision=7 group='Fractal Coefficients'");
+	TwAddVarRW(fed, "Fractal Angle2", TW_TYPE_FLOAT, p + 2, "min=-10 max=10 step=0.0001 precision=7 group='Fractal Coefficients'");
+	TwAddVarRW(fed, "Fractal Shift", TwVec3P, p + 3, "group='Fractal Coefficients'");
+	TwAddVarRW(fed, "Fractal Color", TwVec3P, p + 6, "group='Fractal Coefficients' label='Surface color'");
 
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Animation1", TW_TYPE_FLOAT, &copy->anim_1, "min=0 max=0.5 step=0.0001 group='Fractal Animation'");
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Animation2", TW_TYPE_FLOAT, &copy->anim_2, "min=0 max=0.5 step=0.0001 group='Fractal Animation'");
-	TwAddVarRW(overlays_ptr->fractal_editor, "Fractal Animation3", TW_TYPE_FLOAT, &copy->anim_3, "min=0 max=0.5 step=0.0001 group='Fractal Animation'");
+	//---- Symmetry ----
+	TwEnumVal sym_types[] = { { SYM_MENGER, "Cubic (Menger, original)" },
+							  { SYM_SIERPINSKI, "Tetrahedral (Sierpinski)" },
+							  { SYM_DIAGONAL, "Single diagonal" },
+							  { SYM_NONE, "Mirror axes only" } };
+	TwType Sym_type = TwDefineEnum("Symmetry type", sym_types, 4);
+	TwAddVarRW(fed, "Symmetry type", Sym_type, &copy->sym_type, "group='Symmetry' help='Type of the internal symmetry planes'");
+	TwAddVarRW(fed, "Mirror X axis", TW_TYPE_BOOLCPP, &copy->sym_mirror[0], "group='Symmetry'");
+	TwAddVarRW(fed, "Mirror Y axis", TW_TYPE_BOOLCPP, &copy->sym_mirror[1], "group='Symmetry'");
+	TwAddVarRW(fed, "Mirror Z axis", TW_TYPE_BOOLCPP, &copy->sym_mirror[2], "group='Symmetry'");
+	TwAddVarRW(fed, "Radial symmetry (global)", TW_TYPE_INT32, &copy->sym_radial_global, "min=1 max=64 group='Symmetry' help='Number of symmetry axes around the vertical axis, applied once (1 = off)'");
+	TwAddVarRW(fed, "Radial symmetry (internal)", TW_TYPE_INT32, &copy->sym_radial_internal, "min=1 max=64 group='Symmetry' help='Radial symmetry applied in every iteration => internal structure (1 = off)'");
+
+	//---- Animation ----
+	TwAddVarRW(fed, "Fractal Animation1", TW_TYPE_FLOAT, &copy->anim_1, "min=0 max=0.5 step=0.0001 precision=7 group='Fractal Animation' label='Animation Angle1'");
+	TwAddVarRW(fed, "Fractal Animation2", TW_TYPE_FLOAT, &copy->anim_2, "min=0 max=0.5 step=0.0001 precision=7 group='Fractal Animation' label='Animation Angle2'");
+	TwAddVarRW(fed, "Fractal Animation3", TW_TYPE_FLOAT, &copy->anim_3, "min=0 max=0.5 step=0.0001 precision=7 group='Fractal Animation' label='Animation Shift Y'");
+	TwAddVarRW(fed, "Rotation axis 1", TwVec3P, copy->rot_axis1.data(), "group='Fractal Animation' help='Axis of Angle1 (default 0 0 1)'");
+	TwAddVarRW(fed, "Rotation axis 2", TwVec3P, copy->rot_axis2.data(), "group='Fractal Animation' help='Axis of Angle2 (default 1 0 0)'");
+	TwAddVarRW(fed, "Reacts to music", TW_TYPE_BOOLCPP, &copy->music_react, "group='Fractal Animation' help='The fractal pulses to the beat of the level music'");
+	TwAddVarRW(fed, "Music reaction strength", TW_TYPE_FLOAT, &copy->music_react_strength, "min=0 max=20 step=0.01 precision=7 group='Fractal Animation'");
+
+	//---- Glow ----
+	TwAddVarRW(fed, "Fractal glow", TW_TYPE_BOOLCPP, &copy->glow_enabled, "group='Fractal Glow'");
+	TwAddVarRW(fed, "Glow color", TW_TYPE_COLOR3F, copy->glow_color.data(), "group='Fractal Glow' help='Independent from the surface color'");
+	TwAddVarRW(fed, "Glow brightness", TW_TYPE_FLOAT, &copy->glow_brightness, "min=0 max=100 step=0.01 precision=7 group='Fractal Glow'");
+	TwAddVarRW(fed, "Glow pattern", TwVec3P, copy->glow_pattern.data(), "group='Fractal Glow' help='Decides where the fractal glows (works like the surface color orbit trap)'");
+	TwAddVarRW(fed, "Glow beat sync", TW_TYPE_BOOLCPP, &copy->glow_beat_sync, "group='Fractal Glow' help='Glow pulses to the beat of the music'");
+	TwAddVarRW(fed, "Glow beat strength", TW_TYPE_FLOAT, &copy->glow_beat_strength, "min=0 max=1 step=0.01 precision=7 group='Fractal Glow'");
+	TwAddVarRW(fed, "Glow colors", GlowMultiType(), &copy->glow_multi, "group='Fractal Glow' help='Single color, three colors by fractal structure, animated rainbow, or rainbow by structure + animated'");
+	TwAddVarRW(fed, "Glow color 2", TW_TYPE_COLOR3F, copy->glow_color2.data(), "group='Fractal Glow' help='Second structural band (Glow colors = Three colors)'");
+	TwAddVarRW(fed, "Glow color 3", TW_TYPE_COLOR3F, copy->glow_color3.data(), "group='Fractal Glow' help='Third structural band (Glow colors = Three colors)'");
+	TwAddVarRW(fed, "Rainbow speed", TW_TYPE_FLOAT, &copy->glow_hue_speed, "min=-10 max=10 step=0.005 precision=4 group='Fractal Glow' help='Color cycles per second (rainbow modes)'");
+	TwAddVarRW(fed, "Rainbow spread", TW_TYPE_FLOAT, &copy->glow_hue_spread, "min=-10 max=10 step=0.001 precision=4 group='Fractal Glow' help='Color cycles per marble radius in space (rainbow modes)'");
+
+	//---- Beat analysis equalizer ----
+	for (int b = 0; b < BEAT_BANDS; b++)
+	{
+		std::string def = std::string("min=0 max=3 step=0.01 precision=2 group='Beat equalizer' label='") +
+			BEAT_BAND_NAMES[b] + "' help='Beat detection sensitivity of this frequency band (0 = ignored)'";
+		TwAddVarRW(fed, ("beat_eq" + num2str(b)).c_str(), TW_TYPE_FLOAT, &copy->beat_eq[b], def.c_str());
+	}
+	TwAddVarRO(fed, "Live beat", TW_TYPE_FLOAT, &scene_ptr->music_beat, "precision=2 group='Beat equalizer' help='Current beat value of the playing music (use Play Music in the level editor)'");
+	TwAddVarRO(fed, "Live loudness", TW_TYPE_FLOAT, &scene_ptr->music_energy, "precision=2 group='Beat equalizer'");
+	TwDefine("FractalEditor/'Beat equalizer' opened=false");
+	TwDefine("FractalEditor/'Symmetry' opened=false");
 
 	overlays_ptr->flaunch = TwNewBar("First_launch");
 	 
@@ -1418,8 +1772,8 @@ void InitializeATBWindows(float* fps, float *target_fps)
 
 	TwDefine("Cheats visible=false color='0 0 0' alpha=255 size='500 200' valueswidth=300");
 	TwDefine(" GLOBAL fontsize=3 ");
-	TwDefine("LevelEditor visible=false size='420 350' color='0 80 230' alpha=210 label='Level editor' valueswidth=200");
-	TwDefine("FractalEditor visible=false size='420 350' color='0 120 200' alpha=210 label='Fractal editor' valueswidth=200");
+	TwDefine("LevelEditor visible=false size='460 460' color='0 80 230' alpha=210 label='Level editor' valueswidth=230");
+	TwDefine("FractalEditor visible=false size='460 460' color='0 120 200' alpha=210 label='Fractal editor' valueswidth=230");
 	TwDefine("Settings color='255 128 0' alpha=210 size='420 500' valueswidth=100");
 	TwDefine("First_launch visible=false color='0 0 0' alpha=255 size='500 200' valueswidth=300");
 	TwDefine("Statistics color='0 128 255' alpha=210 size='420 160' valueswidth=200");

@@ -21,6 +21,7 @@
 #include <SFML/Graphics.hpp>
 #include <Eigen/Dense>
 #include<Settings.h>
+#include "MusicAnalyzer.h"
 
 #define MAX_DIST 20.f
 #define MAX_MARCHES 1000
@@ -37,6 +38,7 @@ struct InputRecord
 	float view_x, view_y;
 	float cam_z;
 	bool mouse_clicked;
+	bool jump;
 };
 
 
@@ -57,10 +59,13 @@ public:
   {
 	  DEFAULT,
 	  PLACE_MARBLE,
-	  PLACE_FLAG
+	  PLACE_FLAG,
+	  PLACE_EXTRA_FLAG,
+	  PLACE_CHECKPOINT
   };
 
   EditorMode cur_ed_mode;
+  int ed_place_index;   //which extra flag / checkpoint is being placed
   FractalParams   frac_params;
   FractalParams   frac_params_smooth;
 
@@ -145,6 +150,48 @@ public:
   void SnapCamera();
   void HideObjects();
 
+  //---- Rebuild extensions ----
+  //rendering faster than the 60 Hz simulation: interpolate between the last two ticks
+  void BeginTick() { prev_cam_mat = cam_mat; prev_marble_pos = marble_pos; }
+  float render_alpha;
+  Eigen::Vector3f RenderMarblePos() const;
+  void Jump() { jump_requested = true; }
+
+  //level editor markers (labels drawn on top of the 3D view)
+  struct EditorMarker { Eigen::Vector3f pos; std::string label; sf::Color color; bool selected; };
+  std::vector<EditorMarker> GetEditorMarkers() const;
+  bool ProjectToScreen(const Eigen::Vector3f& p, float& sx, float& sy) const;
+  void RestartOrRespawn(bool full);
+  void EditorPlace(int mousex, int mousey);
+  bool IsMultiFlag() const { return level_copy.multi_flag && level_copy.num_flags > 0; }
+  //ordered checkpoints: index of the next checkpoint to hit (num_checkpoints when all are done)
+  int GetNextCheckpoint() const;
+  bool CheckpointsPending() const { return level_copy.ordered_checkpoints && GetNextCheckpoint() < level_copy.num_checkpoints; }
+  int GetCheckpointTotal() const { return level_copy.num_checkpoints; }
+  //time limit: remaining frames (-1 = no limit)
+  int GetTimeLeft() const;
+  //split time display (frames to show, label, time in frames)
+  int split_show;
+  int split_time;
+  std::string split_label;
+  int GetNextFlag() const { return next_flag; }               //0-based index in the flag sequence
+  int GetFlagTotal() const { return level_copy.num_flags + 1; }
+  Eigen::Vector3f GetTargetFlagPos() const;
+  Eigen::Vector3f GravityUp() const;
+  //checkpoint progress that survives closing the level
+  bool HasSavedProgress(int level);
+  void ClearSavedProgress(int level);
+  void RestoreSavedProgress();          //call right after StartSingle()
+  bool IsRestoredRun() const { return restored_run; }
+
+  //crush effects (glass shards / metal dumpling)
+  static const int MAX_SHARDS = 24;
+  bool IsCrushing() const { return crush_timer > 0; }
+
+  float music_beat;      //0..1 beat pulse of the playing music (with the level equalizer)
+  float music_energy;    //0..1 loudness of the playing music
+  bool  on_ground;
+
   void Write(sf::Shader& shader) const;
   void WriteLVL(int lvl)
   {
@@ -184,6 +231,8 @@ public:
   sf::SoundBuffer buff_bounce3;
   sf::Sound sound_shatter;
   sf::SoundBuffer buff_shatter;
+  sf::Sound sound_rubber;          //synthesized "boing" of the rubber ball
+  sf::SoundBuffer buff_rubber;
 
 protected:
   void SetLevel(int level);
@@ -195,6 +244,23 @@ protected:
   void UpdateCameraOnly(float dx, float dy, float dz);
   void UpdateGoal();
   void MakeCameraRotation();
+
+  void UpdateMusic();
+  void CheckFlags();
+  bool TouchesFlag(const Eigen::Vector3f& fpos) const;
+  void ReachGoal();
+  void Die();
+  void ResetProgress();
+  Eigen::Vector3f FlagSequencePos(int i) const; //multi flag order: main flag first
+  Eigen::Vector3f CheckpointSpawn(int i) const;
+  Eigen::Vector3f FlagSpawn(const Eigen::Vector3f& fpos) const;
+  void SetRespawn(const Eigen::Vector3f& p, const std::string& label);
+  void SaveProgress();
+  std::string ProgressFile(int level);
+  void StartCrush(const Eigen::Vector3f& dir);
+  void UpdateCrush();
+  bool FlagsFlipped() const { return level_copy.planet || level_copy.gravity < 0.0f; }
+  Eigen::Vector3f NPGradient(const Eigen::Vector3f& pt, float& de, Eigen::Vector3f& n) const;
 
 private:
   float           time;
@@ -240,6 +306,43 @@ private:
   bool            disable_motion;
   bool            zoom_to_scale;
   float			  gravity;
+
+  //rebuild state
+  Eigen::Matrix4f prev_cam_mat;
+  Eigen::Vector3f prev_marble_pos;
+  bool            jump_requested;
+  int             jump_cooldown;
+  bool            marble_dead;
+  float           flip_angle;      //camera roll for inverted gravity
+  float           squash;          //rubber ball deformation
+  float           squash_vel;
+  Eigen::Vector3f squash_dir;
+  int             next_flag;
+  int             active_checkpoint;
+  std::vector<char> cp_active;      //one entry per checkpoint, no upper limit
+  bool CpActive(int i) const { return i >= 0 && i < (int)cp_active.size() && cp_active[i]; }
+  void SetCpActive(int i) { if (i < 0) return; if (i >= (int)cp_active.size()) cp_active.resize(i + 1, 0); cp_active[i] = 1; }
+
+  //saved progress
+  struct SavedProgress { int checkpoint; int next_flag; int timer; unsigned int cp_mask; float respawn[3]; int has_respawn; };
+  bool            has_respawn;      //respawn at the last reached checkpoint / flag
+  Eigen::Vector3f respawn_pos;
+  bool            time_over;
+  bool            pending_restore;
+  SavedProgress   restore_data;
+  std::vector<char> restore_cp;     //hit checkpoints of the saved progress (all of them, not only the first 32)
+  bool            restored_run;
+
+  //crush effect state
+  int             crush_timer;     //frames left, 0 = not crushing
+  bool            crush_metal;
+  Eigen::Vector3f crush_dir;
+  Eigen::Vector3f shard_pos[MAX_SHARDS];
+  Eigen::Vector3f shard_vel[MAX_SHARDS];
+  Eigen::Vector3f shard_axis[MAX_SHARDS];
+  float           shard_angle[MAX_SHARDS];
+  float           shard_spin[MAX_SHARDS];
+  float           shard_size[MAX_SHARDS];
 };
 
 int * GetReplayFrame();

@@ -85,10 +85,15 @@ int main(int argc, char *argv[]) {
 	//Create the old menus
 	Overlays overlays(&scene);
 	sf::Clock clock;
+	sf::Clock draw_clock;
 	float smooth_fps = target_fps;
-	float lag_ms = 0.0f;
+	//fixed 60 Hz simulation, rendering as fast as the frame limit allows
+	const float sim_dt = 1.0f / 60.0f;
+	float sim_acc = 0.0f;
+	float tick_wheel = 0.0f;           //mouse wheel collected between simulation ticks
 	mouse_pos = sf::Vector2i(0, 0);
 	mouse_prev_pos = sf::Vector2i(0, 0);
+	sf::Vector2i tick_mouse_prev = sf::Vector2i(0, 0);
   
 	SetPointers(&window, &scene, &overlays, &rend, &main_txt, &screenshot_txt);
 
@@ -365,7 +370,13 @@ int main(int argc, char *argv[]) {
 					else if (keycode == SETTINGS.stg.control_mapping[RESTART])
 					{
 						if (game_mode == PLAYING) {
-							scene.ResetLevel();
+							//R: back to the last checkpoint / flag; Shift+R or R twice quickly: full restart
+							static sf::Clock restart_clock;
+							static float last_restart = -10.0f; //first press is never a double press
+							const float now = restart_clock.getElapsedTime().asSeconds();
+							const bool twice = (now - last_restart) < 0.4f;
+							last_restart = twice ? -10.0f : now; //a third press is a new single press
+							scene.RestartOrRespawn(event.key.shift || twice);
 						}
 					}
 					else if (keycode == SETTINGS.stg.control_mapping[PAUSE])
@@ -473,8 +484,7 @@ int main(int argc, char *argv[]) {
 						if (game_mode == LEVEL_EDITOR)
 						{
 							//stop placing flag/marble
-							if (scene.cur_ed_mode == Scene::EditorMode::PLACE_MARBLE
-								|| scene.cur_ed_mode == Scene::EditorMode::PLACE_FLAG)
+							if (scene.cur_ed_mode != Scene::EditorMode::DEFAULT)
 							{
 								scene.cur_ed_mode = Scene::EditorMode::DEFAULT;
 							}
@@ -485,7 +495,7 @@ int main(int argc, char *argv[]) {
 						io_state.mouse[2] = true; 
 						io_state.mouse_press[2] = true;
 						if (game_mode == PLAYING) {
-							scene.ResetLevel();
+							scene.RestartOrRespawn(false);
 						}
 					}
 				}
@@ -505,15 +515,9 @@ int main(int argc, char *argv[]) {
 				{
 					mouse_pos = sf::Vector2i(event.mouseMove.x, event.mouseMove.y);
 					io_state.mouse_pos = sf::Vector2f(mouse_pos.x, mouse_pos.y);
-					if (scene.cur_ed_mode == Scene::EditorMode::PLACE_MARBLE)
+					if (scene.cur_ed_mode != Scene::EditorMode::DEFAULT)
 					{
-						Eigen::Vector3f marble_pos = scene.MouseRayCast(mouse_pos.x, mouse_pos.y, scene.level_copy.marble_rad);
-						scene.level_copy.start_pos = marble_pos;
-					}
-					else if (scene.cur_ed_mode == Scene::EditorMode::PLACE_FLAG)
-					{
-						Eigen::Vector3f flag_pos = scene.MouseRayCast(mouse_pos.x, mouse_pos.y);
-						scene.level_copy.end_pos = flag_pos;
+						scene.EditorPlace(mouse_pos.x, mouse_pos.y);
 					}
 				}
 				else if (event.type == sf::Event::MouseWheelScrolled)
@@ -559,6 +563,15 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	
+		tick_wheel += mouse_wheel;
+		//one simulation tick whenever 1/60 s of real time has passed
+		bool do_tick = true;
+		if (SETTINGS.stg.speed_regulation)
+		{
+			do_tick = sim_acc >= sim_dt;
+			if (do_tick) sim_acc -= sim_dt;
+		}
+
 		//Check if the game was beat
 		if (scene.GetMode() == Scene::FINAL && game_mode != CREDITS) {
 			game_mode = CREDITS;
@@ -575,7 +588,13 @@ int main(int argc, char *argv[]) {
 		}
 		
 	
-		//Main game update
+		//Main game update (fixed 60 Hz simulation)
+		if (do_tick) {
+		scene.BeginTick();
+		//live fractal editing (level editor only): take the edited values at the start of the
+		//simulation tick, so the animation is applied on top of them in every rendered frame
+		if (overlays.TWBAR_ENABLED && game_mode == LEVEL_EDITOR)
+			scene.Synchronize();
 		if (game_mode == MAIN_MENU || game_mode == ABOUT || game_mode == LEVELS || game_mode == SCREEN_SAVER || game_mode == CONTROLS) 
 		{
 			scene.UpdateCamera();
@@ -608,13 +627,26 @@ int main(int argc, char *argv[]) {
 			 
 			InputRecord record = GetRecord();
 
+			//Jump: space bar or gamepad button 0 (held => jumps again on landing)
+			bool jump_input = (game_mode == PLAYING) &&
+				(all_keys[sf::Keyboard::Space] || io_state.buttons[0]);
+
 			if (replay)
 			{
 				force_x = record.move_x;
 				force_y = record.move_y;
+				jump_input = record.jump;
+			}
+			if (jump_input)
+			{
+				scene.Jump();
+			}
+			if (game_mode == LEVEL_EDITOR)
+			{
+				UpdateEditorFlagVars();
 			}
 			scene.UpdateMarble(force_x, force_y);
-			scene.free_camera_speed *= 1 + mouse_wheel * 0.05;
+			scene.free_camera_speed *= 1 + tick_wheel * 0.05;
 
 			//make ATB impossible to use while playing
 			if (game_mode == PLAYING)
@@ -634,7 +666,7 @@ int main(int argc, char *argv[]) {
 				window.setMouseCursorVisible(true);
 				if (mouse_clicked)
 				{
-					mouse_delta = mouse_pos - mouse_prev_pos;
+					mouse_delta = mouse_pos - tick_mouse_prev;
 				}
 			}
 			else if(!TOUCH_MODE)
@@ -654,7 +686,7 @@ int main(int argc, char *argv[]) {
 			cam_lr +=  5*ms * ((all_keys[SETTINGS.stg.control_mapping[VIEWRIGHT]] ? -1.0f : 0.0f) +
 								(all_keys[SETTINGS.stg.control_mapping[VIEWLEFT]] ? 1.0f : 0.0f));
 			
-			float cam_z = mouse_wheel * SETTINGS.stg.wheel_sensitivity;
+			float cam_z = tick_wheel * SETTINGS.stg.wheel_sensitivity;
 
 			if (replay)
 			{
@@ -666,16 +698,17 @@ int main(int argc, char *argv[]) {
 
 			scene.UpdateCamera(cam_lr, cam_ud, cam_z, mouse_clicked);
 
-			SaveRecord(force_x, force_y, cam_lr, cam_ud, cam_z, mouse_clicked);
+			SaveRecord(force_x, force_y, cam_lr, cam_ud, cam_z, mouse_clicked, jump_input);
 		}
+		tick_wheel = 0.0f;
+		tick_mouse_prev = mouse_pos;
+		} //do_tick
 
-		bool skip_frame = false;
-		if ((lag_ms >= 1000.0f / target_fps) && SETTINGS.stg.speed_regulation) {
-			//If there is too much lag, just do another frame of physics and skip the draw
-			lag_ms -= 1000.0f / target_fps;
-			skip_frame = true;
-		}
-		else 
+		//If the simulation is still behind, do another tick before drawing
+		bool skip_frame = SETTINGS.stg.speed_regulation && do_tick && sim_acc >= sim_dt;
+		//position between the last two ticks for the interpolated rendering
+		scene.render_alpha = SETTINGS.stg.speed_regulation ? std::min(sim_acc / sim_dt, 1.0f) : 1.0f;
+		if (!skip_frame)
 		{
 			//Update the shader values
 			if (game_mode != FIRST_START)
@@ -721,7 +754,30 @@ int main(int argc, char *argv[]) {
 				overlays.DrawLevelDesc(window, scene.level_copy.txt);
 			}
 			else if (scene.GetMode() == Scene::MARBLE && !scene.IsFreeCamera()) {
-				overlays.DrawArrow(window, scene.GetGoalDirection());
+				if (scene.CheckpointsPending())
+				{
+					//ordered checkpoints first, the arrow shows the checkpoint number
+					overlays.DrawArrow(window, scene.GetGoalDirection(), "C" + std::to_string(scene.GetNextCheckpoint() + 1));
+					overlays.DrawProgressText(window, "Checkpoint " + std::to_string(scene.GetNextCheckpoint() + 1) +
+						" / " + std::to_string(scene.GetCheckpointTotal()));
+				}
+				else
+				{
+					overlays.DrawArrow(window, scene.GetGoalDirection(),
+						scene.IsMultiFlag() ? std::to_string(scene.GetNextFlag() + 1) : std::string());
+					if (scene.IsMultiFlag())
+					{
+						overlays.DrawFlagCounter(window, scene.GetNextFlag(), scene.GetFlagTotal());
+					}
+				}
+			}
+			if (scene.GetMode() == Scene::MARBLE) {
+				if (scene.split_show > 0) {
+					overlays.DrawSplit(window, scene.split_label, scene.split_time, scene.split_show);
+				}
+				if (scene.GetTimeLeft() >= 0) {
+					overlays.DrawTimeLeft(window, scene.GetTimeLeft());
+				}
 			}
 			if (!scene.HasCheats() || scene.GetCountdownTime() < 4 * 60) {
 				overlays.DrawTimer(window, scene.GetCountdownTime(), scene.IsHighScore());
@@ -734,6 +790,15 @@ int main(int argc, char *argv[]) {
 			}
 			if (show_cheats) {
 				overlays.DrawCheats(window);
+			}
+		}
+		else if (game_mode == LEVEL_EDITOR && editor_markers) {
+			//labels for start, flags and checkpoints (always on top, also for tiny marbles)
+			for (const auto& mk : scene.GetEditorMarkers()) {
+				float sx, sy;
+				if (scene.ProjectToScreen(mk.pos, sx, sy)) {
+					overlays.DrawEditorMarker(window, sx, sy, mk.label, mk.color, mk.selected);
+				}
 			}
 		}
 		else if (game_mode == CREDITS) {
@@ -753,8 +818,6 @@ int main(int argc, char *argv[]) {
 		UpdateUniforms();
 		
 		if (!skip_frame) {
-			if (overlays.TWBAR_ENABLED)
-				scene.Synchronize();
 			overlays.DrawAntTweakBar();
 
 			if (TOUCH_MODE)
@@ -771,21 +834,15 @@ int main(int argc, char *argv[]) {
 
 			window.display();
 
-			//If V-Sync is running higher than desired fps, slow down!
-			const float s = clock.restart().asSeconds();
-			prev_s = s;
+			//real frame time (no 60 fps sleep anymore, the frame limit / V-Sync is set on the window)
+			const float s = draw_clock.restart().asSeconds();
 			if (s > 0.0f) {
-				smooth_fps = smooth_fps * 0.9f + std::min(1.0f / s, target_fps)*0.1f;
-			}
-			const float time_diff_ms = 1000.0f * (1.0f / target_fps - s);
-			if (time_diff_ms > 0) {
-				sf::sleep(sf::seconds(time_diff_ms / 1000.0f));
-				lag_ms = std::max(lag_ms - time_diff_ms, 0.0f);
-			}
-			else if (time_diff_ms < 0) {
-				lag_ms += std::max(-time_diff_ms, 0.0f);
+				smooth_fps = smooth_fps * 0.9f + (1.0f / s)*0.1f;
 			}
 		}
+		const float loop_s = clock.restart().asSeconds();
+		prev_s = loop_s;
+		sim_acc = std::min(sim_acc + loop_s, 0.25f);
 	}
 
 	RemoveAllObjects();

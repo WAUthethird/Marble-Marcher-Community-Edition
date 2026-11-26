@@ -71,6 +71,7 @@ void ComputeShader::LoadShader(const std::string file_path)
 
 		// Link the program
 		ProgramID = glCreateProgram();
+		uniform_cache.clear();
 		glAttachShader(ProgramID, ComputeShaderID);
 		glLinkProgram(ProgramID); 
 
@@ -96,53 +97,80 @@ void ComputeShader::Run(vec2 global)
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
+GLint ComputeShader::Loc(const std::string& name)
+{
+	//glGetUniformLocation is a string search in the driver, cache it
+	auto it = uniform_cache.find(name);
+	if (it != uniform_cache.end()) return it->second;
+	GLint A = glGetUniformLocation(ProgramID, name.c_str());
+	uniform_cache[name] = A;
+	return A;
+}
+
 void ComputeShader::setUniform(std::string name, float X, float Y)
 {
-	glUseProgram(ProgramID);
-	GLuint A = glGetUniformLocation(ProgramID, name.c_str());
-	glUniform2f(A, X, Y);
+	GLint A = Loc(name);
+	glProgramUniform2f(ProgramID, A, X, Y);
 }
 
 void ComputeShader::setUniform(std::string name, float X, float Y, float Z)
 {
-	glUseProgram(ProgramID);
-	GLuint A = glGetUniformLocation(ProgramID, name.c_str());
-	glUniform3f(A, X, Y, Z);
+	GLint A = Loc(name);
+	glProgramUniform3f(ProgramID, A, X, Y, Z);
 }
 
 void ComputeShader::setUniform(std::string name, float X)
 {
-	glUseProgram(ProgramID);
-	GLuint A = glGetUniformLocation(ProgramID, name.c_str());
-	glUniform1f(A, X);
+	GLint A = Loc(name);
+	glProgramUniform1f(ProgramID, A, X);
 }
 
 void ComputeShader::setUniform(std::string name, int X)
 {
-	glUseProgram(ProgramID);
-	GLuint A = glGetUniformLocation(ProgramID, name.c_str());
-	glUniform1i(A, X);
+	GLint A = Loc(name);
+	glProgramUniform1i(ProgramID, A, X);
 }
 
 void ComputeShader::setUniform(std::string name, glm::mat3 X, bool transpose)
 {
-	glUseProgram(ProgramID);
-	GLuint A = glGetUniformLocation(ProgramID, name.c_str());
-	glUniformMatrix3fv(A, 1, transpose, glm::value_ptr(X));
+	GLint A = Loc(name);
+	glProgramUniformMatrix3fv(ProgramID, A, 1, transpose, glm::value_ptr(X));
 }
 
 void ComputeShader::setUniform(std::string name, glm::vec3 X)
 {
-	glUseProgram(ProgramID);
-	GLuint A = glGetUniformLocation(ProgramID, name.c_str());
-	glUniform3fv(A, 1, glm::value_ptr(X));
+	GLint A = Loc(name);
+	glProgramUniform3fv(ProgramID, A, 1, glm::value_ptr(X));
 }
 
 void ComputeShader::setUniform(std::string name, glm::vec2 X)
 {
-	glUseProgram(ProgramID);
-	GLuint A = glGetUniformLocation(ProgramID, name.c_str());
-	glUniform2fv(A, 1, glm::value_ptr(X));
+	GLint A = Loc(name);
+	glProgramUniform2fv(ProgramID, A, 1, glm::value_ptr(X));
+}
+
+void ComputeShader::setUniform(std::string name, glm::vec4 X)
+{
+	GLint A = Loc(name);
+	glProgramUniform4fv(ProgramID, A, 1, glm::value_ptr(X));
+}
+
+void ComputeShader::setUniformArray3(std::string name, const float* data, int count)
+{
+	GLint A = Loc(name);
+	if (A >= 0 && count > 0) glProgramUniform3fv(ProgramID, A, count, data);
+}
+
+void ComputeShader::setUniformArray4(std::string name, const float* data, int count)
+{
+	GLint A = Loc(name);
+	if (A >= 0 && count > 0) glProgramUniform4fv(ProgramID, A, count, data);
+}
+
+void ComputeShader::setUniformArray1(std::string name, const float* data, int count)
+{
+	GLint A = Loc(name);
+	if (A >= 0 && count > 0) glProgramUniform1fv(ProgramID, A, count, data);
 }
 
 void ComputeShader::setUniform(int i, GLuint tid)
@@ -151,7 +179,7 @@ void ComputeShader::setUniform(int i, GLuint tid)
 	GLuint A = glGetUniformLocation(ProgramID, ("iTexture" + int2str(i)).c_str());
 	glActiveTexture(GL_TEXTURE0 + i);
 	glBindTexture(GL_TEXTURE_2D, tid);
-	glUniform1i(A, i);
+	glProgramUniform1i(ProgramID, A, i);
 }
 
 void ComputeShader::setCameraObj(std::string name, gl_camera cam)

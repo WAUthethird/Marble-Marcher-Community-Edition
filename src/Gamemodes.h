@@ -84,11 +84,14 @@ void SetCameraFocus(float f);
 
 void TW_CALL ApplySettings(void * data);
 
-void SaveRecord(float mx, float my, float vx, float vy, float cz, bool mc);
+void SaveRecord(float mx, float my, float vx, float vy, float cz, bool mc, bool jump = false);
 
 InputRecord GetRecord();
 
 void InitializeATBWindows(float * fps, float * target_fps);
+void EditorLevelChanged();
+void UpdateEditorFlagVars();
+extern bool editor_markers;
 
 
 

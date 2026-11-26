@@ -20,6 +20,8 @@
 #include <SFML/Graphics.hpp>
 #include <filesystem>
 #include <array>
+#include <cstddef>
+#include <algorithm>
 #include <AntTweakBar.h>
 namespace fs = std::filesystem;
 
@@ -96,6 +98,14 @@ struct MainSettings
 	int screenshot_samples;
 	bool fractal_glow;
 	bool flag_glow;
+
+	//Rebuild: shards / dumpling when the marble is crushed, respawn after 3 s
+	//(stored inverted: the padding byte of old settings files is 0 => effects on)
+	bool crush_effects_off;
+
+	//Rebuild 1.0.1: forces a multi color glow for every level (0 = as set in the level, 1..3 = GlowMulti).
+	//Uses the former padding byte, so the file size does not change; invalid values read as 0.
+	unsigned char glow_colors;
 };
 
 extern TwEnumVal resolutions[];
@@ -109,7 +119,8 @@ static const MainSettings default_settings =
 { 
 	6, 10, 6, 3, 5, 0, true, true, true, 0.08, 10, 2.2, 70, 20, 20, 0.005, 0.2, false,
 	0.005, 0.45, 0, false, true, 0, true, 0.5, 0.75, 2.2, false, -0.02, 0.2, 0.55, 
-	false, default_control_mapping, true, 60, true, 1.f, 0.1f, 22.f, 4.5f, 30, false, true
+	false, default_control_mapping, true, 60, true, 1.f, 0.1f, 22.f, 4.5f, 30, false, true,
+	false, 0
 };
 
 class AllSettings
@@ -152,16 +163,22 @@ public:
 
 		int cfg_size = fs::file_size(settings_file);
 		int MainSettings_size = sizeof(MainSettings);
+		//size of the settings before the rebuild extensions were appended
+		int Old_size = (int)offsetof(MainSettings, crush_effects_off);
+		Old_size = (Old_size + 3) / 4 * 4;
 
-		if (cfg_size != MainSettings_size)
+		if (cfg_size != MainSettings_size && cfg_size != Old_size)
 		{
 			return false;
 		}
 
 		std::ifstream cfg_file(settings_file, std::ios_base::in | std::ios_base::binary);
 
+		stg = default_settings; //fields missing in old files keep their defaults
 		cfg_file.seekg(0);
-		cfg_file.read(reinterpret_cast<char *>(&stg), sizeof(MainSettings));
+		cfg_file.read(reinterpret_cast<char *>(&stg), std::min(cfg_size, MainSettings_size));
+		stg.crush_effects_off = (*reinterpret_cast<unsigned char*>(&stg.crush_effects_off) == 1);
+		if (cfg_size != MainSettings_size || stg.glow_colors > 3) stg.glow_colors = 0;
 
 		cfg_file.close();
 		return true;
