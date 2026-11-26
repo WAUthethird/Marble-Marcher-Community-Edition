@@ -26,5 +26,3 @@ uniform float gamma_camera;
 
 uniform bool FRACTAL_GLOW;
 uniform bool FLAG_GLOW;
-uniform int FRACTAL_GLOW_MODE;        //0 = original, 1 = structure colors, 2 = animated spectrum, 3 = both
-uniform float FRACTAL_GLOW_INTENSITY;

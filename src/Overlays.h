@@ -88,7 +88,6 @@ public:
   void DrawLevels(sf::RenderWindow& window);
   void DrawSumTime(sf::RenderWindow& window, int t);
   void DrawCheatsEnabled(sf::RenderWindow& window);
-  void DrawCheckpoints(sf::RenderWindow& window, int count);
   void DrawCheats(sf::RenderWindow& window);
   void SetAntTweakBar(int Width, int Height);
   void DrawAntTweakBar();

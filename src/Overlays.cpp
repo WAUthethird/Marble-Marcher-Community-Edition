@@ -225,13 +225,6 @@ void Overlays::DrawCheatsEnabled(sf::RenderWindow& window) {
   window.draw(text);
 }
 
-void Overlays::DrawCheckpoints(sf::RenderWindow& window, int count) {
-  sf::Text text;
-  std::string txt = "Checkpoints: " + std::to_string(count);
-  MakeText(txt, 10, 640, 28, sf::Color(120, 255, 200), text);
-  window.draw(text);
-}
-
 void Overlays::DrawCheats(sf::RenderWindow& window) {
   sf::Text text;
   std::wstring txt = LOCAL["CheatsInfo"];

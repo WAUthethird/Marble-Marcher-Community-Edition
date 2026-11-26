@@ -31,16 +31,6 @@ extern sf::Music *current_music;
 extern bool recording;
 extern bool replay;
 
-//Checkpoint: a saved marble state the player can respawn at.
-//Stored in a std::vector, so there is no fixed limit on the number of checkpoints.
-struct Checkpoint
-{
-	Eigen::Vector3f pos;
-	Eigen::Matrix3f mat;
-	float look_x;
-	float look_y;
-};
-
 struct InputRecord
 {
 	float move_x, move_y;
@@ -147,14 +137,6 @@ public:
   void StartDefault();
   void ResetLevel();
   void ResetCheats();
-
-  //Checkpoints (unlimited)
-  bool SetCheckpoint();
-  bool LoadCheckpoint();
-  bool RemoveCheckpoint();
-  void ClearCheckpoints();
-  int GetCheckpointCount() const { return (int)checkpoints.size(); }
-  bool UsedCheckpoint() const { return checkpoint_used; }
   void Synchronize();
 
   void UpdateMarble(float dx=0.0f, float dy=0.0f);
@@ -258,9 +240,6 @@ private:
   bool            disable_motion;
   bool            zoom_to_scale;
   float			  gravity;
-
-  std::vector<Checkpoint> checkpoints;
-  bool            checkpoint_used;
 };
 
 int * GetReplayFrame();
