@@ -264,7 +264,6 @@ Scene::Scene(sf::Music* level_music) :
 	prev_cam_mat(Eigen::Matrix4f::Identity()),
 	prev_marble_pos(0.f, 0.f, 0.f)
 {
-  for (int i = 0; i < MAX_CHECKPOINTS; i++) cp_active[i] = false;
   ResetCheats();
   frac_params.setOnes();
   frac_params_smooth.setOnes();
@@ -320,7 +319,7 @@ void Scene::ResetProgress()
 {
 	next_flag = 0;
 	active_checkpoint = -1;
-	for (int i = 0; i < MAX_CHECKPOINTS; i++) cp_active[i] = false;
+	cp_active.assign(level_copy.num_checkpoints, 0);
 	marble_dead = false;
 	jump_requested = false;
 	jump_cooldown = 0;
@@ -337,7 +336,7 @@ int Scene::GetNextCheckpoint() const
 {
 	for (int i = 0; i < level_copy.num_checkpoints; i++)
 	{
-		if (!cp_active[i]) return i;
+		if (!CpActive(i)) return i;
 	}
 	return level_copy.num_checkpoints;
 }
@@ -650,12 +649,17 @@ void Scene::SaveProgress() {
   sp.checkpoint = active_checkpoint;
   sp.next_flag = next_flag;
   sp.timer = timer;
+  //first 32 checkpoints as bit mask (readable by older versions)
   sp.cp_mask = 0;
-  for (int i = 0; i < MAX_CHECKPOINTS; i++) { if (cp_active[i]) sp.cp_mask |= (1u << i); }
+  for (int i = 0; i < 32; i++) { if (CpActive(i)) sp.cp_mask |= (1u << i); }
   sp.respawn[0] = respawn_pos.x(); sp.respawn[1] = respawn_pos.y(); sp.respawn[2] = respawn_pos.z();
   sp.has_respawn = 1;
   std::ofstream f(ProgressFile(cur_level), std::ios::binary | std::ios::trunc);
   f.write(reinterpret_cast<const char*>(&sp), sizeof(sp));
+  //then the state of every checkpoint (no limit)
+  const int n = level_copy.num_checkpoints;
+  f.write(reinterpret_cast<const char*>(&n), sizeof(n));
+  for (int i = 0; i < n; i++) { const char a = CpActive(i) ? 1 : 0; f.write(&a, 1); }
 }
 
 void Scene::RestoreSavedProgress() {
@@ -664,6 +668,13 @@ void Scene::RestoreSavedProgress() {
   memset(&sp, 0, sizeof(sp));
   f.read(reinterpret_cast<char*>(&sp), sizeof(sp));
   if (f.gcount() < 16) { return; }  //older files only have the first 4 fields
+  restore_cp.clear();
+  for (int i = 0; i < 32; i++) { restore_cp.push_back((sp.cp_mask >> i) & 1u ? 1 : 0); }
+  int n = 0;
+  if (f.read(reinterpret_cast<char*>(&n), sizeof(n)) && n > 0 && n < 10000000) {
+    std::vector<char> all(n, 0);
+    if (f.read(all.data(), n)) { restore_cp = all; }
+  }
   if (!sp.has_respawn) {
     if (sp.checkpoint < 0 || sp.checkpoint >= level_copy.num_checkpoints) { return; }
     const Eigen::Vector3f p = CheckpointSpawn(sp.checkpoint);
@@ -841,17 +852,17 @@ void Scene::CheckFlags() {
   //checkpoints first (in the ordered mode only the next one can be hit)
   const int next_cp = GetNextCheckpoint();
   for (int i = 0; i < level_copy.num_checkpoints; i++) {
-    if (cp_active[i] && active_checkpoint == i) { continue; }
-    if (level_copy.ordered_checkpoints && !cp_active[i] && i != next_cp) { continue; }
+    if (CpActive(i) && active_checkpoint == i) { continue; }
+    if (level_copy.ordered_checkpoints && !CpActive(i) && i != next_cp) { continue; }
     const float s = FlagsFlipped() ? -marble_rad : marble_rad;
     const Eigen::Vector3f mid = level_copy.checkpoints[i] + Eigen::Vector3f(0.0f, 2.4f * s, 0.0f);
     if ((marble_pos - mid).norm() < 3.0f * marble_rad) {
-      const bool is_new = !cp_active[i];
+      const bool is_new = !CpActive(i);
       if (is_new) {
         sound_goal.setPitch(2.0f);
         sound_goal.play();
       }
-      cp_active[i] = true;
+      SetCpActive(i);
       active_checkpoint = i;
       if (is_new) {
         SetRespawn(CheckpointSpawn(i), "Checkpoint " + std::to_string(i + 1));
@@ -1250,7 +1261,8 @@ void Scene::UpdateDeOrbit(float dx, float dy, float dz, int iters) {
       active_checkpoint = restore_data.checkpoint;
       has_respawn = true;
       respawn_pos = Eigen::Vector3f(restore_data.respawn[0], restore_data.respawn[1], restore_data.respawn[2]);
-      for (int i = 0; i < MAX_CHECKPOINTS; i++) cp_active[i] = (restore_data.cp_mask >> i) & 1u;
+      cp_active.assign(level_copy.num_checkpoints, 0);
+      for (int i = 0; i < (int)restore_cp.size() && i < level_copy.num_checkpoints; i++) cp_active[i] = restore_cp[i];
     }
   }
 }
@@ -1827,6 +1839,13 @@ void Scene::WriteShader(ComputeShader& shader)
 		glow_beat = (1.0f - s) + s * (0.1f + 2.2f * music_beat);
 	}
 	shader.setUniform("GLOW_BEAT", glow_beat);
+	//multi color glow: the global setting overrides the level
+	const int glow_multi = SETTINGS.stg.glow_colors > 0 ? (int)SETTINGS.stg.glow_colors : L.glow_multi;
+	shader.setUniform("GLOW_MULTI", glow_multi);
+	shader.setUniform("GLOW_COLOR2", vec3(L.glow_color2[0], L.glow_color2[1], L.glow_color2[2]));
+	shader.setUniform("GLOW_COLOR3", vec3(L.glow_color3[0], L.glow_color3[1], L.glow_color3[2]));
+	shader.setUniform("GLOW_HUE_SPEED", L.glow_hue_speed);
+	shader.setUniform("GLOW_HUE_SPREAD", L.glow_hue_spread);
 
 	//sky
 	shader.setUniform("CUSTOM_SKY", (int)L.custom_sky);
@@ -1877,23 +1896,40 @@ void Scene::WriteShader(ComputeShader& shader)
 	//multiple flags + checkpoints
 	const bool objects_visible = level_editor || (!free_camera && !intro && flag_pos.x() < 998.0f);
 	const int nf = objects_visible ? level_copy.num_flags : 0;
-	const int nc = objects_visible ? level_copy.num_checkpoints : 0;
+	//all checkpoints take part in the game; the renderer gets the ones nearest to the camera
+	std::vector<int> cp_draw;
+	if (objects_visible)
+	{
+		cp_draw.reserve(level_copy.num_checkpoints);
+		for (int i = 0; i < level_copy.num_checkpoints; i++) cp_draw.push_back(i);
+		if ((int)cp_draw.size() > MAX_DRAWN_CHECKPOINTS)
+		{
+			const Eigen::Vector3f cam = cam_mat.block<3, 1>(0, 3);
+			std::nth_element(cp_draw.begin(), cp_draw.begin() + MAX_DRAWN_CHECKPOINTS, cp_draw.end(), [&](int a, int b) {
+				return (level_copy.checkpoints[a] - cam).squaredNorm() < (level_copy.checkpoints[b] - cam).squaredNorm();
+			});
+			cp_draw.resize(MAX_DRAWN_CHECKPOINTS);
+		}
+	}
+	const int nc = (int)cp_draw.size();
 	const bool multi = IsMultiFlag() && !level_editor;
 	//ordered checkpoints: flags are locked until all checkpoints are hit
 	const bool flags_locked = !level_editor && CheckpointsPending();
 	const int next_cp = GetNextCheckpoint();
-	float flag_state[MAX_EXTRA_FLAGS], cp_state[MAX_CHECKPOINTS];
+	float flag_state[MAX_EXTRA_FLAGS], cp_state[MAX_DRAWN_CHECKPOINTS], cp_pos[MAX_DRAWN_CHECKPOINTS * 3];
 	for (int i = 0; i < MAX_EXTRA_FLAGS; i++)
 	{
 		//sequence index of extra flag i is i+1 (the main flag is flag 1)
 		flag_state[i] = multi ? (i + 1 < next_flag ? 2.f : (i + 1 == next_flag ? 1.f : 0.f)) : 1.f;
 		if (flags_locked && flag_state[i] < 1.5f) flag_state[i] = 0.f;
 	}
-	for (int i = 0; i < MAX_CHECKPOINTS; i++)
+	for (int k = 0; k < nc; k++)
 	{
+		const int i = cp_draw[k];
 		//0 inactive, 1 hit, 2 next target (ordered mode)
-		cp_state[i] = (level_editor || cp_active[i]) ? 1.f : 0.f;
-		if (!level_editor && level_copy.ordered_checkpoints && i == next_cp) cp_state[i] = 2.f;
+		cp_state[k] = (level_editor || CpActive(i)) ? 1.f : 0.f;
+		if (!level_editor && level_copy.ordered_checkpoints && i == next_cp) cp_state[k] = 2.f;
+		for (int j = 0; j < 3; j++) cp_pos[k * 3 + j] = level_copy.checkpoints[i][j];
 	}
 	shader.setUniform("iGoalState", flags_locked ? 0.f : (multi ? (next_flag == 0 ? 1.f : 2.f) : 1.f));
 	shader.setUniform("iFlagCount", nf);
@@ -1905,7 +1941,7 @@ void Scene::WriteShader(ComputeShader& shader)
 	}
 	if (nc > 0)
 	{
-		shader.setUniformArray3("iCPArr", level_copy.checkpoints[0].data(), nc);
+		shader.setUniformArray3("iCPArr", cp_pos, nc);
 		shader.setUniformArray1("iCPState", cp_state, nc);
 	}
 }

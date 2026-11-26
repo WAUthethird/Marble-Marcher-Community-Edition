@@ -1,0 +1,15 @@
+{
+  "name": "Marble Marcher Web",
+  "short_name": "Marble Marcher",
+  "description": "Browser version of the Marble Marcher Unofficial Rebuild – fractal physics marble game.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0b0d14",
+  "theme_color": "#0b0d14",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

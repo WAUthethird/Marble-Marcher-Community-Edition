@@ -2,6 +2,19 @@
 
 > Inoffizielle Version, nicht verbunden mit dem MMCE-Team oder CodeParade.
 
+## Neu in 1.0.1
+
+- **Checkpoints ohne Limit** (vorher maximal 16). Levels mit bis zu 16 Checkpoints behalten
+  das alte Dateiformat; weitere Checkpoints stehen in einem Zusatzblock am Ende der `.lvl`-Datei.
+  Gezeichnet werden die 32 Checkpoints, die der Kamera am nächsten sind; Spiellogik, Pfeil und
+  gespeicherter Fortschritt kennen alle.
+- **Mehrfarbiger Glow**: neue Editor-Option *Glow colors* – eine Farbe (wie bisher),
+  drei Farben nach Fraktal-Struktur (*Glow color*, *Glow color 2*, *Glow color 3*),
+  animierter Regenbogen oder Regenbogen nach Struktur + animiert (*Rainbow speed*, *Rainbow spread*).
+  Die Einstellung *Fractal glow colors* (Graphics settings) erzwingt das für alle Levels.
+- **Browser-Version** in `web/` (WebGL2, läuft auch auf Android, als App installierbar),
+  siehe README.
+
 ## Neue Funktionen (alles pro Level im Editor, F4 öffnet die Fenster)
 
 **Level editor**
@@ -14,7 +27,7 @@
   Bounciness, Ballgewicht, Kill Y an/aus, Lenk-Beschleunigung (Boden/Luft),
   Max. Geschwindigkeit, Max. Fallgeschwindigkeit, Reibung.
   Negative Schwerkraft → Ansicht dreht sich kopfüber (Kill Y wird gespiegelt: y > -kill_y)
-- *Flags and checkpoints*: bis zu 16 zusätzliche Flaggen und 16 Checkpoints
+- *Flags and checkpoints*: bis zu 16 zusätzliche Flaggen und beliebig viele Checkpoints (ab 1.0.1)
   (Hinzufügen → auf das Fraktal klicken). *Multiple flag mode*: Flaggen müssen
   der Reihe nach erreicht werden, gesperrte Flaggen sind grau, erreichte grün,
   der Pfeil zeigt zur nächsten Flagge und trägt ihre Nummer. Ohne den Modus

@@ -45,6 +45,11 @@ uniform vec3 GLOW_COLOR;
 uniform vec3 GLOW_PATTERN;
 uniform float GLOW_BRIGHTNESS;
 uniform float GLOW_BEAT;         //beat multiplier (1 = no beat sync)
+uniform int GLOW_MULTI;          //0 single color, 1 three colors, 2 rainbow, 3 rainbow bands
+uniform vec3 GLOW_COLOR2;
+uniform vec3 GLOW_COLOR3;
+uniform float GLOW_HUE_SPEED;    //rainbow cycles per second
+uniform float GLOW_HUE_SPREAD;   //rainbow cycles per marble radius
 
 //sky
 uniform bool CUSTOM_SKY;
@@ -55,7 +60,7 @@ uniform vec4 iMarbleSquash;
 
 //multiple flags + checkpoints
 #define MAX_EXTRA_FLAGS 16
-#define MAX_CHECKPOINTS 16
+#define MAX_CHECKPOINTS 32   //drawn checkpoints (nearest to the camera); the game itself has no limit (MAX_DRAWN_CHECKPOINTS in Level.h)
 uniform float iGoalState;                  //state of the main (last) flag
 uniform int iFlagCount;
 uniform vec3 iFlagArr[MAX_EXTRA_FLAGS];

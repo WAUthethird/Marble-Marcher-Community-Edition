@@ -18,6 +18,7 @@
 #include <Renderer.h>
 #include <fstream>
 #include <vector>
+#include <deque>
 #include <Eigen/Dense>
 #include <SFML/Audio.hpp>
 #include <filesystem>
@@ -82,8 +83,29 @@ struct LevelF
 //Rebuild extensions: appended after LevelF in the .lvl file.
 //Old levels (only LevelF) still load and get the defaults below.
 static const int MAX_EXTRA_FLAGS = 16;
+//Checkpoints have no upper limit. The first MAX_CHECKPOINTS are stored in LevelExt
+//(file compatibility), all further ones in an extra block after LevelExt (LevelCPBlock).
 static const int MAX_CHECKPOINTS = 16;
+//the renderer draws the checkpoints nearest to the camera, up to this many
+static const int MAX_DRAWN_CHECKPOINTS = 32;
 static const char LEVEL_EXT_MAGIC[8] = "MMCEXT1";
+static const char LEVEL_CP_MAGIC[8] = "MMCECP1";
+
+//header of the extra checkpoint block; followed by count * float[3]
+struct LevelCPBlock
+{
+	char magic[8];
+	int count;
+};
+
+//how the fractal glow is colored
+enum GlowMulti
+{
+	GLOW_SINGLE = 0,         //one color (original)
+	GLOW_THREE_COLORS = 1,   //three structural bands of the fractal, each with its own color
+	GLOW_RAINBOW = 2,        //one band, cycles through the spectrum over time and space
+	GLOW_RAINBOW_BANDS = 3   //three bands in different hues + animated spectrum
+};
 
 enum SymmetryType
 {
@@ -149,7 +171,14 @@ struct LevelExt
 	int ordered_checkpoints;
 	float time_limit;        //seconds, 0 = no time limit
 
-	float reserved[30];
+	//multi color glow (taken from the reserved block: old levels have 0 = single color)
+	int glow_multi;          //GlowMulti
+	float glow_color2[3];
+	float glow_color3[3];
+	float glow_hue_speed;    //rainbow cycles per second
+	float glow_hue_spread;   //rainbow cycles per marble radius
+
+	float reserved[21];
 };
 
 class Level {
@@ -228,6 +257,11 @@ public:
   float glow_brightness;
   float glow_beat_strength;
   Eigen::Vector3f glow_pattern;   //orbit trap that decides WHERE it glows
+  int glow_multi;                 //GlowMulti
+  Eigen::Vector3f glow_color2;
+  Eigen::Vector3f glow_color3;
+  float glow_hue_speed;
+  float glow_hue_spread;
 
   bool custom_sky;
   Eigen::Vector3f sky_color;
@@ -249,8 +283,19 @@ public:
   bool multi_flag;
   int num_flags;
   Eigen::Vector3f flags[MAX_EXTRA_FLAGS];
+  //number of checkpoints (no upper limit). checkpoints.size() can be larger for a moment:
+  //removed entries stay allocated until the editor bar no longer points to them (TrimCheckpoints).
   int num_checkpoints;
-  Eigen::Vector3f checkpoints[MAX_CHECKPOINTS];
+  //deque: adding checkpoints keeps the addresses of the existing ones valid (AntTweakBar holds pointers)
+  std::deque<Eigen::Vector3f> checkpoints;
+  void AddCheckpoint(const Eigen::Vector3f& p)
+  {
+	  if ((int)checkpoints.size() > num_checkpoints) checkpoints[num_checkpoints] = p;
+	  else checkpoints.push_back(p);
+	  num_checkpoints++;
+  }
+  void RemoveLastCheckpoint() { if (num_checkpoints > 0) num_checkpoints--; }
+  void TrimCheckpoints() { if ((int)checkpoints.size() > num_checkpoints) checkpoints.resize(num_checkpoints); }
 
   bool music_react;
   float music_react_strength;

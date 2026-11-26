@@ -1106,6 +1106,42 @@ void TW_CALL FlagSet(void *data)
 	PlaceAtCursor();
 }
 
+//===== Rebuild 1.0.1: multi color glow =====
+static TwType GlowMultiType()
+{
+	static TwType t = TW_TYPE_UNDEF;
+	if (t == TW_TYPE_UNDEF)
+	{
+		TwEnumVal v[] = { {GLOW_SINGLE, "Single color"}, {GLOW_THREE_COLORS, "Three colors (structure)"},
+			{GLOW_RAINBOW, "Rainbow (animated)"}, {GLOW_RAINBOW_BANDS, "Rainbow (structure + animated)"} };
+		t = TwDefineEnum("GlowMultiType", v, 4);
+	}
+	return t;
+}
+
+static TwType GlowSettingType()
+{
+	static TwType t = TW_TYPE_UNDEF;
+	if (t == TW_TYPE_UNDEF)
+	{
+		TwEnumVal v[] = { {0, "As level"}, {GLOW_THREE_COLORS, "Three colors (structure)"},
+			{GLOW_RAINBOW, "Rainbow (animated)"}, {GLOW_RAINBOW_BANDS, "Rainbow (structure + animated)"} };
+		t = TwDefineEnum("GlowSettingType", v, 4);
+	}
+	return t;
+}
+
+//the setting is stored in one byte, AntTweakBar enums are int
+static void TW_CALL SetGlowColorsSetting(const void *value, void *clientData)
+{
+	SETTINGS.stg.glow_colors = (unsigned char)std::min(std::max(*(const int*)value, 0), 3);
+}
+
+static void TW_CALL GetGlowColorsSetting(void *value, void *clientData)
+{
+	*(int*)value = SETTINGS.stg.glow_colors;
+}
+
 //===== Rebuild: extra flags + checkpoints in the level editor =====
 TwType TwVec3P;
 bool editor_markers = true;
@@ -1163,16 +1199,15 @@ void TW_CALL RemoveExtraFlag(void *data)
 void TW_CALL AddCheckpoint(void *data)
 {
 	Level* copy = &scene_ptr->level_copy;
-	if (copy->num_checkpoints >= MAX_CHECKPOINTS) return;
-	copy->checkpoints[copy->num_checkpoints] = copy->start_pos;
-	copy->num_checkpoints++;
+	//no upper limit
+	copy->AddCheckpoint(copy->start_pos);
 	PlaceCheckpoint((void*)(intptr_t)(copy->num_checkpoints - 1));
 }
 
 void TW_CALL RemoveCheckpoint(void *data)
 {
 	Level* copy = &scene_ptr->level_copy;
-	if (copy->num_checkpoints > 0) copy->num_checkpoints--;
+	copy->RemoveLastCheckpoint();
 	scene_ptr->cur_ed_mode = Scene::EditorMode::DEFAULT;
 }
 
@@ -1240,6 +1275,8 @@ void UpdateEditorFlagVars()
 	{
 		RebuildFlagVars();
 	}
+	//the bar no longer points to removed checkpoints => free them
+	copy->TrimCheckpoints();
 }
 
 void TW_CALL PlayMusic(void *data)
@@ -1535,6 +1572,8 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(overlays_ptr->settings, "Camera gamma", TW_TYPE_FLOAT, &SETTINGS.stg.gamma_camera, "min=0 max=4 step=0.1 group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Fractal glow", TW_TYPE_BOOLCPP, &SETTINGS.stg.fractal_glow, "group='Graphics settings'");
 	TwAddVarRW(overlays_ptr->settings, "Flag glow", TW_TYPE_BOOLCPP, &SETTINGS.stg.flag_glow, "group='Graphics settings'");
+	TwAddVarCB(overlays_ptr->settings, "Fractal glow colors", GlowSettingType(), SetGlowColorsSetting, GetGlowColorsSetting, NULL,
+		"group='Graphics settings' help='Overrides the glow colors of every level (As level = what the level editor set)'");
 	TwAddButton(overlays_ptr->settings, "Apply2", ApplySettings, NULL, "group='Graphics settings' label='Apply settings'  ");
 
 	TwAddVarRW(overlays_ptr->settings, "Language", Languages, &SETTINGS.stg.language, "group='Gameplay settings'");
@@ -1687,6 +1726,11 @@ void InitializeATBWindows(float* fps, float *target_fps)
 	TwAddVarRW(fed, "Glow pattern", TwVec3P, copy->glow_pattern.data(), "group='Fractal Glow' help='Decides where the fractal glows (works like the surface color orbit trap)'");
 	TwAddVarRW(fed, "Glow beat sync", TW_TYPE_BOOLCPP, &copy->glow_beat_sync, "group='Fractal Glow' help='Glow pulses to the beat of the music'");
 	TwAddVarRW(fed, "Glow beat strength", TW_TYPE_FLOAT, &copy->glow_beat_strength, "min=0 max=1 step=0.01 precision=7 group='Fractal Glow'");
+	TwAddVarRW(fed, "Glow colors", GlowMultiType(), &copy->glow_multi, "group='Fractal Glow' help='Single color, three colors by fractal structure, animated rainbow, or rainbow by structure + animated'");
+	TwAddVarRW(fed, "Glow color 2", TW_TYPE_COLOR3F, copy->glow_color2.data(), "group='Fractal Glow' help='Second structural band (Glow colors = Three colors)'");
+	TwAddVarRW(fed, "Glow color 3", TW_TYPE_COLOR3F, copy->glow_color3.data(), "group='Fractal Glow' help='Third structural band (Glow colors = Three colors)'");
+	TwAddVarRW(fed, "Rainbow speed", TW_TYPE_FLOAT, &copy->glow_hue_speed, "min=-10 max=10 step=0.005 precision=4 group='Fractal Glow' help='Color cycles per second (rainbow modes)'");
+	TwAddVarRW(fed, "Rainbow spread", TW_TYPE_FLOAT, &copy->glow_hue_spread, "min=-10 max=10 step=0.001 precision=4 group='Fractal Glow' help='Color cycles per marble radius in space (rainbow modes)'");
 
 	//---- Beat analysis equalizer ----
 	for (int b = 0; b < BEAT_BANDS; b++)

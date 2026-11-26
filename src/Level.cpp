@@ -475,6 +475,11 @@ void Level::InitExtDefaults()
 	glow_brightness = 1.0f;
 	glow_beat_strength = 1.0f;
 	glow_pattern = Eigen::Vector3f(0.42f, 0.38f, 0.19f);
+	glow_multi = GLOW_SINGLE;
+	glow_color2 = Eigen::Vector3f(1.0f, 0.15f, 0.65f);
+	glow_color3 = Eigen::Vector3f(0.15f, 0.85f, 1.0f);
+	glow_hue_speed = 0.08f;
+	glow_hue_spread = 0.033f;
 
 	custom_sky = false;
 	sky_color = Eigen::Vector3f(0.6f, 0.8f, 1.0f);
@@ -497,7 +502,7 @@ void Level::InitExtDefaults()
 	num_flags = 0;
 	num_checkpoints = 0;
 	for (int i = 0; i < MAX_EXTRA_FLAGS; i++) flags[i].setZero();
-	for (int i = 0; i < MAX_CHECKPOINTS; i++) checkpoints[i].setZero();
+	checkpoints.clear();
 
 	music_react = false;
 	music_react_strength = 1.0f;
@@ -514,7 +519,11 @@ bool Level::LoadFromFile(fs::path path)
 	const size_t LevelF_size = sizeof(LevelF);
 	const size_t Full_size = sizeof(LevelF) + sizeof(LevelExt);
 
-	if (ec || (lvl_size != LevelF_size && lvl_size != Full_size))
+	//Full_size + extra checkpoint block: header + count * 3 floats
+	const bool has_cp_block = !ec && lvl_size >= Full_size + sizeof(LevelCPBlock) &&
+		(lvl_size - Full_size - sizeof(LevelCPBlock)) % (3 * sizeof(float)) == 0;
+
+	if (ec || (lvl_size != LevelF_size && lvl_size != Full_size && !has_cp_block))
 	{
 		//skip broken files instead of loading garbage
 		return false;
@@ -533,13 +542,27 @@ bool Level::LoadFromFile(fs::path path)
 	//the glow pattern of old levels follows the old surface color => same look as before
 	glow_pattern = params.segment<3>(6);
 
-	if (lvl_size == Full_size)
+	if (lvl_size == Full_size || has_cp_block)
 	{
 		LevelExt ext;
 		level_file.read(reinterpret_cast<char *>(&ext), sizeof(LevelExt));
 		if (level_file && memcmp(ext.magic, LEVEL_EXT_MAGIC, 8) == 0)
 		{
 			LoadLevelExt(ext);
+
+			//checkpoints beyond the first MAX_CHECKPOINTS
+			LevelCPBlock cpb;
+			if (has_cp_block && level_file.read(reinterpret_cast<char *>(&cpb), sizeof(cpb)) &&
+				memcmp(cpb.magic, LEVEL_CP_MAGIC, 8) == 0 && cpb.count >= 0 &&
+				(size_t)cpb.count * 3 * sizeof(float) == lvl_size - Full_size - sizeof(LevelCPBlock))
+			{
+				for (int i = 0; i < cpb.count; i++)
+				{
+					float v[3];
+					if (!level_file.read(reinterpret_cast<char *>(v), sizeof(v))) break;
+					AddCheckpoint(Eigen::Vector3f(v[0], v[1], v[2]));
+				}
+			}
 		}
 	}
 
@@ -564,6 +587,21 @@ void Level::SaveToFile(std::string file, int ID, int Link)
 	LevelExt ext = GetLevelExt();
 	level_file.write(reinterpret_cast<char *>(&ext), sizeof(ext));
 
+	//extra checkpoint block, only written when needed so levels with up to
+	//MAX_CHECKPOINTS checkpoints keep the old file size
+	if (num_checkpoints > MAX_CHECKPOINTS)
+	{
+		LevelCPBlock cpb;
+		memcpy(cpb.magic, LEVEL_CP_MAGIC, 8);
+		cpb.count = num_checkpoints - MAX_CHECKPOINTS;
+		level_file.write(reinterpret_cast<char *>(&cpb), sizeof(cpb));
+		for (int i = MAX_CHECKPOINTS; i < num_checkpoints; i++)
+		{
+			const float v[3] = { checkpoints[i].x(), checkpoints[i].y(), checkpoints[i].z() };
+			level_file.write(reinterpret_cast<const char *>(v), sizeof(v));
+		}
+	}
+
 	level_file.close();
 }
 
@@ -582,6 +620,15 @@ void Level::LoadLevelExt(const LevelExt& e)
 	glow_brightness = SafeF(e.glow_brightness, 1.f);
 	glow_beat_strength = SafeF(e.glow_beat_strength, 1.f);
 	glow_pattern = Eigen::Vector3f(e.glow_pattern);
+	glow_multi = std::min(std::max(e.glow_multi, 0), 3);
+	//levels saved before the multi color glow have zeros here => keep the defaults
+	if (Eigen::Vector3f(e.glow_color2).squaredNorm() > 0.0f) glow_color2 = Eigen::Vector3f(e.glow_color2);
+	if (Eigen::Vector3f(e.glow_color3).squaredNorm() > 0.0f) glow_color3 = Eigen::Vector3f(e.glow_color3);
+	if (e.glow_hue_speed != 0.0f || e.glow_hue_spread != 0.0f)
+	{
+		glow_hue_speed = SafeF(e.glow_hue_speed, 0.08f);
+		glow_hue_spread = SafeF(e.glow_hue_spread, 0.033f);
+	}
 
 	custom_sky = e.custom_sky;
 	sky_color = Eigen::Vector3f(e.sky_color);
@@ -603,8 +650,10 @@ void Level::LoadLevelExt(const LevelExt& e)
 	multi_flag = e.multi_flag;
 	num_flags = std::min(std::max(e.num_flags, 0), MAX_EXTRA_FLAGS);
 	for (int i = 0; i < MAX_EXTRA_FLAGS; i++) flags[i] = Eigen::Vector3f(e.flags[i]);
-	num_checkpoints = std::min(std::max(e.num_checkpoints, 0), MAX_CHECKPOINTS);
-	for (int i = 0; i < MAX_CHECKPOINTS; i++) checkpoints[i] = Eigen::Vector3f(e.checkpoints[i]);
+	checkpoints.clear();
+	num_checkpoints = 0;
+	const int ncp = std::min(std::max(e.num_checkpoints, 0), MAX_CHECKPOINTS);
+	for (int i = 0; i < ncp; i++) AddCheckpoint(Eigen::Vector3f(e.checkpoints[i]));
 
 	music_react = e.music_react;
 	music_react_strength = SafeF(e.music_react_strength, 1.f);
@@ -629,6 +678,11 @@ LevelExt Level::GetLevelExt()
 	e.glow_brightness = glow_brightness;
 	e.glow_beat_strength = glow_beat_strength;
 	std::copy(glow_pattern.data(), glow_pattern.data() + 3, e.glow_pattern);
+	e.glow_multi = glow_multi;
+	std::copy(glow_color2.data(), glow_color2.data() + 3, e.glow_color2);
+	std::copy(glow_color3.data(), glow_color3.data() + 3, e.glow_color3);
+	e.glow_hue_speed = glow_hue_speed;
+	e.glow_hue_spread = glow_hue_spread;
 
 	e.custom_sky = custom_sky;
 	std::copy(sky_color.data(), sky_color.data() + 3, e.sky_color);
@@ -650,8 +704,13 @@ LevelExt Level::GetLevelExt()
 	e.multi_flag = multi_flag;
 	e.num_flags = num_flags;
 	for (int i = 0; i < MAX_EXTRA_FLAGS; i++) std::copy(flags[i].data(), flags[i].data() + 3, e.flags[i]);
-	e.num_checkpoints = num_checkpoints;
-	for (int i = 0; i < MAX_CHECKPOINTS; i++) std::copy(checkpoints[i].data(), checkpoints[i].data() + 3, e.checkpoints[i]);
+	//the first MAX_CHECKPOINTS go here, the rest into the extra checkpoint block (see SaveToFile)
+	e.num_checkpoints = std::min(num_checkpoints, MAX_CHECKPOINTS);
+	for (int i = 0; i < MAX_CHECKPOINTS; i++)
+	{
+		if (i < e.num_checkpoints) std::copy(checkpoints[i].data(), checkpoints[i].data() + 3, e.checkpoints[i]);
+		else e.checkpoints[i][0] = e.checkpoints[i][1] = e.checkpoints[i][2] = 0.0f;
+	}
 
 	e.music_react = music_react;
 	e.music_react_strength = music_react_strength;

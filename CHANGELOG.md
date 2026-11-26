@@ -2,7 +2,31 @@
 
 Unofficial fork of Marble Marcher: Community Edition 1.4.6. Not affiliated with the MMCE team or CodeParade.
 
-## Unreleased
+## 1.0.1
+
+### Gameplay / level editor
+- **No checkpoint limit anymore** (was 16): the editor can add any number of checkpoints.
+  The first 16 are stored in the extension block as before; further ones go into a new block
+  after it, which is only written when a level has more than 16 checkpoints. Levels with up to
+  16 checkpoints keep the old file format and still load in 1.0.0. The renderer draws the
+  32 checkpoints nearest to the camera; the game logic, the arrow and the saved progress use all of them
+- Saved checkpoint progress stores the state of every checkpoint (old progress files still load)
+
+### Fractal glow
+- **Multi color glow**, new editor option *Glow colors*: single color (as before), three colors
+  by fractal structure (*Glow color*, *Glow color 2*, *Glow color 3*), animated rainbow, or
+  rainbow by structure + animated (*Rainbow speed*, *Rainbow spread*). Stored in the reserved
+  part of the extension block, old levels keep their single color glow
+- New setting *Fractal glow colors* (Graphics settings) forces a multi color glow for every
+  level, also for the legacy glow. Settings files keep their size, nothing is reset
+
+### Browser / Android version
+- New folder `web/`: standalone WebGL2 version (one HTML file) with all levels, the marble physics
+  of the desktop game, touch controls (joystick, camera, pinch zoom), unlimited player checkpoints
+  (K / L / J), multi color glow, best times; installable as an app on Android (PWA, offline)
+- `tools/export_levels_web.py` embeds the `.lvl` files into `web/index.html`
+
+## 1.0.0
 
 ### Level format
 - New extension block after the original level data (old levels load unchanged with defaults)
