@@ -14,7 +14,23 @@ vec3 sky_color(in vec3 pos)
 	vec3 extinction = mix(exp(-exp(-((pos.y + fsun.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0, vec3(1.0 - exp(fsun.y)) * 0.2, -fsun.y * 0.2 + 0.5);
 	vec3 sky_col = brightnees* 3.0 / (8.0 * 3.14) * (1.0 + mu * mu) * (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm) * extinction;
 	sky_col = 0.4*clamp(sky_col,0.001,15.);
-	return pow(sky_col,vec3(1.f/gamma_sky)); 
+
+	//--- Rebuild: day light, sun color and custom sky color ---
+	vec3 sun_dir = normalize(LIGHT_DIRECTION);
+	//sun below the horizon => completely dark (short twilight just below it)
+	float daylight = smoothstep(-0.08, 0.03, sun_dir.y);
+	//sun color relative to the default sun color; black sun => black sky
+	vec3 sun_tint = LIGHT_COLOR/vec3(1.0, 0.95, 0.8);
+	if(CUSTOM_SKY)
+	{
+		//user sky color with a slightly brighter horizon + the sun halo
+		float horizon = 0.75 + 0.45*exp(-6.0*max(pos.y, 0.0));
+		float halo = pow(max(mu, 0.0), 64.0)*2.0 + pow(max(mu, 0.0), 8.0)*0.25;
+		float sun_strength = max(max(LIGHT_COLOR.x, LIGHT_COLOR.y), LIGHT_COLOR.z);
+		vec3 custom = SKY_COLOR*horizon*brightnees*sun_strength + LIGHT_COLOR*halo*brightnees;
+		return custom*daylight;
+	}
+	return pow(sky_col,vec3(1.f/gamma_sky))*sun_tint*daylight;
 }
 
 vec3 refraction(vec3 rd, vec3 n, float p) {

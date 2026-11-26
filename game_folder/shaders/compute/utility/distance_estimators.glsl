@@ -3,7 +3,6 @@ uniform sampler2D iTexture1;
 
 ///Original MM distance estimators
 
-float s1 = sin(iFracAng1), c1 = cos(iFracAng1), s2 = sin(iFracAng2), c2 = cos(iFracAng2);
 
 //##########################################
 //   Space folding
@@ -36,7 +35,7 @@ float smoothmin(float a, float b, float k) {
 }*/
 
 vec2 mp = vec2(-1.,1.);
-void mengerFold(inout vec4 z) 
+void mengerFold(inout vec4 z)
 {
 	z.xy += min(z.x - z.y, 0.0)*mp;
 	z.xz += min(z.x - z.z, 0.0)*mp;
@@ -70,68 +69,154 @@ float de_capsule(vec4 p, float h, float r) {
 //##########################################
 //   Main DEs
 //##########################################
+
+//Early exit of the fractal loop.
+//Every fold is an isometry, so once |p| is large the point can never come back,
+//and once p.w is huge the distance is far below MIN_DIST anyway => the remaining
+//iterations do not change the result. This makes FRACTAL_ITER effectively unlimited
+//(the real number of iterations is ~log(1e11)/log(scale) at most).
+#define FRAC_BAIL2 1e8
+#define FRAC_WMAX 1e11
+#define FRAC_WMIN 1e-20
+
+//n-fold kaleidoscopic symmetry around the Y axis
+void radialFold(inout vec4 p, int n)
+{
+	float sector = 6.28318530718/float(n);
+	float a = atan(p.z, p.x);
+	a = abs(mod(a + 0.5*sector, sector) - 0.5*sector);
+	float r = length(p.xz);
+	p.xz = r*vec2(cos(a), sin(a));
+}
+
+void fractal_step(inout vec4 p)
+{
+	if(SYM_RADIAL_INTERNAL > 1) radialFold(p, SYM_RADIAL_INTERNAL);
+	p.xyz = mix(p.xyz, abs(p.xyz), SYM_MIRROR);
+	p.xyz = iFracRot1*p.xyz;
+	if(SYM_TYPE == 0) mengerFold(p);
+	else if(SYM_TYPE == 1) sierpinskiFold(p);
+	else if(SYM_TYPE == 2) p.xy += min(p.x - p.y, 0.0)*mp;
+	p.xyz = iFracRot2*p.xyz;
+	p *= iFracScale;
+	p.xyz += iFracShift;
+}
+
+#define FRAC_EXIT (dot(p.xyz,p.xyz) > FRAC_BAIL2 || p.w > FRAC_WMAX || p.w < FRAC_WMIN)
+
 float de_fractal(vec4 p)
 {
-	mat2 rmZ = mat2(c1, s1, -s1, c1);
-	mat2 rmX = mat2(c2, s2, -s2, c2);
+	if(SYM_DEFAULT)
+	{
+		//fast path for the original menger symmetry: no per iteration branches
+		for (int i = 0; i < FRACTAL_ITER; ++i) {
+			p.xyz = iFracRot1*abs(p.xyz);
+			mengerFold(p);
+			p.xyz = iFracRot2*p.xyz;
+			p *= iFracScale;
+			p.xyz += iFracShift;
+			if(FRAC_EXIT) break;
+		}
+		return de_box(p, vec3(6.0));
+	}
+	if(SYM_RADIAL_GLOBAL > 1) radialFold(p, SYM_RADIAL_GLOBAL);
 	for (int i = 0; i < FRACTAL_ITER; ++i) {
-		p.xyz = abs(p.xyz);
-		p.xy *= rmZ;
-		mengerFold(p);
-		p.yz *= rmX;
-		p *= iFracScale;
-		p.xyz += iFracShift;
+		fractal_step(p);
+		if(FRAC_EXIT) break;
 	}
 	return de_box(p, vec3(6.0));
 }
-/*
-float de_fractal(vec4 p) 
-{
-	for (int i = 0; i < FRACTAL_ITER; ++i) {
-		p.xyz = abs(p.xyz);
-		rotZ(p, s1, c1);
-		mengerFold(p);
-		rotX(p, s2, c2);
-		p *= iFracScale;
-		p.xyz += iFracShift;
-	}
-	return de_box(p, vec3(6.0));
-}*/
 
-vec4 col_fractal(vec4 p) 
+//surface color orbit trap + glow orbit trap in one pass
+vec4 col_fractal_glow(vec4 p, out vec3 gorbit)
 {
 	vec3 orbit = vec3(0.0);
-	mat2 rmZ = mat2(c1, s1, -s1, c1); 
-	mat2 rmX = mat2(c2, s2, -s2, c2);
+	gorbit = vec3(0.0);
+	if(SYM_RADIAL_GLOBAL > 1) radialFold(p, SYM_RADIAL_GLOBAL);
 	for (int i = 0; i < FRACTAL_ITER; ++i) {
-		p.xyz = abs(p.xyz);
-		p.xy *= rmZ; //rotation around z
-		mengerFold(p);
-		p.yz *= rmX; //rotation around x
-		p *= iFracScale;
-		p.xyz += iFracShift;
+		fractal_step(p);
 		orbit = max(orbit, p.xyz*iFracCol);
+		gorbit = max(gorbit, p.xyz*GLOW_PATTERN);
+		if(FRAC_EXIT) break;
 	}
 	return vec4(orbit, de_box(p, vec3(6.0)));
 }
 
-float de_marble(vec4 p) 
+vec4 col_fractal(vec4 p)
 {
-	return de_sphere(p - vec4(iMarblePos, 0), iMarbleRad);
+	vec3 orbit = vec3(0.0);
+	if(SYM_RADIAL_GLOBAL > 1) radialFold(p, SYM_RADIAL_GLOBAL);
+	for (int i = 0; i < FRACTAL_ITER; ++i) {
+		fractal_step(p);
+		orbit = max(orbit, p.xyz*iFracCol);
+		if(FRAC_EXIT) break;
+	}
+	return vec4(orbit, de_box(p, vec3(6.0)));
 }
 
-vec4 col_marble(vec4 p) 
+//marble, squashed into an ellipsoid when the rubber ball hits something
+float de_marble(vec4 p)
 {
-	vec4 col = vec4(0.5, 0.5, 0.5, de_sphere(p - vec4(iMarblePos, 0), iMarbleRad));
+	if(iMarbleSquash.w == 0.0)
+	{
+		return de_sphere(p - vec4(iMarblePos, 0), iMarbleRad);
+	}
+	float s = iMarbleSquash.w;
+	vec3 n = iMarbleSquash.xyz;
+	vec3 q = p.xyz - (iMarblePos + n*(iMarbleRad*s));
+	float a = 1.0 - s;                    //scale along the contact normal
+	float b = inversesqrt(max(a, 0.05));  //volume preserving bulge
+	float qn = dot(q, n);
+	vec3 qs = n*(qn/a) + (q - n*qn)/b;
+	float d = (length(qs) - iMarbleRad)*min(a, b);
+	if(iMarbleLumps > 0.0)
+	{
+		//crushed metal: lumpy dumpling surface
+		vec3 k = q*(18.0/iMarbleRad);
+		d += iMarbleLumps*iMarbleRad*0.06*sin(k.x)*sin(k.y + 1.3)*sin(k.z + 2.1);
+		d *= 0.7;
+	}
+	return d/p.w;
+}
+
+//glass shards of a crushed marble
+vec3 quat_rotate_inv(vec4 q, vec3 v)
+{
+	vec3 u = -q.xyz;
+	return v + 2.0*cross(u, cross(u, v) + q.w*v);
+}
+
+float de_shard(vec4 p, int i)
+{
+	vec3 q = quat_rotate_inv(iShardRot[i], p.xyz - iShardPos[i].xyz);
+	q = abs(q);
+	return (q.x + 2.5*q.y + q.z*0.8 - iShardPos[i].w*0.5)*0.36/p.w;
+}
+
+float de_shards(vec4 p, float best)
+{
+	if (length(p.xyz - iShardBound.xyz) - iShardBound.w > best) return best;
+	float d = best;
+	for (int i = 0; i < iShardCount; i++)
+	{
+		if (length(p.xyz - iShardPos[i].xyz) - iShardPos[i].w > d) continue;
+		d = min(d, de_shard(p, i));
+	}
+	return d;
+}
+
+vec4 col_marble(vec4 p)
+{
+	vec4 col = vec4(0.5, 0.5, 0.5, de_marble(p));
 	return col;
 }
 
-float de_flag(vec4 p) 
+float de_flag_at(vec4 p, vec3 fpos)
 {
-	vec3 f_pos = iFlagPos + vec3(1.5, 4, 0)*iFlagScale;
+	vec3 f_pos = fpos + vec3(1.5, 4, 0)*iFlagScale;
 	vec4 p_s = p/iMarbleRad;
 	vec4 d_pos = p - vec4(f_pos, 0);
-	vec4 caps_pos = p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0);
+	vec4 caps_pos = p - vec4(fpos + vec3(0, iFlagScale*2.4, 0), 0);
 	//animated flag woooo
 	float speed = 14;
 	float oscillation = sin(8*p_s.x - 1*p_s.y - speed*time) + 0.4*sin(11*p_s.x + 2*p_s.y - 1.2*speed*time) + 0.15*sin(20*p_s.x - 5*p_s.y -1.4*speed*time);
@@ -141,43 +226,189 @@ float de_flag(vec4 p)
 	return d;
 }
 
-vec4 col_flag(vec4 p) 
+float de_flag(vec4 p)
 {
-	vec3 f_pos = iFlagPos + vec3(1.5, 4, 0)*iFlagScale;
+	return de_flag_at(p, iFlagPos);
+}
+
+//state: 0 locked (not reachable yet), 1 current target, 2 collected
+vec4 col_flag_at(vec4 p, vec3 fpos, float state)
+{
+	vec3 f_pos = fpos + vec3(1.5, 4, 0)*iFlagScale;
 	vec4 d_pos = p - vec4(f_pos, 0);
 	vec3 fsize = vec3(1.5, 0.8, 0.08)*iMarbleRad;
-	vec4 caps_pos = p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0);
+	vec4 caps_pos = p - vec4(fpos + vec3(0, iFlagScale*2.4, 0), 0);
 	float d1 = de_box(d_pos, fsize);
-	float d2 = de_capsule(p - vec4(iFlagPos + vec3(0, iFlagScale*2.4, 0), 0), iMarbleRad*2.4, iMarbleRad*0.18);
+	float d2 = de_capsule(caps_pos, iMarbleRad*2.4, iMarbleRad*0.18);
 	if (d1 < d2) {
 		vec2 texture_coord = d_pos.xy*vec2(0.5,-0.48)/fsize.xy + vec2(0.5,0.5) - 0.5*vec2(0,caps_pos.x*(0.02+ caps_pos.x* 0.5))/fsize.xy;
 		vec3 flagcolor = texture(iTexture0, texture_coord).xyz;
+		if(state < 0.5) flagcolor = vec3(dot(flagcolor, vec3(0.3,0.59,0.11)))*0.25;
+		else if(state > 1.5) flagcolor = mix(flagcolor, vec3(0.1,0.9,0.2), 0.65);
 		return vec4(flagcolor, d1);
 	} else {
-		return vec4(0.9, 0.9, 0.1, d2);
+		vec3 pole = vec3(0.9, 0.9, 0.1);
+		if(state < 0.5) pole = vec3(0.25);
+		else if(state > 1.5) pole = vec3(0.1, 0.85, 0.2);
+		return vec4(pole, d2);
 	}
 }
 
-float de_scene(vec3 pos) 
+vec4 col_flag(vec4 p)
 {
-	vec4 p = vec4(pos,1.f);
-	float d = de_fractal(p);
-	d = min(d, de_marble(p));
-	d = min(d, de_flag(p));
+	return col_flag_at(p, iFlagPos, iGoalState);
+}
+
+//checkpoint: thin pole with a slowly spinning crystal on top
+float de_checkpoint(vec4 p, vec3 cpos, out bool gem)
+{
+	vec4 caps_pos = p - vec4(cpos + vec3(0, iFlagScale*2.4, 0), 0);
+	float d = de_capsule(caps_pos, iMarbleRad*2.4, iMarbleRad*0.07);
+	vec3 q = p.xyz - (cpos + vec3(0, iFlagScale*5.6, 0));
+	float a = time*1.5;
+	q.xz = mat2(cos(a), sin(a), -sin(a), cos(a))*q.xz;
+	q = abs(q);
+	float oct = (q.x + q.y*0.7 + q.z - iMarbleRad*0.9)*0.57735/p.w;
+	gem = oct < d;
+	return min(d, oct);
+}
+
+//distance to all extra flags and checkpoints; objects whose bounding sphere
+//is further away than the current best distance are skipped (cheap)
+float de_extra(vec4 p, float best)
+{
+	float d = best;
+	for (int i = 0; i < iFlagCount; i++)
+	{
+		vec3 c = iFlagArr[i] + vec3(0, 2.4*iFlagScale, 0);
+		if (length(p.xyz - c) - 4.2*iMarbleRad < d)
+			d = min(d, de_flag_at(p, iFlagArr[i]));
+	}
+	for (int i = 0; i < iCPCount; i++)
+	{
+		vec3 c = iCPArr[i] + vec3(0, 3.2*iFlagScale, 0);
+		if (length(p.xyz - c) - 4.2*iMarbleRad < d)
+		{
+			bool gem;
+			d = min(d, de_checkpoint(p, iCPArr[i], gem));
+		}
+	}
 	return d;
 }
 
-vec4 col_scene(vec3 pos) 
+//color of the nearest extra object, w = distance
+vec4 col_extra(vec4 p, out vec3 emission)
+{
+	vec4 best = vec4(0, 0, 0, 1e10);
+	emission = vec3(0);
+	for (int i = 0; i < iFlagCount; i++)
+	{
+		vec3 c = iFlagArr[i] + vec3(0, 2.4*iFlagScale, 0);
+		if (length(p.xyz - c) - 4.2*iMarbleRad > best.w) continue;
+		vec4 cf = col_flag_at(p, iFlagArr[i], iFlagState[i]);
+		if (cf.w < best.w)
+		{
+			best = cf;
+			emission = (FLAG_GLOW && iFlagState[i] > 0.5 && iFlagState[i] < 1.5) ? 10.*cf.xyz : vec3(0);
+		}
+	}
+	for (int i = 0; i < iCPCount; i++)
+	{
+		vec3 c = iCPArr[i] + vec3(0, 3.2*iFlagScale, 0);
+		if (length(p.xyz - c) - 4.2*iMarbleRad > best.w) continue;
+		bool gem;
+		float d = de_checkpoint(p, iCPArr[i], gem);
+		if (d < best.w)
+		{
+			bool cp_on = iCPState[i] > 0.5 && iCPState[i] < 1.5;
+			bool cp_next = iCPState[i] > 1.5;
+			vec3 col = gem ? (cp_on ? vec3(0.15, 1.0, 0.3) : (cp_next ? vec3(1.0, 0.8, 0.1) : vec3(0.25, 0.3, 0.45))) : vec3(0.8);
+			best = vec4(col, d);
+			emission = (gem && cp_on) ? 6.*col : ((gem && cp_next) ? (3.0 + 2.5*sin(time*5.0))*col : vec3(0));
+		}
+	}
+	return best;
+}
+
+float de_scene(vec3 pos)
+{
+	vec4 p = vec4(pos,1.f);
+	float d = de_fractal(p);
+	//bounding spheres: the exact marble / flag DE is only needed when they can be the closest object
+	if(length(pos - iMarblePos) - 2.5*iMarbleRad < d) d = min(d, de_marble(p));
+	if(length(pos - (iFlagPos + vec3(0, 2.4*iFlagScale, 0))) - 4.2*iMarbleRad < d) d = min(d, de_flag(p));
+	if(iFlagCount + iCPCount > 0) d = de_extra(p, d);
+	if(iShardCount > 0) d = de_shards(p, d);
+	return d;
+}
+
+vec4 col_scene(vec3 pos)
 {
 	vec4 p = vec4(pos,1.f);
 	vec4 col = col_fractal(p);
 	vec4 col_f = col_flag(p);
 	if (col_f.w < col.w) { col = col_f; }
+	if(iFlagCount + iCPCount > 0)
+	{
+		vec3 e;
+		vec4 col_e = col_extra(p, e);
+		if (col_e.w < col.w) { col = col_e; }
+	}
+	if(iShardCount > 0)
+	{
+		float ds = de_shards(p, col.w);
+		if (ds < col.w) col = vec4(iShardColor, ds);
+	}
 	vec4 col_m = col_marble(p);
 	if (col_m.w < col.w) {
+		if(MARBLE_MODE == 3) return vec4(vec3(0.02), 0.0);
+		if(MARBLE_MODE == 4) return vec4(vec3(0.6), 0.0);
 		return vec4(col_m.xyz, 1.0);
 	}
 	return vec4(min(col.xyz,1), 0.0);
+}
+
+float glow_mask(vec3 c)
+{
+	vec3 hfcol = 0.5*sin(vec3(3.,4.,5.)*c)+0.5;
+	return exp(-50.*clamp(pow(abs(length(hfcol-vec3(0.2,0.5,0.75))),2.),0.,1.));
+}
+
+//##########################################
+//   Multi color glow
+//##########################################
+vec3 glow_palette(float t)
+{
+	return 0.5 + 0.5*cos(6.28318*(t + vec3(0.0, 0.33, 0.67)));
+}
+
+//c = glow orbit trap, base = color of band 0 (glow color, or the surface color for the legacy glow)
+vec3 multi_glow(vec3 pos, vec3 c, vec3 base)
+{
+	//band 0 is the original glow band, bands 1 and 2 are other parts of the fractal structure
+	const vec3 band[3] = vec3[3](vec3(0.2,0.5,0.75), vec3(0.75,0.3,0.4), vec3(0.4,0.8,0.25));
+	vec3 hfcol = 0.5*sin(vec3(3.,4.,5.)*c)+0.5;
+	float m[3];
+	for(int k = 0; k < 3; k++)
+	{
+		vec3 d = hfcol - band[k];
+		m[k] = exp(-50.*clamp(dot(d,d), 0., 1.));
+	}
+	float shift = GLOW_HUE_SPEED*time + GLOW_HUE_SPREAD*dot(pos, vec3(0.3,0.5,0.7))/max(iMarbleRad, 1e-6);
+	if(GLOW_MULTI == 1)
+	{
+		return base*m[0] + GLOW_COLOR2*m[1] + GLOW_COLOR3*m[2];
+	}
+	if(GLOW_MULTI == 2)
+	{
+		return glow_palette(shift)*m[0];
+	}
+	vec3 em = vec3(0.);
+	for(int k = 0; k < 3; k++)
+	{
+		em += m[k]*glow_palette(shift + float(k)/3. + 0.35*dot(hfcol, vec3(1.)));
+	}
+	return em;
 }
 
 void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emission)
@@ -185,44 +416,99 @@ void scene_material(vec3 pos, inout vec4 color, inout vec2 pbr, inout vec3 emiss
 	//DE_count = DE_count+1;
 	vec4 p = vec4(pos,1.f);
 	emission = vec3(0.);
-	
-	color = col_fractal(p);
+
+	vec3 gorbit;
+	color = col_fractal_glow(p, gorbit);
 	vec4 color_f = col_flag(p);
 	vec4 color_m = col_marble(p);
-	
+
 	pbr = vec2(PBR_METALLIC, PBR_ROUGHNESS);
 	float reflection = 0;
 
 	if(FRACTAL_GLOW)
 	{
-		vec3 hfcol = 0.5*sin(vec3(3.,4.,5.)*color.xyz)+0.5;
-		emission = 20.*color.xyz*exp(-50.*clamp(pow(abs(length(hfcol-vec3(0.2,0.5,0.75))),2.),0.,1.));
+		if(GLOW_MULTI > 0)
+		{
+			//multi color glow (level setting or global override)
+			emission = GLOW_CUSTOM ?
+				20.*GLOW_BRIGHTNESS*GLOW_BEAT*multi_glow(pos, gorbit, GLOW_COLOR) :
+				20.*multi_glow(pos, color.xyz, color.xyz);
+		}
+		else if(GLOW_CUSTOM)
+		{
+			//glow color is independent from the surface color
+			emission = 20.*GLOW_BRIGHTNESS*GLOW_BEAT*GLOW_COLOR*glow_mask(gorbit);
+		}
+		else
+		{
+			//legacy glow (global setting only)
+			emission = 20.*color.xyz*glow_mask(color.xyz);
+		}
 	}
-	
-	if (color_f.w < color.w) 
-	{ 
-		color = color_f; 
+
+	if (color_f.w < color.w)
+	{
+		color = color_f;
 		pbr = vec2(0.2,0.35);
-		if(FLAG_GLOW)
+		emission = vec3(0);
+		if(FLAG_GLOW && iGoalState > 0.5 && iGoalState < 1.5)
 		{
 			emission = 10.*color_f.xyz;
 		}
 	}
-	
-	if (color_m.w < color.w) 
-	{ 
-		color = color_m; 
-		color.w = 1.;
-		if(MARBLE_MODE <= 1)
+
+	if(iFlagCount + iCPCount > 0)
+	{
+		vec3 e;
+		vec4 color_e = col_extra(p, e);
+		if (color_e.w < color.w)
 		{
-			pbr = vec2(1,0.35);
+			color = color_e;
+			pbr = vec2(0.2,0.35);
+			emission = e;
+		}
+	}
+
+	if(iShardCount > 0)
+	{
+		float ds = de_shards(p, color.w);
+		if (ds < color.w)
+		{
+			color = vec4(iShardColor, ds);
+			pbr = vec2(0.9, 0.08); //shiny glass/ceramic splinters
+			emission = vec3(0);
+		}
+	}
+
+	if (color_m.w < color.w)
+	{
+		color = color_m;
+		emission = vec3(0);
+		if(MARBLE_MODE == 4)
+		{
+			//crushed metal dumpling: rendered with normal lighting (correct normals)
+			color = vec4(vec3(0.62), 0.);
+			pbr = vec2(1.0, 0.3);
+		}
+		else if(MARBLE_MODE == 3)
+		{
+			//rubber ball: matte black
+			color = vec4(vec3(0.02), 0.);
+			pbr = vec2(0., 0.9);
 		}
 		else
 		{
-			pbr = vec2(0.,0.35);
+			color.w = 1.;
+			if(MARBLE_MODE <= 1)
+			{
+				pbr = vec2(1,0.35);
+			}
+			else
+			{
+				pbr = vec2(0.,0.35);
+			}
+			reflection = 1;
 		}
-		
-		reflection = 1;
 	}
 
 	color = vec4(min(color.xyz,1), reflection);
@@ -243,8 +529,8 @@ vec3 calcNormalA(in vec3 pos, in float h)
 {
     vec4 e = vec4(0.0005,-0.0005, 1., -1);
     pos = pos - e.xxx;
-    return normalize(e.zww*DE( pos + e.xyy ) + 
-  			 		 e.wwz*DE( pos + e.yyx ) + 
-			  		 e.wzw*DE( pos + e.yxy ) + 
+    return normalize(e.zww*DE( pos + e.xyy ) +
+  			 		 e.wwz*DE( pos + e.yyx ) +
+			  		 e.wzw*DE( pos + e.yxy ) +
               		 e.zzz*h );
 }

@@ -39,4 +39,7 @@ add_library(MarbleMarcherSources
   
   SoundSystem.h
   SoundSystem.cpp
+
+  MusicAnalyzer.h
+  MusicAnalyzer.cpp
 )

@@ -24,7 +24,10 @@ const mat2 rot = mat2(cos(GA),sin(GA),-sin(GA),cos(GA));
 //DOF radius camera distance dependence
 float radius(float w)
 {
-    return (Camera.bokeh+0.001)*(max(w-Camera.focus,0.001)+max(Camera.size-w,1e-3))/(abs(w)+1e-3); // the angle 
+    //the minimum distances scale with the camera/marble size (identical to the original
+    //for the default marble, but no more full screen blur for tiny marbles)
+    float e = 1e-3*max(Camera.size/0.075, 1e-4);
+    return (Camera.bokeh+0.001)*(max(w-Camera.focus,e)+max(Camera.size-w,e))/(abs(w)+e); // the angle 
 }
 
 float convol_kernel(float w1, float w2, float rad)

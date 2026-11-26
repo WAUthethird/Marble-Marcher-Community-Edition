@@ -1,10 +1,30 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 project(MarbleMarcher VERSION "1.4.6")
 set(CMAKE_CXX_STANDARD 17)
 
 configure_file(src/config.h.in config.h)
 
-if (WIN32)
+if (WIN32 AND NOT MSVC)
+	## MSYS2 / MinGW (clang64) build, see build_with_msys2.md
+	set(MMCE_MINGW ON)
+	# dependencies from tools/setup_deps_msys2.sh (./deps), or ../deps
+	set(MMCE_DEPS "${CMAKE_SOURCE_DIR}/deps")
+	if(NOT EXISTS "${MMCE_DEPS}/SFML" AND EXISTS "${CMAKE_SOURCE_DIR}/../deps/SFML")
+		set(MMCE_DEPS "${CMAKE_SOURCE_DIR}/../deps")
+	endif()
+	if(NOT SFML_DIR)
+		set(SFML_DIR "${MMCE_DEPS}/SFML/lib/cmake/SFML")
+	endif()
+	set(ANTTWEAKBAR_DIR "${MMCE_DEPS}/atb/AntTweakBar" CACHE PATH "AntTweakBar folder")
+	set(ATB_LIB ${ANTTWEAKBAR_DIR}/lib/libAntTweakBar.a)
+	find_package(SFML 2.5 COMPONENTS system window graphics audio REQUIRED)
+	find_package(GLEW REQUIRED)
+	find_package(OpenGL REQUIRED)
+	find_package(Eigen3 REQUIRED)
+	find_package(glm REQUIRED)
+	get_target_property(SFML_INCLUDE_DIR sfml-system INTERFACE_INCLUDE_DIRECTORIES)
+	set(EIGEN3_INCLUDE_DIR ${EIGEN3_INCLUDE_DIRS})
+elseif (WIN32)
 	#CHECK THE BITNESS
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	    set(BIT 64)
@@ -74,9 +94,15 @@ else()
 	)
 endif()
 
-target_compile_definitions(MarbleMarcherSources PRIVATE SFML_STATIC)
+if(MMCE_MINGW)
+	target_compile_definitions(MarbleMarcherSources PUBLIC TW_STATIC TW_NO_LIB_PRAGMA)
+else()
+	target_compile_definitions(MarbleMarcherSources PRIVATE SFML_STATIC)
+endif()
 
-if(WIN32)
+if(MMCE_MINGW)
+  add_executable(MarbleMarcher WIN32 src/Main.cpp src/Resource_utf8.rc)
+elseif(WIN32)
   add_executable(MarbleMarcher WIN32 src/Main.cpp src/Resource.rc assets/icon.ico)
   set_source_files_properties(icon.ico Resource.rc PROPERTIES LANGUAGE RC)
 else()
@@ -88,7 +114,7 @@ add_custom_command(TARGET MarbleMarcher PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                        ${CMAKE_SOURCE_DIR}/game_folder $<TARGET_FILE_DIR:MarbleMarcher>)
 
-if(WIN32)
+if(WIN32 AND NOT MMCE_MINGW)
 	if(BIT EQUAL 32)
 		add_custom_command(TARGET MarbleMarcher PRE_BUILD
 		           COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -105,8 +131,23 @@ if(CMAKE_COMPILER_IS_GNUCC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
 endif()				   
 
-target_compile_definitions(MarbleMarcher PRIVATE SFML_STATIC)
-if(WIN32)
+if(NOT MMCE_MINGW)
+	target_compile_definitions(MarbleMarcher PRIVATE SFML_STATIC)
+endif()
+if(MMCE_MINGW)
+	target_link_libraries(MarbleMarcherSources PUBLIC
+	  ${ATB_LIB}
+	  GLEW::GLEW
+	  Eigen3::Eigen
+	  OpenGL::GL
+	  sfml-system
+	  sfml-window
+	  sfml-graphics
+	  sfml-audio
+	  gdi32 user32 shell32
+	)
+	target_link_libraries(MarbleMarcher MarbleMarcherSources)
+elseif(WIN32)
 	target_link_libraries(MarbleMarcher
 	  MarbleMarcherSources
 	  ${ATB_LIB}
